@@ -9,6 +9,9 @@
         abPickupInterval: ['pickupInterval', 'float', v => v + 's'],
         abMaxSlots: ['maxSlots', 'int', v => String(v)],
         abMatchTime: ['matchTime', 'int', v => v + 's'],
+        abShrinkStart: ['shrinkStart', 'int', v => v + 's'],
+        abShrinkRate: ['shrinkRate', 'int', v => v + ' px/s'],
+        abShrinkMax: ['shrinkMax', 'percent', v => v + '%'],
         abObstacles: ['obstacles', 'int', v => String(v)],
         abSpeed: ['gameSpeed', 'float', v => v.toFixed(1) + 'x']
     };
@@ -47,7 +50,7 @@
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                 Object.entries(SLIDERS).forEach(([id, cfg]) => {
                     const el = document.getElementById(id);
-                    if (el && saved[cfg[0]] != null) el.value = saved[cfg[0]];
+                    if (el && saved[cfg[0]] != null) el.value = cfg[1] === 'percent' ? Math.round(saved[cfg[0]] * 100) : saved[cfg[0]];
                 });
                 const mode = document.getElementById('abMatchMode');
                 if (mode && saved.matchMode) mode.value = saved.matchMode;
@@ -64,7 +67,7 @@
                 const el = document.getElementById(id);
                 if (!el) return;
                 const value = Number(el.value);
-                options[cfg[0]] = cfg[1] === 'int' ? Math.round(value) : value;
+                options[cfg[0]] = cfg[1] === 'int' || cfg[1] === 'percent' ? (cfg[1] === 'percent' ? value / 100 : Math.round(value)) : value;
             });
             const mode = document.getElementById('abMatchMode');
             const shrink = document.getElementById('abShrinkToggle');
@@ -213,7 +216,9 @@
 
         tick(now) {
             if (!this.running || !this.world) return;
-            const dt = Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000));
+            const realDt = Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000));
+            const gameSpeed = Number(window.ArenaBattle.getOptions().gameSpeed) || 1;
+            const dt = realDt * gameSpeed;
             this.lastTime = now;
             try {
                 window.ArenaBattle.update(dt, this.world);
