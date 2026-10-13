@@ -106,6 +106,27 @@ input[type=range]::-moz-range-thumb {
     visibility: visible !important;
 }
 
+
+/* Harmonisation des accordéons du menu Capacités avec Réglages Arena Brawl */
+.ability-global,.ability-preset-box,.ability-group{
+    border-radius:1rem;
+    background:rgba(24,24,27,.58);
+    overflow:hidden;
+}
+.ability-section-toggle,.ability-group-toggle{
+    min-height:42px;
+    text-align:left;
+}
+.ability-group-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;padding:12px;color:#e4e4e7;font-size:11px;font-weight:800;letter-spacing:.08em}
+.ability-group-title{display:flex;align-items:center}
+.ability-group-content[hidden]{display:none!important}
+.ability-group-content{padding-top:0}
+.ability-card{background:rgba(9,12,20,.62);margin-bottom:7px}
+.ability-card:last-child{margin-bottom:0}
+.ability-preset-box .ability-preset-row{margin:0}
+.ability-preset-box .ability-preset-row label{font-size:10px;color:#a1a1aa}
+.ability-group-toggle:focus-visible,.ability-section-toggle:focus-visible{outline:2px solid #00f2fe;outline-offset:-2px}
+
 /* Seed Search Pulse Animation */
 @keyframes pulseGlow {
     0%, 100% {
