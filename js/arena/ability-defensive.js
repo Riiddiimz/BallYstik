@@ -39,7 +39,7 @@
 
             const absorbed = Math.min(d.hp, amount);
             d.hp -= absorbed;
-            d.regenDelay = 3;
+            d.regenDelay = d.regenDelaySetting;
             d.hitFlash = 1;
 
             world.spawnParticle(ball.x, ball.y, {
