@@ -386,7 +386,16 @@
 
             target[updateName] = function (dt, ...args) {
                 if (self.active) {
-                    self.world && self.running && window.ArenaBattle.update(dt, self.world);
+                    if (self.world && self.running) {
+                        // Simulation.update() reçoit des ticks fixes (1 tick = 1/60 s),
+                        // alors que ArenaBattle attend un delta en secondes.
+                        // Convertir ici évite d'accélérer le jeu d'environ 60×.
+                        const deltaSeconds = target === window.sim
+                            ? (Number.isFinite(dt) ? dt / 60 : 1 / 60)
+                            : (Number.isFinite(dt) ? dt : 1 / 60);
+                        const speed = Number(window.ArenaBattle.options?.gameSpeed) || 1;
+                        window.ArenaBattle.update(deltaSeconds * speed, self.world);
+                    }
                     self._syncHudCounters();
                     return;
                 }
