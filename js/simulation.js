@@ -51,7 +51,7 @@ class Simulation {
         this.cssHeight = 0;
 
         // Active Mode (Classic by default)
-        this.modes = { classic: new ClassicMode(this), accumulation: new ArcadeMode(this, "accumulation"), multiply: new ArcadeMode(this, "multiply"), battleLines: new ArcadeMode(this, "battleLines"), lines: new ArcadeMode(this, "lines"), paint: new ArcadeMode(this, "paint"), target: new ArcadeMode(this, "target"), grow: new ArcadeMode(this, "grow"), shatter: new ArcadeMode(this, "shatter"), colorMatch: new ArcadeMode(this, "colorMatch"), portal: new ArcadeMode(this, "portal") };
+        this.modes = { classic: new ClassicMode(this) };
         this.activeModeId = 'classic';
         this.activeMode = this.modes.classic;
 

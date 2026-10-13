@@ -841,8 +841,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
     const modeNameForFile = id => String(id).replace(/[^a-z0-9_-]/gi, '-').toLowerCase();
     const modeList = document.getElementById('modeButtons');
-    if (modeList) {
-        // Add a small export action alongside every mode button without changing the existing HTML list.
+    if (modeList && Array.from(modeList.querySelectorAll('.mode-btn')).some(btn => sim.modes[btn.dataset.mode])) {
+        // Add export actions only when the selector contains a simulation-backed mode.
         Array.from(modeList.querySelectorAll('.mode-btn')).forEach(modeButton => {
             const modeId = modeButton.dataset.mode;
             const wrapper = document.createElement('div');
