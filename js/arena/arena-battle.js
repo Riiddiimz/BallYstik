@@ -255,7 +255,7 @@
                 return window.AbilityRegistry.pickRandom(world.prng, (meta) => {
                     const count = world.balls.reduce((s, b) =>
                         s + b.abilitySlots.filter(sl => sl.meta.id === meta.id).length, 0);
-                    return count < (window.AbilitySettings ? window.AbilitySettings.runtimeConfig(meta.id).maxStacks : 4);
+                    return count < 4;
                 });
             };
 
