@@ -255,7 +255,7 @@
                 return window.AbilityRegistry.pickRandom(world.prng, (meta) => {
                     const count = world.balls.reduce((s, b) =>
                         s + b.abilitySlots.filter(sl => sl.meta.id === meta.id).length, 0);
-                    return count < 4;
+                    return count < (window.AbilitySettings ? window.AbilitySettings.runtimeConfig(meta.id).maxStacks : 4);
                 });
             };
 
@@ -276,8 +276,8 @@
                 const slot = {
                     meta,
                     data: null,
-                    timeLeft: meta.duration > 0 ? meta.duration : Infinity,
-                    maxTime: meta.duration > 0 ? meta.duration : Infinity
+                    timeLeft: meta.duration > 0 ? (window.AbilitySettings ? window.AbilitySettings.getDuration(meta.id, meta.duration) : meta.duration) : Infinity,
+                    maxTime: meta.duration > 0 ? (window.AbilitySettings ? window.AbilitySettings.getDuration(meta.id, meta.duration) : meta.duration) : Infinity
                 };
                 ball.abilitySlots.push(slot);
                 const beh = window.AbilityBehaviors[meta.id];
