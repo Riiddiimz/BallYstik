@@ -355,7 +355,7 @@
             if (!ball.alive) return;
             // Clignotement rouge
             const t = performance.now() * 0.006;
-            const blink = (slot.data && slot.data.warning === false) ? 0 : ((Math.sin(t) > 0.3) ? 1 : 0);
+            const blink = (slot.data && !slot.data.warning) ? 0 : ((Math.sin(t) > 0.3) ? 1 : 0);
             ctx.save();
             ctx.globalAlpha = 0.35 * blink;
             ctx.strokeStyle = '#dc2626';
