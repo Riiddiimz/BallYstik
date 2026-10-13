@@ -44,8 +44,8 @@
             <i class="fa-solid fa-gamepad"></i> Mode & Balle
         </button>
         <span class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</span>
-        <button id="toggleRightSidebarBtn" aria-label="Menu Audio" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
-            <i class="fa-solid fa-sliders"></i> Audio
+        <button id="toggleRightSidebarBtn" aria-label="Menu des capacités" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-sliders"></i> Capacités
         </button>
     </header>
 
@@ -287,7 +287,7 @@
     </main>
 
     <!-- ====================================================================
-         RIGHT SIDEBAR : Audio & Préférences
+         RIGHT SIDEBAR : Capacités & réglages audio
          ==================================================================== -->
     <aside id="rightSidebar" class="fixed inset-y-0 right-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-l border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 translate-x-full md:h-full h-full">
         
@@ -295,7 +295,7 @@
         <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
-                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">AUDIO</h2>
+                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">CAPACITÉS</h2>
             </div>
             <div class="flex items-center gap-2">
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
@@ -308,7 +308,7 @@
         </div>
 
         <!-- Scrollable Settings -->
-        <div id="rightSettingsContainer" class="p-3.5 flex-1 text-sm"><p class="text-xs text-zinc-400 leading-relaxed">Le son est optionnel. Les réglages de combat et la seed sont dans le panneau principal.</p></div>
+        <div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto"><p class="text-xs text-zinc-400 leading-relaxed">Chargement des capacités…</p></div>
     </aside>
 
     <!-- ====================================================================
@@ -326,6 +326,7 @@
     <script src="js/arena/ability-offensive.js"></script>
     <script src="js/arena/ability-defensive.js"></script>
     <script src="js/arena/ability-utility.js"></script>
+    <script src="js/arena/ability-settings.js"></script>
     <script src="js/arena/pickups.js"></script>
     <script src="js/arena/arena-hud.js"></script>
     <script src="js/arena/arena-battle.js"></script>

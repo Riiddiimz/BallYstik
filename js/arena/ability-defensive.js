@@ -13,6 +13,7 @@
                 hp: 40,
                 maxHp: 40,
                 regenDelay: 0,
+                regenDelaySetting: 3,
                 regenRate: 5,
                 hitFlash: 0,
                 cracks: 0
@@ -39,7 +40,7 @@
 
             const absorbed = Math.min(d.hp, amount);
             d.hp -= absorbed;
-            d.regenDelay = 3;
+            d.regenDelay = d.regenDelaySetting;
             d.hitFlash = 1;
 
             world.spawnParticle(ball.x, ball.y, {

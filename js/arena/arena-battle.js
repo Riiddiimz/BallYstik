@@ -54,7 +54,7 @@
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
         init(world) {
-            this.matchTime = this.options.matchMode === 'timed' ? this.options.matchTime : 999;
+            this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
             this.winner = null;
@@ -148,6 +148,12 @@
             ball.status = new window.StatusEffects(ball);
             ball.abilitySlots = []; // { meta, data, timeLeft, maxTime, cooldownBase }
             ball.isPlayer = opts.isPlayer ?? false;
+            // Toutes les boules partagent la même vitesse de déplacement de base.
+            ball.baseMoveSpeed = 180;
+            const initialSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
+            const initialAngle = initialSpeed > 0 ? Math.atan2(ball.vy, ball.vx) : ((ball.id * 2.399963229728653) % (Math.PI * 2));
+            ball.vx = Math.cos(initialAngle) * ball.baseMoveSpeed;
+            ball.vy = Math.sin(initialAngle) * ball.baseMoveSpeed;
 
             // Marqueur capacité
             ball._lastContactTimers = {};
@@ -276,8 +282,8 @@
                 const slot = {
                     meta,
                     data: null,
-                    timeLeft: meta.duration > 0 ? meta.duration : Infinity,
-                    maxTime: meta.duration > 0 ? meta.duration : Infinity
+                    timeLeft: meta.duration > 0 ? (window.AbilitySettings ? window.AbilitySettings.getDuration(meta.id, meta.duration) : meta.duration) : Infinity,
+                    maxTime: meta.duration > 0 ? (window.AbilitySettings ? window.AbilitySettings.getDuration(meta.id, meta.duration) : meta.duration) : Infinity
                 };
                 ball.abilitySlots.push(slot);
                 const beh = window.AbilityBehaviors[meta.id];
@@ -358,6 +364,20 @@
         // ═══════════════════════════════════════════════════════════
         // UPDATE
         // ═══════════════════════════════════════════════════════════
+        _keepBaseSpeed(ball) {
+            const target = ball.baseMoveSpeed || 180;
+            const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
+            if (speed < 0.001) {
+                const angle = ((ball.id || 1) * 2.399963229728653) % (Math.PI * 2);
+                ball.vx = Math.cos(angle) * target;
+                ball.vy = Math.sin(angle) * target;
+                return;
+            }
+            const scale = target / speed;
+            ball.vx *= scale;
+            ball.vy *= scale;
+        }
+
         update(dt, world) {
             if (this.finished && this.options.matchMode === 'lastStanding') {
                 // Ralenti dramatique après fin
@@ -366,6 +386,9 @@
 
             this.elapsedTime += dt;
             world.time = this.elapsedTime;
+            // Synchronise le temps consommé par le HUD dessiné sur le canvas.
+            world.elapsedTime = this.elapsedTime;
+            world.matchTime = this.options.matchTime;
 
             // Arena
             world.arena.update(dt);
@@ -399,10 +422,6 @@
                     ball.y += ball.vy * dt * speedMult;
                 }
 
-                // Friction douce (garde l'énergie mais évite l'explosion)
-                ball.vx *= 0.999;
-                ball.vy *= 0.999;
-
                 // Gravité (très légère, contrairement au mode classic)
                 // Mouvement libre en 2D : aucune gravité, les boules se déplacent dans tout le terrain.
 
@@ -435,15 +454,15 @@
                         other.x += nx * overlap * 0.5;
                         other.y += ny * overlap * 0.5;
                         // Rebond
-                        const rvx = ball.vx - other.vx;
-                        const rvy = ball.vy - other.vy;
-                        const relV = rvx * nx + rvy * ny;
-                        if (relV > 0) continue;
-                        const impulse = -1.05 * relV;
-                        ball.vx -= impulse * nx * 0.5;
-                        ball.vy -= impulse * ny * 0.5;
-                        other.vx += impulse * nx * 0.5;
-                        other.vy += impulse * ny * 0.5;
+                        // Rebond élastique : le contact change la direction, pas la vitesse.
+                        const relV = (ball.vx - other.vx) * nx + (ball.vy - other.vy) * ny;
+                        if (relV <= 0) continue;
+                        ball.vx -= relV * nx;
+                        ball.vy -= relV * ny;
+                        other.vx += relV * nx;
+                        other.vy += relV * ny;
+                        this._keepBaseSpeed(ball);
+                        this._keepBaseSpeed(other);
 
                         // Contact damage
                         if (ball.team !== other.team) {
@@ -493,6 +512,9 @@
                     const beh = window.AbilityBehaviors[slot.meta.id];
                     if (beh && beh.update) beh.update(ball, world, slot, dt);
                 }
+
+                // Les effets de collision/capacité ne doivent pas faire dériver la vitesse de base.
+                if (!ball.status.isStunned()) this._keepBaseSpeed(ball);
 
                 // Health update
                 ball.health.update(dt);

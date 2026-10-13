@@ -34,6 +34,10 @@
             this.shrinkRate    = options.shrinkRate  ?? 6;
             this.shrinkMax     = options.shrinkMax   ?? 0.16;
             this.shrinkOffset  = 0;
+            this.shrinkMoving = false;
+            this.shrinkWarning = 0;
+            this.shrinkCycleLength = 2.4;
+            this.shrinkWarningLength = 1.6;
 
             this.obstacles = [];
             this._buildObstacles(options.obstacles ?? 1);
@@ -75,10 +79,22 @@
             this.elapsed += dt;
             this.wallPulse = Math.max(0, this.wallPulse - dt * 3.2);
 
+            this.shrinkMoving = false;
+            this.shrinkWarning = 0;
             if (this.shrinkEnabled && this.elapsed > this.shrinkStart) {
                 const maxPx = Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
-                this.shrinkOffset = Math.min(maxPx, this.shrinkOffset + this.shrinkRate * dt);
-                this._recompute();
+                if (this.shrinkOffset < maxPx) {
+                    const cycle = (this.elapsed - this.shrinkStart) % this.shrinkCycleLength;
+                    if (cycle < this.shrinkWarningLength) {
+                        // Avertissement clignotant qui monte progressivement vers le rouge.
+                        const progress = cycle / this.shrinkWarningLength;
+                        this.shrinkWarning = progress * (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(this.time * 13)));
+                    } else {
+                        this.shrinkMoving = true;
+                        this.shrinkOffset = Math.min(maxPx, this.shrinkOffset + this.shrinkRate * dt * this.shrinkCycleLength / (this.shrinkCycleLength - this.shrinkWarningLength));
+                        this._recompute();
+                    }
+                }
             }
 
             for (let i = this.hitFlashes.length - 1; i >= 0; i--) {
@@ -208,10 +224,13 @@
             ctx.save();
             this._roundRectPath(ctx, x, y, w, h, cornerRadius);
             const pulse = 1 + this.wallPulse * 0.6;
-            ctx.shadowColor = PALETTE.wallGlow;
-            ctx.shadowBlur  = 22 * pulse;
-            ctx.strokeStyle = PALETTE.wall;
-            ctx.lineWidth   = 2.4 * pulse;
+            const dangerMix = this.shrinkMoving ? 1 : this.shrinkWarning;
+            const wallColor = dangerMix > 0 ? `rgba(${Math.round(140 + 115 * dangerMix)}, ${Math.round(220 - 178 * dangerMix)}, ${Math.round(255 - 122 * dangerMix)}, 0.85)` : PALETTE.wall;
+            const glowColor = dangerMix > 0 ? `rgba(255, 42, 42, ${0.25 + 0.55 * dangerMix})` : PALETTE.wallGlow;
+            ctx.shadowColor = glowColor;
+            ctx.shadowBlur  = (22 + 12 * dangerMix) * pulse;
+            ctx.strokeStyle = wallColor;
+            ctx.lineWidth   = (2.4 + 1.2 * dangerMix) * pulse;
             ctx.stroke();
             ctx.shadowBlur  = 0;
             ctx.strokeStyle = PALETTE.wallCore;
@@ -246,16 +265,15 @@
                 ctx.restore();
             }
 
-            if (this.shrinkEnabled && this.shrinkOffset > 0.5) {
-                const safeP = this.padding + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            if (this.shrinkEnabled && this.shrinkOffset > 0.5 && (this.shrinkMoving || this.shrinkWarning > 0)) {
                 ctx.save();
-                ctx.globalAlpha = 0.45 + 0.25 * Math.sin(this.time * 5);
-                ctx.strokeStyle = PALETTE.danger;
-                ctx.lineWidth = 2;
+                ctx.globalAlpha = this.shrinkMoving ? 0.95 : 0.2 + this.shrinkWarning * 0.7;
+                ctx.strokeStyle = this.shrinkMoving ? '#ff2929' : `rgba(255, 42, 42, ${0.2 + this.shrinkWarning * 0.8})`;
+                ctx.shadowColor = '#ff2929';
+                ctx.shadowBlur = this.shrinkMoving ? 20 : 6 + this.shrinkWarning * 12;
+                ctx.lineWidth = this.shrinkMoving ? 3.5 : 2;
                 ctx.setLineDash([6, 6]);
-                this._roundRectPath(ctx, safeP, safeP,
-                    this.canvas.width - safeP * 2, this.canvas.height - safeP * 2,
-                    cornerRadius);
+                this._roundRectPath(ctx, x, y, w, h, cornerRadius);
                 ctx.stroke();
                 ctx.restore();
             }
