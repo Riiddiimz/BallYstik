@@ -54,6 +54,13 @@
             setTimeout(() => this._tryAutoHook(), 1000);
             setTimeout(() => this._tryAutoHook(), 3000);
 
+            // Au chargement, sélectionner automatiquement Arena Brawl.
+            // Le délai laisse l'application principale attacher ses écouteurs.
+            setTimeout(() => {
+                const btn = document.querySelector('.mode-btn[data-mode="arenaBattle"]');
+                if (btn) btn.click();
+            }, 0);
+
             console.log('[ArenaBridge] Prêt. Options :', this.getOptions());
         },
 
