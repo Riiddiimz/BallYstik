@@ -13,6 +13,7 @@
                 hp: 40,
                 maxHp: 40,
                 regenDelay: 0,
+                regenDelaySetting: 3,
                 regenRate: 5,
                 hitFlash: 0,
                 cracks: 0
