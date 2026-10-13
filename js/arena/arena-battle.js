@@ -404,7 +404,7 @@
                 ball.vy *= 0.999;
 
                 // Gravité (très légère, contrairement au mode classic)
-                ball.vy += 30 * dt;
+                // Mouvement libre en 2D : aucune gravité, les boules se déplacent dans tout le terrain.
 
                 // Collisions murs
                 const hit = world.arena.resolveBall(ball);
