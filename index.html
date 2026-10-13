@@ -50,7 +50,7 @@
     </header>
 
     <!-- ====================================================================
-         LEFT SIDEBAR : Mode, Réglages de la Boule & Recherche de Durée / Seeds
+         LEFT SIDEBAR : Réglages Arena Brawl
          ==================================================================== -->
     <aside id="leftSidebar" class="fixed inset-y-0 left-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-r border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 -translate-x-full md:h-full h-full">
         
@@ -72,25 +72,6 @@
 
         <!-- Scrollable Settings -->
         <div id="leftSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
-
-            <!-- Mode Selector Box -->
-            <div class="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-2">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                        <i class="fa-solid fa-gamepad text-pink-500"></i> Mode de jeu
-                    </span>
-                    
-                </div>
-                <div class="grid grid-cols-1 gap-2" id="modeButtons">
-                    <button data-mode="arenaBattle" class="mode-btn w-full px-3 py-2 rounded-xl border border-zinc-700 bg-zinc-900/50 text-white font-medium hover:bg-zinc-800 transition flex items-center justify-between text-xs opacity-50">
-                        <span class="flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-sm" style="color:#fbbf24"></i>
-                            <span class="font-semibold">Last Sphere Standing</span>
-                        </span>
-                        <span class="text-[10px] text-zinc-400 font-mono">Choisir</span>
-                    </button>
-                </div>
-            </div>
 
             <!-- ================================================================
                  ARENA BRAWL — Réglages du mode Battle Royale
@@ -236,9 +217,6 @@
             <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
                 <i class="fa-solid fa-rotate-right"></i> Réinitialiser
             </button>
-            <button id="spawnBallBtn" class="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-xl font-bold border border-zinc-700 active:scale-95 transition flex items-center justify-center text-xs" title="Ajouter une balle" aria-label="Ajouter une balle">
-                <i class="fa-solid fa-plus mr-1"></i> Balle
-            </button>
         </div>
     </aside>
 
@@ -259,10 +237,6 @@
                 <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
                     <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
                     <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
-                </div>
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-bullseye text-cyan-400 text-xs"></i>
-                    <span>Rebonds: <strong id="bounceCounter" class="text-white">0</strong></span>
                 </div>
                 <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
                     <i class="fa-solid fa-clock text-yellow-400 text-xs"></i>
@@ -321,7 +295,7 @@
         <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
-                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">STUDIO & EFFETS</h2>
+                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">AUDIO</h2>
             </div>
             <div class="flex items-center gap-2">
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
@@ -334,45 +308,28 @@
         </div>
 
         <!-- Scrollable Settings -->
-        <div id="rightSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
-
-            <div class="rounded-xl bg-zinc-900/60 border border-zinc-700 p-3 space-y-2">
-                <div class="text-xs font-bold text-zinc-200"><i class="fa-solid fa-floppy-disk text-cyan-400 mr-1.5"></i>Préférences</div>
-                <p id="preferencesStatus" class="text-[10px] text-zinc-400">Sauvegarde automatique activée</p>
-                <button id="clearPreferencesBtn" type="button" class="w-full py-1.5 px-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300"><i class="fa-solid fa-rotate-left mr-1"></i> Effacer les réglages mémorisés</button>
-            </div>
-
-
-        </div>
+        <div id="rightSettingsContainer" class="p-3.5 flex-1 text-sm"><p class="text-xs text-zinc-400 leading-relaxed">Le son est optionnel. Les réglages de combat et la seed sont dans le panneau principal.</p></div>
     </aside>
 
     <!-- ====================================================================
          Modular Application Scripts (in execution order)
          ==================================================================== -->
-    <script src="config.js"></script>
-    <script src="js/prng.js"></script>
+    <!-- Audio UI -->
     <script src="js/audio.js"></script>
-    <script src="js/effects.js"></script>
-    <script src="js/ball.js"></script>
-    <script src="js/modes/classic.js"></script>
-    <script src="js/seedSearcher.js"></script>
-    <script src="js/simulation.js"></script>
 
-    <!-- === ARENA BRAWL — Fournée 1 === -->
-    <script src="arena.js"></script>
-    <script src="health.js"></script>
-    <script src="damage-numbers.js"></script>
-    <script src="status-effects.js"></script>
-    <script src="ability-registry.js"></script>
-    <script src="ability-offensive.js"></script>
-
-    <!-- === ARENA BRAWL — Fournée 2 === -->
-    <script src="ability-defensive.js"></script>
-    <script src="ability-utility.js"></script>
-    <script src="pickups.js"></script>
-    <script src="arena-hud.js"></script>
-    <script src="arena-battle.js"></script>
-    <script src="arena-battle-bindings.js"></script>
+    <!-- Arena Brawl — modules autonomes -->
+    <script src="js/arena/arena.js"></script>
+    <script src="js/arena/health.js"></script>
+    <script src="js/arena/damage-numbers.js"></script>
+    <script src="js/arena/status-effects.js"></script>
+    <script src="js/arena/ability-registry.js"></script>
+    <script src="js/arena/ability-offensive.js"></script>
+    <script src="js/arena/ability-defensive.js"></script>
+    <script src="js/arena/ability-utility.js"></script>
+    <script src="js/arena/pickups.js"></script>
+    <script src="js/arena/arena-hud.js"></script>
+    <script src="js/arena/arena-battle.js"></script>
+    <script src="js/arena/arena-battle-bindings.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
