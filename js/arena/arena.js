@@ -120,44 +120,25 @@
         }
 
         resolveBall(ball) {
-            const r = ball.radius;
+            const r = Math.max(0, Number(ball.radius) || 0);
             const left = this.x, right = this.x + this.w;
             const top = this.y, bottom = this.y + this.h;
             const corner = Math.min(this.cornerRadius, this.w / 2, this.h / 2);
             const arcRadius = Math.max(0, corner - r);
             let hit = null;
 
-            // Les côtés droits ne s'appliquent que sur leur portion rectiligne.
-            // Dans les coins, la collision est calculée sur le cercle de l'arrondi.
-            const verticalMin = top + corner;
-            const verticalMax = bottom - corner;
-            const horizontalMin = left + corner;
-            const horizontalMax = right - corner;
+            // Sécurité prioritaire : le centre de chaque boule reste toujours dans
+            // les limites utiles du terrain, même quand l'arène rétrécit sous elle.
+            const minX = left + r, maxX = right - r;
+            const minY = top + r, maxY = bottom - r;
+            const wasLeft = ball.x < minX, wasRight = ball.x > maxX;
+            const wasTop = ball.y < minY, wasBottom = ball.y > maxY;
+            ball.x = Math.max(minX, Math.min(maxX, ball.x));
+            ball.y = Math.max(minY, Math.min(maxY, ball.y));
 
-            if (ball.y >= verticalMin && ball.y <= verticalMax) {
-                if (ball.x < left + r) {
-                    ball.x = left + r;
-                    if (ball.vx < 0) ball.vx = Math.abs(ball.vx);
-                    hit = { nx: 1, ny: 0, x: left, y: ball.y };
-                } else if (ball.x > right - r) {
-                    ball.x = right - r;
-                    if (ball.vx > 0) ball.vx = -Math.abs(ball.vx);
-                    hit = { nx: -1, ny: 0, x: right, y: ball.y };
-                }
-            }
-
-            if (ball.x >= horizontalMin && ball.x <= horizontalMax) {
-                if (ball.y < top + r) {
-                    ball.y = top + r;
-                    if (ball.vy < 0) ball.vy = Math.abs(ball.vy);
-                    hit = { nx: 0, ny: 1, x: ball.x, y: top };
-                } else if (ball.y > bottom - r) {
-                    ball.y = bottom - r;
-                    if (ball.vy > 0) ball.vy = -Math.abs(ball.vy);
-                    hit = { nx: 0, ny: -1, x: ball.x, y: bottom };
-                }
-            }
-
+            // Les coins arrondis ont une normale radiale : elle permet un rebond
+            // dont l'angle évolue le long de la courbe, au lieu d'un rebond carré.
+            let cornerHit = false;
             if (arcRadius > 0) {
                 const corners = [
                     { cx: left + corner,  cy: top + corner,    sx: -1, sy: -1 },
@@ -178,7 +159,6 @@
                         nx = dx / d;
                         ny = dy / d;
                     }
-                    // Le centre de la boule reste à rayon (arrondi - rayon de boule).
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
                     const dot = ball.vx * nx + ball.vy * ny;
@@ -187,9 +167,30 @@
                         ball.vy -= 2 * dot * ny;
                     }
                     hit = { nx, ny, x: c.cx + nx * corner, y: c.cy + ny * corner };
+                    cornerHit = true;
                 }
             }
 
+            // Si la collision n'était pas sur un arrondi, appliquer le rebond du
+            // côté touché. Cela récupère aussi les boules déplacées par le shrink.
+            if (!cornerHit) {
+                if (wasLeft && ball.vx < 0) {
+                    ball.vx = Math.abs(ball.vx);
+                    hit = { nx: 1, ny: 0, x: left, y: ball.y };
+                } else if (wasRight && ball.vx > 0) {
+                    ball.vx = -Math.abs(ball.vx);
+                    hit = { nx: -1, ny: 0, x: right, y: ball.y };
+                }
+                if (wasTop && ball.vy < 0) {
+                    ball.vy = Math.abs(ball.vy);
+                    hit = { nx: 0, ny: 1, x: ball.x, y: top };
+                } else if (wasBottom && ball.vy > 0) {
+                    ball.vy = -Math.abs(ball.vy);
+                    hit = { nx: 0, ny: -1, x: ball.x, y: bottom };
+                }
+            }
+
+            // Les obstacles sont également traités sans laisser de pénétration.
             for (const o of this.obstacles) {
                 const dx = ball.x - o.x, dy = ball.y - o.y;
                 const minD = o.r + r, d = Math.hypot(dx, dy);
@@ -206,6 +207,10 @@
                     }
                 }
             }
+
+            // Dernière barrière anti-fuite après la résolution des autres collisions.
+            ball.x = Math.max(minX, Math.min(maxX, ball.x));
+            ball.y = Math.max(minY, Math.min(maxY, ball.y));
 
             if (hit) {
                 this.wallPulse = 1;
