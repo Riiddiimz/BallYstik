@@ -16,7 +16,6 @@
     const DEFAULTS = {
         ballCount: 4,
         maxHp: 100,
-        ballSpeed: 180,
         contactDamageMult: 1,
         pickupInterval: 5,
         maxSlots: 3,
@@ -48,12 +47,8 @@
 
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
-            const speed = Math.max(60, Number(this.options.ballSpeed) || DEFAULTS.ballSpeed);
-            if (this.world && this.world.balls) {
-                this.world.balls.forEach(ball => {
-                    ball.baseMoveSpeed = speed;
-                    this._keepBaseSpeed(ball);
-                });
+            if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
+                this.matchTime = Number(this.options.matchTime);
             }
         }
         getOptions() { return Object.assign({}, this.options); }
@@ -62,7 +57,6 @@
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
         init(world) {
-            this.world = world;
             this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
@@ -158,7 +152,7 @@
             ball.abilitySlots = []; // { meta, data, timeLeft, maxTime, cooldownBase }
             ball.isPlayer = opts.isPlayer ?? false;
             // Toutes les boules partagent la même vitesse de déplacement de base.
-            ball.baseMoveSpeed = Math.max(60, Number(this.options.ballSpeed) || DEFAULTS.ballSpeed);
+            ball.baseMoveSpeed = 180;
             const initialSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
             const initialAngle = initialSpeed > 0 ? Math.atan2(ball.vy, ball.vx) : ((ball.id * 2.399963229728653) % (Math.PI * 2));
             ball.vx = Math.cos(initialAngle) * ball.baseMoveSpeed;
@@ -388,6 +382,9 @@
         }
 
         update(dt, world) {
+            // Une manche chronométrée est figée dès que le gagnant est déterminé.
+            if (this.finished && this.options.matchMode === 'timed') return;
+
             if (this.finished && this.options.matchMode === 'lastStanding') {
                 // Ralenti dramatique après fin
                 dt *= 0.25;
@@ -625,8 +622,9 @@
                 this.finished = true;
                 // Gagnant = plus de HP
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
-                alive.sort((a, b) => b.health.current - a.health.current);
-                this.winner = alive[0] || null;
+                const candidates = alive.length ? alive : world.balls.filter(b => !b.isClone);
+                candidates.sort((a, b) => (b.health?.current || 0) - (a.health?.current || 0));
+                this.winner = candidates[0] || null;
             }
         }
 
@@ -710,6 +708,76 @@
 
             // HUD
             this.hud.render(ctx, world);
+
+            // Résultat de manche : boule gagnante agrandie et label lumineux.
+            if (this.finished) this._renderWinner(ctx, world);
+        }
+
+        _renderWinner(ctx, world) {
+            const winner = this.winner;
+            const w = ctx.canvas.width;
+            const h = ctx.canvas.height;
+            const pulse = 0.5 + 0.5 * Math.sin((world.time || this.elapsedTime) * 4.5);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(3, 5, 14, 0.76)';
+            ctx.fillRect(0, 0, w, h);
+
+            const centerX = w / 2;
+            const centerY = h * 0.43;
+            if (winner) {
+                const radius = Math.max(28, Math.min(w, h) * 0.075);
+                ctx.save();
+                ctx.shadowColor = winner.color || '#fbbf24';
+                ctx.shadowBlur = 26 + pulse * 24;
+                const ballGradient = ctx.createRadialGradient(
+                    centerX - radius * 1.75, centerY - radius * 0.35, radius * 0.08,
+                    centerX - radius * 1.45, centerY, radius
+                );
+                ballGradient.addColorStop(0, '#ffffff');
+                ballGradient.addColorStop(0.28, winner.color || '#fbbf24');
+                ballGradient.addColorStop(1, winner.color || '#fbbf24');
+                ctx.fillStyle = ballGradient;
+                ctx.beginPath();
+                ctx.arc(centerX - radius * 1.45, centerY, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(255,255,255,' + (0.65 + pulse * 0.35) + ')';
+                ctx.stroke();
+                ctx.restore();
+
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.font = '900 ' + Math.max(30, Math.min(w * 0.105, 58)) + 'px Outfit, system-ui, sans-serif';
+                ctx.shadowColor = '#fbbf24';
+                ctx.shadowBlur = 18 + pulse * 20;
+                ctx.fillStyle = '#fff5c2';
+                ctx.fillText('WINNER', centerX + radius * 0.1, centerY - 4);
+
+                ctx.shadowBlur = 0;
+                ctx.font = '700 ' + Math.max(13, Math.min(w * 0.035, 19)) + 'px Outfit, system-ui, sans-serif';
+                ctx.fillStyle = winner.color || '#fbbf24';
+                ctx.fillText('BOULE #' + winner.id, centerX + radius * 0.1, centerY + radius * 0.8);
+            } else {
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = '900 ' + Math.max(28, Math.min(w * 0.09, 48)) + 'px Outfit, system-ui, sans-serif';
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText('MANCHE TERMINÉE', centerX, centerY);
+            }
+
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = '#22d3ee';
+            ctx.shadowBlur = 18 + pulse * 14;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 ' + Math.max(16, Math.min(w * 0.05, 26)) + 'px Outfit, system-ui, sans-serif';
+            ctx.fillText('BALLYSTIK CHAMPION', centerX, centerY + Math.min(h * 0.12, 82));
+            ctx.shadowBlur = 0;
+            ctx.font = '500 ' + Math.max(12, Math.min(w * 0.032, 16)) + 'px Outfit, system-ui, sans-serif';
+            ctx.fillStyle = 'rgba(226,232,240,0.88)';
+            ctx.fillText('Relance une manche pour tenter ta chance', centerX, centerY + Math.min(h * 0.17, 118));
+            ctx.restore();
         }
 
         _renderBall(ctx, ball, world) {
