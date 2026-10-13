@@ -44,8 +44,8 @@
             <i class="fa-solid fa-gamepad"></i> Mode & Balle
         </button>
         <span class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</span>
-        <button id="toggleRightSidebarBtn" aria-label="Menu Audio et VFX" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
-            <i class="fa-solid fa-sliders"></i> Audio & VFX
+        <button id="toggleRightSidebarBtn" aria-label="Menu Audio" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-sliders"></i> Audio
         </button>
     </header>
 
@@ -390,157 +390,12 @@
         <!-- Scrollable Settings -->
         <div id="rightSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
 
-            <!-- Audio & Synth Controls Accordion -->
-            <div class="rounded-2xl bg-zinc-900/60 border border-cyan-500/30 overflow-hidden">
-                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="audioSettings">
-                    <span class="flex items-center gap-2 text-cyan-400">
-                        <i class="fa-solid fa-music"></i> Audio & Synthétiseur
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
-                </button>
-                <div id="audioSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
-                    <div class="grid grid-cols-2 gap-2">
-                        <div>
-                            <label for="instSelect" class="text-[11px] text-zinc-400 block mb-1">Instrument</label>
-                            <select id="instSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                                <option value="marimba">Marimba (Chaud)</option>
-                                <option value="synth">Synthwave Lead</option>
-                                <option value="piano">Piano Doux</option>
-                                <option value="bell">Crystal Bell</option>
-                                <option value="chiptune">8-Bit Retro</option>
-                                <option value="pluck">Pluck Harp</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="scaleSelect" class="text-[11px] text-zinc-400 block mb-1">Gamme Musicale</label>
-                            <select id="scaleSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                                <option value="pentatonic">Pentatonique (ASMR)</option>
-                                <option value="major">Majeure (Lumineuse)</option>
-                                <option value="minor">Mineure (Épique)</option>
-                                <option value="synthwave">Synthwave Night</option>
-                                <option value="japanese">Insen Japonaise</option>
-                                <option value="celestial">Céleste (Rêve)</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="volumeSlider">Volume Audio</label>
-                            <span id="volumeValue" class="text-cyan-400 font-mono font-semibold">80%</span>
-                        </div>
-                        <input id="volumeSlider" type="range" min="0" max="100" value="80" class="w-full" aria-label="Volume audio">
-                    </div>
-                </div>
-            </div>
-
             <div class="rounded-xl bg-zinc-900/60 border border-zinc-700 p-3 space-y-2">
                 <div class="text-xs font-bold text-zinc-200"><i class="fa-solid fa-floppy-disk text-cyan-400 mr-1.5"></i>Préférences</div>
                 <p id="preferencesStatus" class="text-[10px] text-zinc-400">Sauvegarde automatique activée</p>
                 <button id="clearPreferencesBtn" type="button" class="w-full py-1.5 px-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300"><i class="fa-solid fa-rotate-left mr-1"></i> Effacer les réglages mémorisés</button>
             </div>
 
-            <!-- Visual FX Accordion -->
-            <div class="rounded-2xl bg-zinc-900/60 border border-yellow-500/30 overflow-hidden">
-                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="visualSettings">
-                    <span class="flex items-center gap-2 text-yellow-400">
-                        <i class="fa-solid fa-wand-magic-sparkles"></i> Effets Visuels (VFX)
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
-                </button>
-                <div id="visualSettings" class="accordion-content open px-3 pb-3 space-y-2 pt-1">
-                    <div class="rounded-xl border border-fuchsia-500/20 bg-zinc-950/60 p-2.5 space-y-2.5">
-                        <div class="text-[11px] font-bold uppercase tracking-wider text-fuchsia-300"><i class="fa-solid fa-palette mr-1"></i> Style & couleurs</div>
-                        <div>
-                            <label for="visualStyleSelect" class="text-[11px] text-zinc-400 block mb-1">Rendu visuel</label>
-                            <select id="visualStyleSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500">
-                                <option value="neon">Néon intense</option>
-                                <option value="soft">Lueur douce</option>
-                                <option value="minimal">Minimal / net</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="backgroundToneSelect" class="text-[11px] text-zinc-400 block mb-1">Fond du jeu</label>
-                            <select id="backgroundToneSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500">
-                                <option value="midnight">Noir spatial</option>
-                                <option value="blue">Bleu profond</option>
-                                <option value="black">Noir pur</option>
-                            </select>
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs text-zinc-400 mb-1"><label for="glowIntensitySlider">Intensité de la lueur</label><span id="glowIntensityValue" class="text-fuchsia-300 font-mono">100%</span></div>
-                            <input id="glowIntensitySlider" type="range" min="0" max="2" step="0.1" value="1" class="w-full" aria-label="Intensité de la lueur">
-                        </div>
-                    </div>
-                    <!-- Palette -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="classicPaletteSelect">Palette de couleurs</label>
-                            <span id="classicPalettePreview" class="text-emerald-400 font-mono text-xs">Neon Glow</span>
-                        </div>
-                        <select id="classicPaletteSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="neon">Neon Glow</option>
-                            <option value="cyberpunk">Cyberpunk Pink/Cyan</option>
-                            <option value="ocean">Deep Ocean</option>
-                            <option value="sunset">Golden Sunset</option>
-                            <option value="candy">Cotton Candy</option>
-                            <option value="fire">Fire & Lava</option>
-                            <option value="rainbow">Chroma Rainbow</option>
-                        </select>
-                    </div>
-
-                    <!-- Multi-Color Toggle -->
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Mode multi-couleur</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="classicMultiColorToggle" checked class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
-                        </div>
-                    </label>
-                    
-
-                    
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Traînée lumineuse (Trail)</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="trailToggle" checked class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
-                        </div>
-                    </label>
-
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Étincelles d'impact (Particles)</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="particlesToggle" checked class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
-                        </div>
-                    </label>
-
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Ondes de choc (Shockwaves)</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="shockwavesToggle" checked class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
-                        </div>
-                    </label>
-
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Secousse d'écran (Screen Shake)</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="shakeToggle" class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
-                        </div>
-                    </label>
-
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
-                        <span class="text-xs text-zinc-300">Cadre portrait 9:16 (TikTok)</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="portraitToggle" checked class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-cyan-500 relative"></div>
-                        </div>
-                    </label>
-                </div>
-            </div>
 
         </div>
     </aside>
