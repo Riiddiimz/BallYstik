@@ -131,12 +131,12 @@
         },
 
         pickRandom(prng, filterFn) {
-            const list = Object.values(REGISTRY).filter(a => !filterFn || filterFn(a));
+            const list = Object.values(REGISTRY).filter(a => (!window.AbilitySettings || window.AbilitySettings.isEnabled(a.id)) && (!filterFn || filterFn(a)));
             if (!list.length) return null;
-            const total = list.reduce((s, a) => s + (a.weight || 1), 0);
+            const total = list.reduce((s, a) => s + (window.AbilitySettings ? window.AbilitySettings.getWeight(a.id, a.weight) : (a.weight || 1)), 0);
             let r = (prng && prng.next ? prng.next() : Math.random()) * total;
             for (const a of list) {
-                r -= (a.weight || 1);
+                r -= (window.AbilitySettings ? window.AbilitySettings.getWeight(a.id, a.weight) : (a.weight || 1));
                 if (r <= 0) return a;
             }
             return list[list.length - 1];
