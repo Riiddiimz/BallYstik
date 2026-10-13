@@ -5,6 +5,7 @@
     const SLIDERS = {
         abBallCount: ['ballCount', 'int', v => String(v)],
         abMaxHp: ['maxHp', 'int', v => String(v)],
+        abBallSpeed: ['ballSpeed', 'int', v => v + ' px/s'],
         abContactDmg: ['contactDamageMult', 'float', v => v.toFixed(1) + 'x'],
         abPickupInterval: ['pickupInterval', 'float', v => v + 's'],
         abMaxSlots: ['maxSlots', 'int', v => String(v)],
