@@ -149,17 +149,17 @@
                         <input id="abMatchTime" type="range" min="10" max="300" step="10" value="60" class="w-full">
                     </div>
 
-                    <!-- Arène rétrécissante -->
-                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                    <!-- Arène rétrécissante : même interrupteur que les capacités -->
+                    <div class="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition">
                         <span class="text-xs text-zinc-300">Arène qui rétrécit</span>
-                        <div class="relative inline-flex items-center">
-                            <input type="checkbox" id="abShrinkToggle" class="sr-only peer">
-                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-cyan-500 relative"></div>
-                        </div>
-                    </label>
+                        <label class="ability-switch-wrap" title="Activer/désactiver l'arène qui rétrécit">
+                            <input type="checkbox" id="abShrinkToggle">
+                            <span class="ability-switch"></span>
+                        </label>
+                    </div>
 
-                    <!-- Réglages de rétrécissement de l'arène -->
-                    <div id="abShrinkOptions" class="space-y-2 border-l-2 border-amber-500/30 pl-2.5">
+                    <!-- Réglages visibles uniquement si l'option est activée -->
+                    <div id="abShrinkOptions" hidden class="space-y-2 border-l-2 border-amber-500/30 pl-2.5">
                         <div>
                             <div class="flex justify-between text-xs text-zinc-400 mb-1">
                                 <label for="abShrinkStart">Début du rétrécissement</label>
