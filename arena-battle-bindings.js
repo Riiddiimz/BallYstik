@@ -186,7 +186,7 @@
             btn.classList.remove('opacity-50');
             const badge = btn.querySelector('span:last-child');
             if (badge) {
-                badge.textContent = 'Prêt';
+                badge.textContent = 'ACTIF';
                 badge.className = 'text-[10px] text-amber-400 font-mono font-semibold';
             }
         },
