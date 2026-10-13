@@ -5,7 +5,6 @@
     const SLIDERS = {
         abBallCount: ['ballCount', 'int', v => String(v)],
         abMaxHp: ['maxHp', 'int', v => String(v)],
-        abBallSpeed: ['ballSpeed', 'int', v => v + ' px/s'],
         abContactDmg: ['contactDamageMult', 'float', v => v.toFixed(1) + 'x'],
         abPickupInterval: ['pickupInterval', 'float', v => v + 's'],
         abMaxSlots: ['maxSlots', 'int', v => String(v)],
@@ -132,6 +131,14 @@
             ['resetBtn', 'replayBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.addEventListener('click', () => this.start());
+            });
+            const newGame = document.getElementById('newGameBtn');
+            if (newGame) newGame.addEventListener('click', () => {
+                // Seed entière aléatoire sur 32 bits, non nulle pour rester compatible avec getSeed().
+                const randomSeed = (Math.floor(Math.random() * 0xFFFFFFFF) + 1) >>> 0 || 1;
+                if (seed) seed.value = String(randomSeed);
+                try { localStorage.setItem(SEED_KEY, String(randomSeed)); } catch (_) {}
+                this.start();
             });
             const play = document.getElementById('playPauseBtn');
             if (play) play.addEventListener('click', () => this.togglePause());
