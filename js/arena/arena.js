@@ -194,6 +194,27 @@
                 }
             }
 
+            // Garde-fou final : aucune boule ne peut rester hors des limites.
+            const minX = this.x + r, maxX = this.x + this.w - r;
+            const minY = this.y + r, maxY = this.y + this.h - r;
+            if (ball.x < minX) {
+                ball.x = minX;
+                if (ball.vx < 0) ball.vx = Math.abs(ball.vx);
+                hit = hit || { nx: 1, ny: 0, x: this.x, y: ball.y };
+            } else if (ball.x > maxX) {
+                ball.x = maxX;
+                if (ball.vx > 0) ball.vx = -Math.abs(ball.vx);
+                hit = hit || { nx: -1, ny: 0, x: this.x + this.w, y: ball.y };
+            }
+            if (ball.y < minY) {
+                ball.y = minY;
+                if (ball.vy < 0) ball.vy = Math.abs(ball.vy);
+                hit = hit || { nx: 0, ny: 1, x: ball.x, y: this.y };
+            } else if (ball.y > maxY) {
+                ball.y = maxY;
+                if (ball.vy > 0) ball.vy = -Math.abs(ball.vy);
+                hit = hit || { nx: 0, ny: -1, x: ball.x, y: this.y + this.h };
+            }
             if (hit) {
                 this.wallPulse = 1;
                 this.hitFlashes.push({ x: hit.x, y: hit.y, life: 0.35, maxLife: 0.35 });
