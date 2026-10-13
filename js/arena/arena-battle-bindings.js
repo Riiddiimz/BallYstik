@@ -59,6 +59,7 @@
             } catch (_) {}
             this.updateLabels();
             this.syncMatchTime();
+            this.syncShrinkOptions();
         },
 
         getOptions() {
@@ -94,6 +95,12 @@
             if (mode && group) group.style.display = mode.value === 'timed' ? '' : 'none';
         },
 
+        syncShrinkOptions() {
+            const toggle = document.getElementById('abShrinkToggle');
+            const options = document.getElementById('abShrinkOptions');
+            if (toggle && options) options.hidden = !toggle.checked;
+        },
+
         bindControls() {
             Object.keys(SLIDERS).forEach(id => {
                 const el = document.getElementById(id);
@@ -108,6 +115,7 @@
                 if (el) el.addEventListener('change', () => {
                     this.saveOptions();
                     this.syncMatchTime();
+                    this.syncShrinkOptions();
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
