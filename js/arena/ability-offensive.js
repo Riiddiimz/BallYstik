@@ -100,7 +100,7 @@
     // ═══════ FLÈCHE ═══════
     window.AbilityBehaviors.arrow = {
         attach(ball, world, slot) {
-            slot.data = { cooldown: 0.4, fireRate: 1.2, telegraph: 0, target: null };
+            slot.data = { cooldown: 0.4, fireRate: 1.2, telegraph: 0, target: null, projectileSpeed: 480, damage: d.damage ?? 12, bounces: d.bounces ?? 1, range: 400, autoTarget: true };
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
@@ -108,7 +108,7 @@
             d.cooldown -= dt;
             if (d.telegraph > 0) d.telegraph -= dt;
 
-            const target = findNearestEnemy(ball, world, 400);
+            const target = findNearestEnemy(ball, world, d.range || 400);
             if (!target) return;
 
             if (d.cooldown < 0.2 && d.cooldown > 0) {
@@ -120,7 +120,7 @@
                 const dx = target.x - ball.x;
                 const dy = target.y - ball.y;
                 const len = Math.hypot(dx, dy) || 1;
-                const speed = 480;
+                const speed = d.projectileSpeed || 480;
                 world.projectiles.push({
                     x: ball.x + (dx / len) * ball.radius,
                     y: ball.y + (dy / len) * ball.radius,
@@ -156,7 +156,7 @@
             ctx.setLineDash([4, 4]);
             ctx.beginPath();
             ctx.moveTo(ball.x, ball.y);
-            ctx.lineTo(ball.x + ux * 220, ball.y + uy * 220);
+            ctx.lineTo(ball.x + ux * (d.range || 400), ball.y + uy * (d.range || 400));
             ctx.stroke();
             ctx.restore();
         }
@@ -197,7 +197,7 @@
     // ═══════ MINE ═══════
     window.AbilityBehaviors.mine = {
         attach(ball, world, slot) {
-            slot.data = { cooldown: 0.5, interval: 3, mines: [], maxMines: 3 };
+            slot.data = { cooldown: 0.5, interval: 3, mines: [], maxMines: 3, armingDelay: 0.8, damage: 25, blastRadius: 70, detectionRadius: 26, knockback: 320, lifetime: 20 };
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
@@ -212,13 +212,13 @@
                 const my = ball.y + uy * ball.radius * 1.5;
                 d.mines.push({
                     x: mx, y: my,
-                    armTimer: 0.8,
+                    armTimer: d.armingDelay,
                     armed: false,
-                    life: 20,
+                    life: d.lifetime,
                     blink: 0,
                     radius: 8,
-                    triggerR: 26,
-                    blastR: 70
+                    triggerR: d.detectionRadius,
+                    blastR: d.blastRadius,
                 });
                 world.playSound('mine-drop', { pitch: 0.9 });
             }
@@ -253,9 +253,9 @@
                             const dist = Math.sqrt(d2) || 1;
                             if (dist < m.blastR + other.radius) {
                                 const falloff = 1 - Math.max(0, (dist - other.radius) / m.blastR);
-                                const dmg = 8 + 22 * falloff;
+                                const dmg = d.damage * falloff;
                                 world.damage(other, ball, dmg, 'mine');
-                                const kb = 320 * falloff;
+                                const kb = d.knockback * falloff;
                                 other.vx += (dx / dist) * kb;
                                 other.vy += (dy / dist) * kb;
                             }
@@ -431,7 +431,7 @@
     // ═══════ ÉCLAIR EN CHAÎNE ═══════
     window.AbilityBehaviors.chain = {
         attach(ball, world, slot) {
-            slot.data = { cooldown: 1.0, interval: 2.5, bolt: null, boltTimer: 0 };
+            slot.data = { cooldown: 1.0, interval: 2.5, bolt: null, boltTimer: 0, targets: 3, damage: 10, falloff: 30, range: 150 };
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
@@ -443,7 +443,7 @@
 
             const inRange = world.balls.filter(o =>
                 o !== ball && o.alive && o.team !== ball.team &&
-                Math.hypot(o.x - ball.x, o.y - ball.y) < 150
+                Math.hypot(o.x - ball.x, o.y - ball.y) < d.range
             );
             if (inRange.length < 1) return;
 
@@ -451,17 +451,17 @@
                 Math.hypot(a.x - ball.x, a.y - ball.y) -
                 Math.hypot(b.x - ball.x, b.y - ball.y)
             );
-            const chainTargets = [ball, ...inRange.slice(0, 3)];
+            const chainTargets = [ball, ...inRange.slice(0, d.targets)];
             d.bolt = chainTargets.map(b => ({ x: b.x, y: b.y, id: b.id }));
             d.boltTimer = 0.25;
 
-            let dmg = 10;
+            let dmg = d.damage;
             for (let i = 1; i < chainTargets.length; i++) {
                 const t = chainTargets[i];
                 world.damage(t, ball, dmg, 'chain');
                 world.addHitFlash(t.x, t.y);
                 world.spawnParticle(t.x, t.y, { color: '#a855f7', count: 4, speed: 160, life: 0.4 });
-                dmg *= 0.7;
+                dmg *= (1 - d.falloff / 100);
             }
             world.playSound('chain', { pitch: 1.1 });
             d.cooldown = d.interval;
@@ -515,7 +515,7 @@
     // ═══════ TRAÎNÉE DE FEU ═══════
     window.AbilityBehaviors.firetrail = {
         attach(ball, world, slot) {
-            slot.data = { blobs: [], dropTimer: 0, dropInterval: 0.08, blobLife: 3 };
+            slot.data = { blobs: [], dropTimer: 0, dropInterval: 0.08, blobLife: 3, dps: 5, blobSize: 0.9 };
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
@@ -526,7 +526,7 @@
                 d.dropTimer = d.dropInterval;
                 d.blobs.push({
                     x: ball.x, y: ball.y,
-                    r: ball.radius * 0.9,
+                    r: ball.radius * d.blobSize,
                     life: d.blobLife,
                     maxLife: d.blobLife,
                     seed: Math.random()
@@ -543,7 +543,7 @@
                     const dx = other.x - b.x;
                     const dy = other.y - b.y;
                     if (dx * dx + dy * dy < (b.r + other.radius) ** 2) {
-                        world.damage(other, ball, 5 * dt, 'firetrail', { silent: true });
+                        world.damage(other, ball, d.dps * dt, 'firetrail', { silent: true });
                         if (Math.random() < 0.2) {
                             world.spawnParticle(other.x, other.y, { color: '#ff6b35', count: 1, speed: 60, life: 0.5 });
                         }
