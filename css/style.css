@@ -1,0 +1,120 @@
+/* ==========================================================================
+   Satisfying Ball Simulator - Stylesheet
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+    --bg-main: #0b0b0d;
+}
+
+body {
+    font-family: 'Outfit', sans-serif;
+    background-color: var(--bg-main);
+    color: #ffffff;
+    overflow: hidden;
+    touch-action: manipulation;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+    width: 5px;
+}
+::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.4);
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 42, 133, 0.4);
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 42, 133, 0.7);
+}
+
+/* Neon Glow Utilities */
+.glow-text-cyan {
+    text-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
+}
+.glow-text-pink {
+    text-shadow: 0 0 12px rgba(255, 42, 133, 0.6);
+}
+
+.glass-panel {
+    background: rgba(18, 20, 29, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.phone-frame {
+    box-shadow: 0 0 35px -8px rgba(0, 242, 254, 0.25), 0 0 70px -15px rgba(121, 40, 202, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Custom Range Slider */
+input[type=range] {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    border-radius: 9999px;
+    background: #27272a;
+    outline: none;
+    transition: all 0.2s ease;
+}
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: #00f2fe;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.8);
+    transition: transform 0.1s ease, background-color 0.2s ease;
+}
+input[type=range]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    background: #ff2a85;
+    box-shadow: 0 0 10px rgba(255, 42, 133, 0.9);
+}
+input[type=range]::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    border: none;
+    border-radius: 50%;
+    background: #00f2fe;
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(0, 242, 254, 0.8);
+}
+
+/* Accordion Transitions - Total invisibility when closed */
+.accordion-content {
+    overflow: hidden;
+    transition: opacity 0.2s ease;
+}
+.accordion-content:not(.open) {
+    display: none !important;
+    max-height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+.accordion-content.open {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* Seed Search Pulse Animation */
+@keyframes pulseGlow {
+    0%, 100% {
+        box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 25px rgba(255, 42, 133, 0.7);
+    }
+}
+.searching-active {
+    animation: pulseGlow 1.4s infinite ease-in-out;
+}

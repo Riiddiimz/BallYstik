@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Satisfying Ball Simulator — Viral Physics ASMR</title>
+    <meta name="description" content="Simulateur physique de balles rebondissantes déterministe pour TikTok, Reels et Shorts avec recherche automatique de durée par seed.">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0b0d',
+                        panelBg: 'rgba(18, 20, 29, 0.88)',
+                        accentPink: '#ff2a85',
+                        accentCyan: '#00f2fe',
+                        accentPurple: '#7928ca'
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Modular Application Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden select-none bg-[#0b0b0d] text-white">
+
+    <!-- ====================================================================
+         Mobile Top Navigation Bar
+         ==================================================================== -->
+    <header class="md:hidden flex items-center justify-between px-4 py-2.5 bg-zinc-950/90 border-b border-zinc-800 z-30 shrink-0">
+        <button id="toggleLeftSidebarBtn" aria-label="Menu Boule et Mode" class="px-2.5 py-1.5 text-xs bg-pink-500/20 border border-pink-500/50 text-pink-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-gamepad"></i> Mode & Balle
+        </button>
+        <span class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BALLTOK</span>
+        <button id="toggleRightSidebarBtn" aria-label="Menu Audio et VFX" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-sliders"></i> Audio & VFX
+        </button>
+    </header>
+
+    <!-- ====================================================================
+         LEFT SIDEBAR : Mode, Réglages de la Boule & Recherche de Durée / Seeds
+         ==================================================================== -->
+    <aside id="leftSidebar" class="fixed inset-y-0 left-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-r border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 -translate-x-full md:h-full h-full">
+        
+        <!-- Header -->
+        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-accentPink to-accentCyan flex items-center justify-center text-white shadow-lg shadow-pink-500/25">
+                    <i class="fa-solid fa-basketball text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BALL SIMULATOR</h1>
+                    <p class="text-[10px] text-zinc-400 font-medium">Physique Déterministe & Lab Vidéo</p>
+                </div>
+            </div>
+            <button id="closeLeftSidebarBtn" aria-label="Fermer le menu gauche" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable Settings -->
+        <div id="leftSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
+
+            <!-- Mode Selector Box -->
+            <div class="p-3 rounded-2xl bg-zinc-900/60 border border-zinc-800/80 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <i class="fa-solid fa-gamepad text-pink-500"></i> Mode de jeu
+                    </span>
+                    <button id="resetModeDefaultsBtn" title="Réinitialiser aux valeurs par défaut de ce mode" class="text-[10px] px-2 py-0.5 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700 transition flex items-center gap-1">
+                        <i class="fa-solid fa-rotate-left text-[9px]"></i> Défauts
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 gap-2" id="modeButtons">
+                    <button data-mode="classic" class="mode-btn w-full px-3 py-2 rounded-xl border border-zinc-700 bg-zinc-900/50 text-white font-medium hover:bg-zinc-800 transition flex items-center justify-between text-xs">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-notch text-emerald-400 text-sm"></i>
+                            <span class="font-semibold">Escape</span>
+                        </span>
+                        <span class="text-[10px] text-emerald-400 font-mono font-semibold">Actif</span>
+                    </button>
+                    <button data-mode="accumulation" class="mode-btn w-full px-3 py-2 rounded-xl border border-zinc-700 bg-zinc-900/50 text-white font-medium hover:bg-zinc-800 transition flex items-center justify-between text-xs opacity-50"><span class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-sm" style="color:#f97316"></i><span class="font-semibold">Accumulation</span></span><span class="text-[10px] text-zinc-400 font-mono">Choisir</span></button>
+                    <button data-mode="multiply" class="mode-btn w-full px-3 py-2 rounded-xl border border-zinc-700 bg-zinc-900/50 text-white font-medium hover:bg-zinc-800 transition flex items-center justify-between text-xs opacity-50"><span class="flex items-center gap-2"><i class="fa-solid fa-clone text-sm" style="color:#f43f5e"></i><span class="font-semibold">Multiply</span></span><span class="text-[10px] text-zinc-400 font-mono">Choisir</span></button>
+                    <button data-mode="arenaBattle" class="mode-btn w-full px-3 py-2 rounded-xl border border-zinc-700 bg-zinc-900/50 text-white font-medium hover:bg-zinc-800 transition flex items-center justify-between text-xs opacity-50">
+                        <span class="flex items-center gap-2">
+                            <i class="fa-solid fa-shield-halved text-sm" style="color:#fbbf24"></i>
+                            <span class="font-semibold">Arena Brawl</span>
+                        </span>
+                        <span class="text-[10px] text-zinc-400 font-mono">Choisir</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mode Settings Accordion (Classic) -->
+            <div id="classicSettingsBox" class="rounded-2xl bg-zinc-900/60 border border-emerald-500/30 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="classicSettings">
+                    <span class="flex items-center gap-2 text-emerald-400">
+                        <i class="fa-solid fa-sliders"></i> Réglages Mode : Classic
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="classicSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
+                    
+                    <!-- Ring Count -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicRingsSlider">Nombre de cercles</label>
+                            <span id="classicRingsVal" class="text-emerald-400 font-mono font-semibold">6</span>
+                        </div>
+                        <input id="classicRingsSlider" type="range" min="2" max="10" step="1" value="6" class="w-full" aria-label="Nombre de cercles concentriques">
+                    </div>
+
+                    <!-- Rotation Speed -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicRotationSlider">Vitesse de rotation</label>
+                            <span id="classicRotationValue" class="text-emerald-400 font-mono font-semibold">0.12x</span>
+                        </div>
+                        <input id="classicRotationSlider" type="range" min="0.02" max="0.6" step="0.02" value="0.12" class="w-full" aria-label="Vitesse de rotation des cercles">
+                    </div>
+
+                    <!-- Rotation Direction -->
+                    <div>
+                        <label for="classicDirSelect" class="text-[11px] text-zinc-400 block mb-1">Sens de rotation</label>
+                        <select id="classicDirSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="alternate">Alterné (sens inverse 1/2)</option>
+                            <option value="clockwise">Sens horaire</option>
+                            <option value="counter">Sens anti-horaire</option>
+                        </select>
+                    </div>
+
+                    <!-- Initial Gap Mode -->
+                    <div>
+                        <label for="classicGapModeSelect" class="text-[11px] text-zinc-400 block mb-1">Mode de départ des brèches</label>
+                        <select id="classicGapModeSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="random">Aléatoire (seed)</option>
+                            <option value="offset">Décalé (spirale)</option>
+                            <option value="alternate">Alterné (1 sur 2 opposé)</option>
+                        </select>
+                    </div>
+                    <div id="classicGapOffsetGroup" class="hidden">
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicGapOffsetSlider">Décalage</label>
+                            <span id="classicGapOffsetValue" class="text-emerald-400 font-mono font-semibold">0°</span>
+                        </div>
+                        <input id="classicGapOffsetSlider" type="range" min="0" max="360" step="1" value="0" class="w-full" aria-label="Décalage angulaire entre brèches">
+                    </div>
+
+                    <!-- Gap Size -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicGapSlider">Ouverture (brèche)</label>
+                            <span id="classicGapVal" class="text-emerald-400 font-mono font-semibold">Moyenne</span>
+                        </div>
+                        <input id="classicGapSlider" type="range" min="0.25" max="0.85" step="0.05" value="0.45" class="w-full" aria-label="Taille de la brèche">
+                    </div>
+
+                    <!-- Spikes Toggle -->
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Pics d'obstacles (Spikes)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="classicSpikeToggle" class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <!-- Spike Count -->
+                    <div id="spikeCountGroup" class="hidden">
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicSpikeCountSlider">Nombre de pics par cercle</label>
+                            <span id="classicSpikeCountValue" class="text-emerald-400 font-mono font-semibold">8</span>
+                        </div>
+                        <input id="classicSpikeCountSlider" type="range" min="3" max="20" step="1" value="8" class="w-full" aria-label="Nombre de pics">
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Options propres aux modes arcade -->
+            <div class="rounded-2xl bg-zinc-900/60 border border-orange-500/30 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider" data-target="arcadeModeSettings">
+                    <span class="flex items-center gap-2 text-orange-400"><i class="fa-solid fa-sliders"></i> Options du mode</span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400"></i>
+                </button>
+                <div id="arcadeModeSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
+                    <div id="accumulationOptions" class="space-y-2">
+                        <p class="text-[10px] font-bold text-orange-300 uppercase">Accumulation</p>
+                        <label class="block text-[11px] text-zinc-400">Taille du trou : <span id="accGapSizeVal">42°</span><input id="accGapSize" type="range" min="10" max="100" value="42" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Angle du trou : <span id="accGapAngleVal">30° (2h)</span><input id="accGapAngle" type="range" min="-180" max="180" value="30" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Temps avant gel : <span id="accFreezeVal">5 s</span><input id="accFreeze" type="range" min="1" max="10" value="5" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Vitesse : <span id="accSpeedVal">5.4</span><input id="accSpeed" type="range" min="2" max="10" step="0.2" value="5.4" class="w-full"></label>
+                    </div>
+                    <div id="multiplyOptions" class="hidden space-y-2">
+                        <p class="text-[10px] font-bold text-rose-300 uppercase">Multiply</p>
+                        <label class="block text-[11px] text-zinc-400">Balles au départ : <span id="mulInitialVal">2</span><input id="mulInitial" type="range" min="1" max="8" value="2" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Balles créées par contact entre boules : <span id="mulSpawnVal">1</span><input id="mulSpawn" type="range" min="1" max="4" value="1" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Diamètre du cercle : <span id="mulDiameterVal">100%</span><input id="mulDiameter" type="range" min="70" max="140" step="5" value="100" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Limite de boules : <span id="mulMaxVal">10</span><input id="mulMax" type="range" min="10" max="10000" step="10" value="10" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Vitesse : <span id="mulSpeedVal">5</span><input id="mulSpeed" type="range" min="1" max="10" step="0.5" value="5" class="w-full"></label>
+                    </div>
+                    <div id="battleOptions" class="hidden space-y-2">
+                        <p class="text-[10px] font-bold text-violet-300 uppercase">Battle Lines</p>
+                        <label class="block text-[11px] text-zinc-400">Nombre de boules : <span id="battleCountVal">6</span><input id="battleCount" type="range" min="2" max="10" value="6" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Lignes initiales : <span id="battleLinesVal">5</span><input id="battleLines" type="range" min="1" max="12" value="5" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Lignes gagnées au mur : <span id="battleGainVal">3</span><input id="battleGain" type="range" min="0" max="6" value="3" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Vitesse : <span id="battleSpeedVal">4</span><input id="battleSpeed" type="range" min="1" max="8" step="0.5" value="4" class="w-full"></label>
+                        <label class="block text-[11px] text-zinc-400">Écart entre lignes : <span id="battleSpreadVal">7°</span><input id="battleSpread" type="range" min="2" max="18" value="7" class="w-full"></label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ================================================================
+                 ARENA BRAWL — Réglages du mode Battle Royale
+                 ================================================================ -->
+            <div id="arenaBattleSettingsBox" class="rounded-2xl bg-zinc-900/60 border border-amber-500/40 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="arenaBattleSettings">
+                    <span class="flex items-center gap-2 text-amber-400">
+                        <i class="fa-solid fa-shield-halved"></i> Réglages Arena Brawl
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="arenaBattleSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
+
+                    <!-- Nombre de boules -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abBallCount">Nombre de boules</label>
+                            <span id="abBallCountVal" class="text-amber-400 font-mono font-semibold">4</span>
+                        </div>
+                        <input id="abBallCount" type="range" min="2" max="8" step="1" value="4" class="w-full">
+                    </div>
+
+                    <!-- HP max -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abMaxHp">PV max par boule</label>
+                            <span id="abMaxHpVal" class="text-amber-400 font-mono font-semibold">100</span>
+                        </div>
+                        <input id="abMaxHp" type="range" min="50" max="300" step="10" value="100" class="w-full">
+                    </div>
+
+                    <!-- Dégâts de contact -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abContactDmg">Multiplicateur dégâts de contact</label>
+                            <span id="abContactDmgVal" class="text-amber-400 font-mono font-semibold">1.0x</span>
+                        </div>
+                        <input id="abContactDmg" type="range" min="0.5" max="3" step="0.1" value="1" class="w-full">
+                    </div>
+
+                    <!-- Fréquence pickups -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abPickupInterval">Fréquence des capacités</label>
+                            <span id="abPickupIntervalVal" class="text-amber-400 font-mono font-semibold">5s</span>
+                        </div>
+                        <input id="abPickupInterval" type="range" min="2" max="10" step="0.5" value="5" class="w-full">
+                    </div>
+
+                    <!-- Slots de capacité -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abMaxSlots">Slots de capacité</label>
+                            <span id="abMaxSlotsVal" class="text-amber-400 font-mono font-semibold">3</span>
+                        </div>
+                        <input id="abMaxSlots" type="range" min="1" max="4" step="1" value="3" class="w-full">
+                    </div>
+
+                    <!-- Mode de victoire -->
+                    <div>
+                        <label for="abMatchMode" class="text-[11px] text-zinc-400 block mb-1">Mode de victoire</label>
+                        <select id="abMatchMode" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
+                            <option value="lastStanding">Dernier survivant</option>
+                            <option value="timed">Timer (60s)</option>
+                            <option value="kills">Premier à 10 kills</option>
+                        </select>
+                    </div>
+
+                    <!-- Timer du match (si timed) -->
+                    <div id="abMatchTimeGroup">
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abMatchTime">Durée du match</label>
+                            <span id="abMatchTimeVal" class="text-amber-400 font-mono font-semibold">60s</span>
+                        </div>
+                        <input id="abMatchTime" type="range" min="20" max="180" step="5" value="60" class="w-full">
+                    </div>
+
+                    <!-- Arène rétrécissante -->
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Arène qui rétrécit</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="abShrinkToggle" class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-amber-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-amber-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <!-- Obstacles centraux -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abObstacles">Obstacles centraux</label>
+                            <span id="abObstaclesVal" class="text-amber-400 font-mono font-semibold">1</span>
+                        </div>
+                        <input id="abObstacles" type="range" min="0" max="3" step="1" value="1" class="w-full">
+                    </div>
+
+                    <!-- Vitesse du jeu -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="abSpeed">Vitesse du jeu</label>
+                            <span id="abSpeedVal" class="text-amber-400 font-mono font-semibold">1.0x</span>
+                        </div>
+                        <input id="abSpeed" type="range" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                    </div>
+
+                    <!-- Info déterministe -->
+                    <p class="text-[10px] text-zinc-500 leading-snug pt-1 border-t border-zinc-800/70">
+                        <i class="fa-solid fa-fingerprint text-amber-500/60 mr-1"></i>
+                        Le mode utilise la seed active pour le spawn des capacités et les positions de départ — rejouable à l'identique.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Boule & Physique Accordion -->
+            <div class="rounded-2xl bg-zinc-900/60 border border-zinc-800/80 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="physicsSettings">
+                    <span class="flex items-center gap-2 text-purple-400">
+                        <i class="fa-solid fa-atom"></i> Boule & Physique (Mode)
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="physicsSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
+                    
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="gravitySlider">Gravité</label>
+                            <span id="gravityVal" class="text-purple-400 font-mono font-semibold">0.24</span>
+                        </div>
+                        <input id="gravitySlider" type="range" min="0" max="0.8" step="0.02" value="0.24" class="w-full" aria-label="Intensité de la gravité">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="bounceSlider">Élasticité / Restitution</label>
+                            <span id="bounceVal" class="text-purple-400 font-mono font-semibold">1.02x</span>
+                        </div>
+                        <input id="bounceSlider" type="range" min="0.85" max="1.15" step="0.01" value="1.02" class="w-full" aria-label="Rebondissement / restitution">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="radiusSlider">Rayon de la boule</label>
+                            <span id="radiusVal" class="text-purple-400 font-mono font-semibold">13px</span>
+                        </div>
+                        <input id="radiusSlider" type="range" min="6" max="24" value="13" class="w-full" aria-label="Taille de la balle">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="speedBoostSlider">Gain vitesse par rebond</label>
+                            <span id="speedBoostVal" class="text-purple-400 font-mono font-semibold">+1%</span>
+                        </div>
+                        <input id="speedBoostSlider" type="range" min="1.00" max="1.08" step="0.005" value="1.01" class="w-full" aria-label="Accélération par rebond">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deterministic Seed & Target Duration Searcher Accordion -->
+            <div class="rounded-2xl bg-zinc-900/60 border border-cyan-500/40 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="seedSearchSettings">
+                    <span class="flex items-center gap-2 text-cyan-400">
+                        <i class="fa-solid fa-stopwatch"></i> Recherche de Durée (Seed)
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="seedSearchSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
+                    
+                    <p class="text-[11px] text-zinc-400 leading-snug">
+                        Trouve en arrière-plan la <strong class="text-cyan-300">seed exacte</strong> pour que la vidéo dure précisément le temps voulu pour TikTok/Shorts.
+                    </p>
+
+                    <!-- Quick Duration Presets -->
+                    <div>
+                        <label class="text-[11px] text-zinc-400 block mb-1.5">Durée cible prédéfinie :</label>
+                        <div class="grid grid-cols-4 gap-1.5" id="durationPresetBtns">
+                            <button data-duration="15" class="duration-preset-btn py-1 px-2 rounded-lg bg-zinc-800 hover:bg-cyan-500/20 hover:text-cyan-300 text-xs font-mono font-semibold border border-zinc-700 transition">15s</button>
+                            <button data-duration="30" class="duration-preset-btn active py-1 px-2 rounded-lg bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 text-xs font-mono font-semibold transition">30s</button>
+                            <button data-duration="45" class="duration-preset-btn py-1 px-2 rounded-lg bg-zinc-800 hover:bg-cyan-500/20 hover:text-cyan-300 text-xs font-mono font-semibold border border-zinc-700 transition">45s</button>
+                            <button data-duration="60" class="duration-preset-btn py-1 px-2 rounded-lg bg-zinc-800 hover:bg-cyan-500/20 hover:text-cyan-300 text-xs font-mono font-semibold border border-zinc-700 transition">60s</button>
+                            <button data-duration="65" class="duration-preset-btn py-1 px-2 rounded-lg bg-zinc-800 hover:bg-cyan-500/20 hover:text-cyan-300 text-xs font-mono font-semibold border border-zinc-700 transition">65s</button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Duration Slider -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="customDurationInput">Durée personnalisée</label>
+                            <span id="targetDurationVal" class="text-cyan-400 font-mono font-semibold">30s</span>
+                        </div>
+                        <input id="customDurationSlider" type="range" min="5" max="90" step="1" value="65" class="w-full" aria-label="Durée cible en secondes">
+                    </div>
+
+                    <label for="autoOptimizeSeedToggle" class="flex items-start gap-2 rounded-lg border border-cyan-500/20 bg-cyan-500/5 p-2.5 cursor-pointer">
+                        <input id="autoOptimizeSeedToggle" type="checkbox" class="mt-0.5 accent-cyan-400">
+                        <span class="flex-1">
+                            <span class="block text-xs font-semibold text-cyan-200">Optimiser automatiquement les options</span>
+                            <span class="block text-[10px] leading-relaxed text-zinc-400 mt-0.5">Teste plusieurs configurations avec la seed. Disponible pour Escape pour le moment.</span>
+                        </span>
+                    </label>
+
+                    <!-- Search Button -->
+                    <button id="findSeedBtn" class="w-full py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/25 active:scale-95 transition flex items-center justify-center gap-2 text-xs">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span id="findSeedBtnText">Trouver la Seed (30s)</span>
+                    </button>
+
+                    <!-- Search Progress & Best Candidate Display -->
+                    <div id="seedSearchStatusBox" class="hidden p-2.5 rounded-xl bg-zinc-950/80 border border-zinc-800 text-xs space-y-1 font-mono">
+                        <div class="flex items-center justify-between text-zinc-400 text-[11px]">
+                            <span>Seeds analysées :</span>
+                            <span id="searchCountDisplay" class="text-white font-bold">0</span>
+                        </div>
+                        <div class="flex items-center justify-between text-zinc-400 text-[11px]">
+                            <span>Meilleur candidat :</span>
+                            <span id="bestCandidateDisplay" class="text-cyan-400">En cours...</span>
+                        </div>
+                        <button id="playBestSeedBtn" type="button" disabled class="w-full mt-2 py-2 px-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-emerald-500/20 transition">Lancer la meilleure seed trouvée</button>
+                        <div class="w-full bg-zinc-800 h-1.5 rounded-full overflow-hidden mt-1">
+                            <div id="searchProgressBar" class="bg-gradient-to-r from-cyan-400 to-pink-500 h-full w-1/3 animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <!-- Active Seed Manual Input -->
+                    <div class="pt-1 border-t border-zinc-800/80">
+                        <label for="manualSeedInput" class="text-[11px] text-zinc-400 block mb-1">Seed active (Reproductible) :</label>
+                        <div class="flex gap-1.5">
+                            <input id="manualSeedInput" type="number" value="104291" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <button id="applySeedBtn" title="Appliquer cette seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-lg border border-zinc-700 text-xs font-semibold">
+                                <i class="fa-solid fa-play"></i>
+                            </button>
+                            <button id="copySeedBtn" title="Copier le code de la seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 text-xs">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Left Action Footer -->
+        <div class="p-3 border-t border-zinc-800/80 bg-zinc-950/90 flex gap-2 shrink-0">
+            <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+            </button>
+            <button id="spawnBallBtn" class="py-2 px-3 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-xl font-bold border border-zinc-700 active:scale-95 transition flex items-center justify-center text-xs" title="Ajouter une balle" aria-label="Ajouter une balle">
+                <i class="fa-solid fa-plus mr-1"></i> Balle
+            </button>
+        </div>
+    </aside>
+
+    <!-- ====================================================================
+         CENTER : Simulation Viewport & 9:16 Portrait Hero Frame
+         ==================================================================== -->
+    <main class="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden h-full">
+        
+        <!-- Floating Top Toolbar -->
+        <div class="absolute top-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+            
+            <!-- Live Simulation Stats -->
+            <div class="flex flex-wrap gap-2 text-xs font-mono pointer-events-auto">
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
+                </div>
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
+                    <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
+                </div>
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-bullseye text-cyan-400 text-xs"></i>
+                    <span>Rebonds: <strong id="bounceCounter" class="text-white">0</strong></span>
+                </div>
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-clock text-yellow-400 text-xs"></i>
+                    <span id="timerCounter" class="text-yellow-300 font-bold">0.0s</span>
+                </div>
+                <div class="hidden sm:flex px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-fingerprint text-purple-400 text-xs"></i>
+                    <span id="activeSeedBadge" class="text-purple-300 font-bold">#104291</span>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
+                    <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
+                    <span id="playPauseText" class="hidden sm:inline">Pause</span>
+                </button>
+                <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Container (9:16 Portrait Phone Frame) -->
+        <div id="canvasContainer" class="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+            <div id="frameWrapper" class="relative w-full h-full max-h-full aspect-[9/16] max-w-[520px] flex items-center justify-center rounded-2xl overflow-hidden phone-frame bg-[#080a10]">
+                
+                <!-- Victory Banner Overlay (Purely visual, no sound, no screen shake) -->
+                <div id="victoryOverlay" class="absolute inset-0 bg-black/75 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none p-4 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 flex items-center justify-center text-white text-3xl shadow-xl shadow-cyan-500/50 animate-bounce">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-cyan-300 to-purple-400">ÉVASION RÉUSSIE !</h2>
+                    <p id="victoryDetails" class="text-xs text-zinc-300 font-mono">Tous les cercles ont été franchis !</p>
+                    <button id="replayBtn" class="mt-2 px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-xs font-bold shadow-lg shadow-pink-500/30 hover:opacity-95 active:scale-95 transition">
+                        Rejouer cette seed
+                    </button>
+                </div>
+
+                <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            </div>
+        </div>
+
+        <!-- Subtle Branding Watermark -->
+        <div class="absolute bottom-3 right-4 z-10 text-[10px] text-zinc-600 font-mono tracking-wider pointer-events-none select-none">
+            VEKTRALZ // BALLTOK v1.0
+        </div>
+    </main>
+
+    <!-- ====================================================================
+         RIGHT SIDEBAR : Effets Visuels (VFX), Audio & Synthétiseur, Valeurs par défaut
+         ==================================================================== -->
+    <aside id="rightSidebar" class="fixed inset-y-0 right-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-l border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 translate-x-full md:h-full h-full">
+        
+        <!-- Header -->
+        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
+                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">STUDIO & EFFETS</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
+                    <i class="fa-solid fa-volume-high"></i> Audio
+                </button>
+                <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scrollable Settings -->
+        <div id="rightSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
+
+            <!-- Audio & Synth Controls Accordion -->
+            <div class="rounded-2xl bg-zinc-900/60 border border-cyan-500/30 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="audioSettings">
+                    <span class="flex items-center gap-2 text-cyan-400">
+                        <i class="fa-solid fa-music"></i> Audio & Synthétiseur
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="audioSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label for="instSelect" class="text-[11px] text-zinc-400 block mb-1">Instrument</label>
+                            <select id="instSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                <option value="marimba">Marimba (Chaud)</option>
+                                <option value="synth">Synthwave Lead</option>
+                                <option value="piano">Piano Doux</option>
+                                <option value="bell">Crystal Bell</option>
+                                <option value="chiptune">8-Bit Retro</option>
+                                <option value="pluck">Pluck Harp</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="scaleSelect" class="text-[11px] text-zinc-400 block mb-1">Gamme Musicale</label>
+                            <select id="scaleSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                                <option value="pentatonic">Pentatonique (ASMR)</option>
+                                <option value="major">Majeure (Lumineuse)</option>
+                                <option value="minor">Mineure (Épique)</option>
+                                <option value="synthwave">Synthwave Night</option>
+                                <option value="japanese">Insen Japonaise</option>
+                                <option value="celestial">Céleste (Rêve)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="volumeSlider">Volume Audio</label>
+                            <span id="volumeValue" class="text-cyan-400 font-mono font-semibold">80%</span>
+                        </div>
+                        <input id="volumeSlider" type="range" min="0" max="100" value="80" class="w-full" aria-label="Volume audio">
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl bg-zinc-900/60 border border-zinc-700 p-3 space-y-2">
+                <div class="text-xs font-bold text-zinc-200"><i class="fa-solid fa-floppy-disk text-cyan-400 mr-1.5"></i>Préférences</div>
+                <p id="preferencesStatus" class="text-[10px] text-zinc-400">Sauvegarde automatique activée</p>
+                <button id="clearPreferencesBtn" type="button" class="w-full py-1.5 px-2 rounded-lg border border-zinc-700 bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300"><i class="fa-solid fa-rotate-left mr-1"></i> Effacer les réglages mémorisés</button>
+            </div>
+
+            <!-- Visual FX Accordion -->
+            <div class="rounded-2xl bg-zinc-900/60 border border-yellow-500/30 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="visualSettings">
+                    <span class="flex items-center gap-2 text-yellow-400">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Effets Visuels (VFX)
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="visualSettings" class="accordion-content open px-3 pb-3 space-y-2 pt-1">
+                    <div class="rounded-xl border border-fuchsia-500/20 bg-zinc-950/60 p-2.5 space-y-2.5">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-fuchsia-300"><i class="fa-solid fa-palette mr-1"></i> Style & couleurs</div>
+                        <div>
+                            <label for="visualStyleSelect" class="text-[11px] text-zinc-400 block mb-1">Rendu visuel</label>
+                            <select id="visualStyleSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500">
+                                <option value="neon">Néon intense</option>
+                                <option value="soft">Lueur douce</option>
+                                <option value="minimal">Minimal / net</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="backgroundToneSelect" class="text-[11px] text-zinc-400 block mb-1">Fond du jeu</label>
+                            <select id="backgroundToneSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-fuchsia-500">
+                                <option value="midnight">Noir spatial</option>
+                                <option value="blue">Bleu profond</option>
+                                <option value="black">Noir pur</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-xs text-zinc-400 mb-1"><label for="glowIntensitySlider">Intensité de la lueur</label><span id="glowIntensityValue" class="text-fuchsia-300 font-mono">100%</span></div>
+                            <input id="glowIntensitySlider" type="range" min="0" max="2" step="0.1" value="1" class="w-full" aria-label="Intensité de la lueur">
+                        </div>
+                    </div>
+                    <!-- Palette -->
+                    <div>
+                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                            <label for="classicPaletteSelect">Palette de couleurs</label>
+                            <span id="classicPalettePreview" class="text-emerald-400 font-mono text-xs">Neon Glow</span>
+                        </div>
+                        <select id="classicPaletteSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="neon">Neon Glow</option>
+                            <option value="cyberpunk">Cyberpunk Pink/Cyan</option>
+                            <option value="ocean">Deep Ocean</option>
+                            <option value="sunset">Golden Sunset</option>
+                            <option value="candy">Cotton Candy</option>
+                            <option value="fire">Fire & Lava</option>
+                            <option value="rainbow">Chroma Rainbow</option>
+                        </select>
+                    </div>
+
+                    <!-- Multi-Color Toggle -->
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Mode multi-couleur</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="classicMultiColorToggle" checked class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-emerald-500 relative"></div>
+                        </div>
+                    </label>
+                    
+
+                    
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Traînée lumineuse (Trail)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="trailToggle" checked class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Étincelles d'impact (Particles)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="particlesToggle" checked class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Ondes de choc (Shockwaves)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="shockwavesToggle" checked class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Secousse d'écran (Screen Shake)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="shakeToggle" class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-pink-500 relative"></div>
+                        </div>
+                    </label>
+
+                    <label class="relative flex items-center justify-between cursor-pointer py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition select-none">
+                        <span class="text-xs text-zinc-300">Cadre portrait 9:16 (TikTok)</span>
+                        <div class="relative inline-flex items-center">
+                            <input type="checkbox" id="portraitToggle" checked class="sr-only peer">
+                            <div class="w-8 h-4.5 bg-zinc-800 peer-focus:ring-2 peer-focus:ring-cyan-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-cyan-500 relative"></div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+        </div>
+    </aside>
+
+    <!-- ====================================================================
+         Modular Application Scripts (in execution order)
+         ==================================================================== -->
+    <script src="config.js"></script>
+    <script src="js/prng.js"></script>
+    <script src="js/modesConfig.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/effects.js"></script>
+    <script src="js/ball.js"></script>
+    <script src="js/modes/classic.js"></script>
+    <script src="js/modes/extraModes.js"></script>
+    <script src="js/seedSearcher.js"></script>
+    <script src="js/simulation.js"></script>
+
+    <!-- === ARENA BRAWL — Fournée 1 === -->
+    <script src="arena.js"></script>
+    <script src="health.js"></script>
+    <script src="damage-numbers.js"></script>
+    <script src="status-effects.js"></script>
+    <script src="ability-registry.js"></script>
+    <script src="ability-offensive.js"></script>
+
+    <!-- === ARENA BRAWL — Fournée 2 === -->
+    <script src="ability-defensive.js"></script>
+    <script src="ability-utility.js"></script>
+    <script src="pickups.js"></script>
+    <script src="arena-hud.js"></script>
+    <script src="arena-battle.js"></script>
+    <script src="arena-battle-bindings.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
