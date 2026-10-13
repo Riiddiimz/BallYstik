@@ -595,10 +595,10 @@
             d.spawned = true;
             if (world.spawnCloneFor) {
                 d.cloneId = world.spawnCloneFor(ball, {
-                    lifetime: 5,
-                    hpRatio: 0.3,
+                    lifetime: window.AbilitySettings ? window.AbilitySettings.getParam('clone', 'cloneLifetime', 5) : 5,
+                    hpRatio: (window.AbilitySettings ? window.AbilitySettings.getParam('clone', 'hpRatio', 30) : 30) / 100,
                     inheritSpeed: 0.85,
-                    opacity: 0.55
+                    opacity: (window.AbilitySettings ? window.AbilitySettings.getParam('clone', 'opacity', 55) : 55) / 100
                 });
             }
         }
