@@ -16,6 +16,7 @@
     const DEFAULTS = {
         ballCount: 4,
         maxHp: 100,
+        ballSpeed: 180,
         contactDamageMult: 1,
         pickupInterval: 5,
         maxSlots: 3,
@@ -47,6 +48,13 @@
 
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
+            const speed = Math.max(60, Number(this.options.ballSpeed) || DEFAULTS.ballSpeed);
+            if (this.world && this.world.balls) {
+                this.world.balls.forEach(ball => {
+                    ball.baseMoveSpeed = speed;
+                    this._keepBaseSpeed(ball);
+                });
+            }
         }
         getOptions() { return Object.assign({}, this.options); }
 
@@ -54,6 +62,7 @@
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
         init(world) {
+            this.world = world;
             this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
@@ -149,7 +158,7 @@
             ball.abilitySlots = []; // { meta, data, timeLeft, maxTime, cooldownBase }
             ball.isPlayer = opts.isPlayer ?? false;
             // Toutes les boules partagent la même vitesse de déplacement de base.
-            ball.baseMoveSpeed = 180;
+            ball.baseMoveSpeed = Math.max(60, Number(this.options.ballSpeed) || DEFAULTS.ballSpeed);
             const initialSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
             const initialAngle = initialSpeed > 0 ? Math.atan2(ball.vy, ball.vx) : ((ball.id * 2.399963229728653) % (Math.PI * 2));
             ball.vx = Math.cos(initialAngle) * ball.baseMoveSpeed;
