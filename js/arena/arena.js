@@ -194,27 +194,30 @@
                 }
             }
 
-            // Garde-fou final : aucune boule ne peut rester hors des limites.
-            const minX = this.x + r, maxX = this.x + this.w - r;
-            const minY = this.y + r, maxY = this.y + this.h - r;
-            if (ball.x < minX) {
-                ball.x = minX;
+            // Clamp final de sécurité après coins arrondis et obstacles, sur les quatre côtés.
+            const safeLeft = this.x + r;
+            const safeRight = this.x + this.w - r;
+            const safeTop = this.y + r;
+            const safeBottom = this.y + this.h - r;
+            if (ball.x < safeLeft) {
+                ball.x = safeLeft;
                 if (ball.vx < 0) ball.vx = Math.abs(ball.vx);
                 hit = hit || { nx: 1, ny: 0, x: this.x, y: ball.y };
-            } else if (ball.x > maxX) {
-                ball.x = maxX;
+            } else if (ball.x > safeRight) {
+                ball.x = safeRight;
                 if (ball.vx > 0) ball.vx = -Math.abs(ball.vx);
                 hit = hit || { nx: -1, ny: 0, x: this.x + this.w, y: ball.y };
             }
-            if (ball.y < minY) {
-                ball.y = minY;
+            if (ball.y < safeTop) {
+                ball.y = safeTop;
                 if (ball.vy < 0) ball.vy = Math.abs(ball.vy);
                 hit = hit || { nx: 0, ny: 1, x: ball.x, y: this.y };
-            } else if (ball.y > maxY) {
-                ball.y = maxY;
+            } else if (ball.y > safeBottom) {
+                ball.y = safeBottom;
                 if (ball.vy > 0) ball.vy = -Math.abs(ball.vy);
                 hit = hit || { nx: 0, ny: -1, x: ball.x, y: this.y + this.h };
             }
+
             if (hit) {
                 this.wallPulse = 1;
                 this.hitFlashes.push({ x: hit.x, y: hit.y, life: 0.35, maxLife: 0.35 });
