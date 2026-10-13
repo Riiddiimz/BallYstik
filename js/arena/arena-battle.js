@@ -24,6 +24,7 @@
         shrinkEnabled: false,
         shrinkStart: 30,
         shrinkRate: 6,
+        shrinkMax: 0.16,
         obstacles: 1
     };
 
@@ -47,6 +48,12 @@
 
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
+            if (this._world && this._world.arena) {
+                this._world.arena.shrinkEnabled = !!this.options.shrinkEnabled;
+                this._world.arena.shrinkStart = Number(this.options.shrinkStart);
+                this._world.arena.shrinkRate = Number(this.options.shrinkRate);
+                this._world.arena.shrinkMax = Number(this.options.shrinkMax);
+            }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
             }
@@ -57,6 +64,7 @@
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
         init(world) {
+            this._world = world;
             this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
@@ -76,12 +84,13 @@
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
-                    shrinkMax: 0.16
+                    shrinkMax: this.options.shrinkMax
                 });
             } else {
                 world.arena.shrinkEnabled = this.options.shrinkEnabled;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
+                world.arena.shrinkMax = this.options.shrinkMax;
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._buildObstacles(this.options.obstacles);
