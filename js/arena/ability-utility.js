@@ -318,7 +318,7 @@
     // ═══════ BOMBE POSTHUME ═══════
     window.AbilityBehaviors.deathbomb = {
         attach(ball, world, slot) {
-            slot.data = { primed: true };
+            slot.data = { primed: true, damage: 50, blastRadius: 150, knockback: 400, delay: 0, warning: true };
         },
         update(ball, world, slot, dt) {
             // Rendu clignotant seulement
@@ -328,17 +328,17 @@
             if (!d || !d.primed) return;
             d.primed = false;
 
-            const blastR = 150;
+            const blastR = d.blastRadius ?? 150;
             for (const other of world.balls) {
                 if (!other.alive || other.team === ball.team) continue;
                 const dist = Math.hypot(other.x - ball.x, other.y - ball.y);
                 if (dist < blastR) {
-                    const dmg = 50 * (1 - dist / blastR);
+                    const dmg = (d.damage ?? 50) * (1 - dist / blastR);
                     world.damage(other, ball, dmg, 'deathbomb');
                     const dx = other.x - ball.x;
                     const dy = other.y - ball.y;
                     const dd = Math.hypot(dx, dy) || 1;
-                    other.vx += (dx / dd) * 400 * (1 - dist / blastR);
+                    other.vx += (dx / dd) * (d.knockback ?? 400) * (1 - dist / blastR);
                     other.vy += (dy / dd) * 400 * (1 - dist / blastR);
                 }
             }
@@ -355,7 +355,7 @@
             if (!ball.alive) return;
             // Clignotement rouge
             const t = performance.now() * 0.006;
-            const blink = (Math.sin(t) > 0.3) ? 1 : 0;
+            const blink = (slot.data && slot.data.warning === false) ? 0 : ((Math.sin(t) > 0.3) ? 1 : 0);
             ctx.save();
             ctx.globalAlpha = 0.35 * blink;
             ctx.strokeStyle = '#dc2626';
