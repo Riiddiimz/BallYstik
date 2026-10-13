@@ -131,7 +131,7 @@
         },
 
         pickRandom(prng, filterFn) {
-            const list = Object.values(REGISTRY).filter(a => (!window.AbilitySettings || window.AbilitySettings.isEnabled(a.id)) && (!filterFn || filterFn(a)));
+            const list = Object.values(REGISTRY).filter(a => (!window.AbilitySettings || (window.AbilitySettings.isEnabled(a.id) && window.AbilitySettings.getWeight(a.id, a.weight) > 0)) && (!filterFn || filterFn(a)));
             if (!list.length) return null;
             const total = list.reduce((s, a) => s + (window.AbilitySettings ? window.AbilitySettings.getWeight(a.id, a.weight) : (a.weight || 1)), 0);
             let r = (prng && prng.next ? prng.next() : Math.random()) * total;
