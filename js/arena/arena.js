@@ -121,65 +121,78 @@
 
         resolveBall(ball) {
             const r = ball.radius;
-            const leftB   = this.x + r;
-            const rightB  = this.x + this.w - r;
-            const topB    = this.y + r;
-            const bottomB = this.y + this.h - r;
-
+            const left = this.x, right = this.x + this.w;
+            const top = this.y, bottom = this.y + this.h;
+            const corner = Math.min(this.cornerRadius, this.w / 2, this.h / 2);
+            const arcRadius = Math.max(0, corner - r);
             let hit = null;
 
-            if (ball.x < leftB) {
-                ball.x = leftB;
-                if (ball.vx < 0) ball.vx = -ball.vx;
-                hit = { nx: 1, ny: 0, x: this.x, y: ball.y };
-            } else if (ball.x > rightB) {
-                ball.x = rightB;
-                if (ball.vx > 0) ball.vx = -ball.vx;
-                hit = { nx: -1, ny: 0, x: this.x + this.w, y: ball.y };
+            // Les côtés droits ne s'appliquent que sur leur portion rectiligne.
+            // Dans les coins, la collision est calculée sur le cercle de l'arrondi.
+            const verticalMin = top + corner;
+            const verticalMax = bottom - corner;
+            const horizontalMin = left + corner;
+            const horizontalMax = right - corner;
+
+            if (ball.y >= verticalMin && ball.y <= verticalMax) {
+                if (ball.x < left + r) {
+                    ball.x = left + r;
+                    if (ball.vx < 0) ball.vx = Math.abs(ball.vx);
+                    hit = { nx: 1, ny: 0, x: left, y: ball.y };
+                } else if (ball.x > right - r) {
+                    ball.x = right - r;
+                    if (ball.vx > 0) ball.vx = -Math.abs(ball.vx);
+                    hit = { nx: -1, ny: 0, x: right, y: ball.y };
+                }
             }
 
-            if (ball.y < topB) {
-                ball.y = topB;
-                if (ball.vy < 0) ball.vy = -ball.vy;
-                hit = { nx: 0, ny: 1, x: ball.x, y: this.y };
-            } else if (ball.y > bottomB) {
-                ball.y = bottomB;
-                if (ball.vy > 0) ball.vy = -ball.vy;
-                hit = { nx: 0, ny: -1, x: ball.x, y: this.y + this.h };
+            if (ball.x >= horizontalMin && ball.x <= horizontalMax) {
+                if (ball.y < top + r) {
+                    ball.y = top + r;
+                    if (ball.vy < 0) ball.vy = Math.abs(ball.vy);
+                    hit = { nx: 0, ny: 1, x: ball.x, y: top };
+                } else if (ball.y > bottom - r) {
+                    ball.y = bottom - r;
+                    if (ball.vy > 0) ball.vy = -Math.abs(ball.vy);
+                    hit = { nx: 0, ny: -1, x: ball.x, y: bottom };
+                }
             }
 
-            const cr = Math.max(0, this.cornerRadius - r);
-            if (cr > 0) {
+            if (arcRadius > 0) {
                 const corners = [
-                    { cx: this.x + this.cornerRadius,          cy: this.y + this.cornerRadius,          sx:  1, sy:  1 },
-                    { cx: this.x + this.w - this.cornerRadius, cy: this.y + this.cornerRadius,          sx: -1, sy:  1 },
-                    { cx: this.x + this.cornerRadius,          cy: this.y + this.h - this.cornerRadius, sx:  1, sy: -1 },
-                    { cx: this.x + this.w - this.cornerRadius, cy: this.y + this.h - this.cornerRadius, sx: -1, sy: -1 }
+                    { cx: left + corner,  cy: top + corner,    sx: -1, sy: -1 },
+                    { cx: right - corner, cy: top + corner,    sx:  1, sy: -1 },
+                    { cx: left + corner,  cy: bottom - corner, sx: -1, sy:  1 },
+                    { cx: right - corner, cy: bottom - corner, sx:  1, sy:  1 }
                 ];
                 for (const c of corners) {
-                    const dx = ball.x - c.cx;
-                    const dy = ball.y - c.cy;
+                    const dx = ball.x - c.cx, dy = ball.y - c.cy;
                     if (dx * c.sx < 0 || dy * c.sy < 0) continue;
                     const d = Math.hypot(dx, dy);
-                    if (d >= cr || d === 0) continue;
-                    const nx = dx / d, ny = dy / d;
-                    const overlap = cr - d;
-                    ball.x += nx * overlap;
-                    ball.y += ny * overlap;
+                    if (d >= arcRadius) continue;
+                    let nx, ny;
+                    if (d < 1e-8) {
+                        nx = c.sx * Math.SQRT1_2;
+                        ny = c.sy * Math.SQRT1_2;
+                    } else {
+                        nx = dx / d;
+                        ny = dy / d;
+                    }
+                    // Le centre de la boule reste à rayon (arrondi - rayon de boule).
+                    ball.x = c.cx + nx * arcRadius;
+                    ball.y = c.cy + ny * arcRadius;
                     const dot = ball.vx * nx + ball.vy * ny;
                     if (dot < 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
-                        hit = { nx, ny, x: c.cx + nx * cr, y: c.cy + ny * cr };
                     }
+                    hit = { nx, ny, x: c.cx + nx * corner, y: c.cy + ny * corner };
                 }
             }
 
             for (const o of this.obstacles) {
-                const dx = ball.x - o.x;
-                const dy = ball.y - o.y;
-                const minD = o.r + r;
-                const d = Math.hypot(dx, dy);
+                const dx = ball.x - o.x, dy = ball.y - o.y;
+                const minD = o.r + r, d = Math.hypot(dx, dy);
                 if (d < minD && d > 0) {
                     const nx = dx / d, ny = dy / d;
                     const overlap = minD - d;
@@ -192,30 +205,6 @@
                         hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r };
                     }
                 }
-            }
-
-            // Clamp final de sécurité après coins arrondis et obstacles, sur les quatre côtés.
-            const safeLeft = this.x + r;
-            const safeRight = this.x + this.w - r;
-            const safeTop = this.y + r;
-            const safeBottom = this.y + this.h - r;
-            if (ball.x < safeLeft) {
-                ball.x = safeLeft;
-                if (ball.vx < 0) ball.vx = Math.abs(ball.vx);
-                hit = hit || { nx: 1, ny: 0, x: this.x, y: ball.y };
-            } else if (ball.x > safeRight) {
-                ball.x = safeRight;
-                if (ball.vx > 0) ball.vx = -Math.abs(ball.vx);
-                hit = hit || { nx: -1, ny: 0, x: this.x + this.w, y: ball.y };
-            }
-            if (ball.y < safeTop) {
-                ball.y = safeTop;
-                if (ball.vy < 0) ball.vy = Math.abs(ball.vy);
-                hit = hit || { nx: 0, ny: 1, x: ball.x, y: this.y };
-            } else if (ball.y > safeBottom) {
-                ball.y = safeBottom;
-                if (ball.vy > 0) ball.vy = -Math.abs(ball.vy);
-                hit = hit || { nx: 0, ny: -1, x: ball.x, y: this.y + this.h };
             }
 
             if (hit) {
