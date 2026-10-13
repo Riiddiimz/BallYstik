@@ -162,7 +162,9 @@
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
                     const dot = ball.vx * nx + ball.vy * ny;
-                    if (dot < 0) {
+                    // Ici la normale pointe du centre de l’arrondi vers la boule :
+                    // un mouvement vers l’extérieur a donc un produit scalaire positif.
+                    if (dot > 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
                     }
