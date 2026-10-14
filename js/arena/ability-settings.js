@@ -15,7 +15,8 @@ const groups=[
 {id:'teslaCoil',icon:'ϟ',name:'Bobine Tesla ⭐',weight:4,params:[['cooldown','Intervalle de décharge',1.2,4,0.1,2.4,'s'],['chargeTime','Temps de charge',0.2,1.2,0.1,0.5,'s'],['range','Portée électrique',140,380,10,260,' px'],['damage','Dégâts initiaux',5,25,1,14],['chainDamage','Dégâts de l’arc secondaire',2,15,1,8],['chainRange','Portée de l’arc secondaire',50,180,10,110,' px']]}
  ]},
 {id:'weapons',title:'ARMES',color:'#fbbf24',items:[
-{id:'blade',icon:'⚔',name:'Épée',weight:0,params:[['damage','Dégâts par coup',5,40,1,18],['hitCooldown','Délai entre coups sur une cible',0.3,1.5,0.05,0.72,'s']]}
+{id:'blade',icon:'⚔',name:'Épée',weight:0,params:[['damage','Dégâts par coup',5,40,1,18],['hitCooldown','Délai entre coups sur une cible',0.3,1.5,0.05,0.72,'s']]},
+{id:'blade2',icon:'⚔',name:'Lame noire',weight:0,params:[['damage','Dégâts par coup',5,40,1,20],['hitCooldown','Délai entre coups sur une cible',0.3,1.5,0.05,0.65,'s']]}
 ]},
 {id:'defensive',title:'DÉFENSIVES',color:'#60a5fa',items:[
 {id:'shield',icon:'◈',name:'Bouclier',weight:10,params:[['shieldHp','PV du bouclier',10,100,5,40],['regenDelay','Délai avant régénération',1,8,.5,3,'s'],['regenRate','Vitesse de régénération',0,20,1,5,' HP/s'],['explodeOnBreak','Explose à la rupture','toggle',false],['resistance','Résistance supplémentaire',0,50,5,0,'%']]},
