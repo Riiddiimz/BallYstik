@@ -114,42 +114,44 @@
             ctx.setLineDash([]);
             ctx.restore();
 
-            // La lame possède un pickup dédié, visible dans son image réelle.
-            if (meta.id === 'blade' && window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade && window.BallYstikWeaponImages.blade.complete && window.BallYstikWeaponImages.blade.naturalWidth) {
+            // Pour l'épée, le pickup EST l'image de l'arme : aucun orbe ni icône générique.
+            if (meta.id === 'blade') {
+                const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade;
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                const appear = this.state === 'spawning' ? Math.max(0.25, 1 - this.spawnTimer / 0.5) : 1;
+                const appear = this.state === 'spawning' ? Math.max(0.25, 1 - this.spawnTimer / 0.7) : 1;
                 ctx.globalAlpha = appear;
                 ctx.rotate(-Math.PI / 4);
                 ctx.shadowColor = '#93c5fd';
-                ctx.shadowBlur = 18;
-                ctx.drawImage(window.BallYstikWeaponImages.blade, -r * 1.25, -r * 1.25, r * 2.5, r * 2.5);
+                ctx.shadowBlur = 22;
+                if (weaponImage && weaponImage.complete && weaponImage.naturalWidth > 0) {
+                    // Plus grande que l'ancienne icône, pour que l'épée soit clairement identifiable au sol.
+                    const size = r * 3.6;
+                    ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
+                } else {
+                    // Fallback temporaire pendant le chargement de blade.png.
+                    ctx.fillStyle = '#dbeafe';
+                    ctx.font = 'bold 38px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⚔', 0, 0);
+                }
                 ctx.restore();
+                // Conserver l'anneau de rareté éventuel, sans dessiner le corps d'un orbe.
+                if (meta.rarity === 'epic') {
+                    ctx.save();
+                    ctx.globalAlpha = 0.7 + 0.3 * Math.sin(t * 4);
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#fbbf24';
+                    ctx.shadowBlur = 18;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, r + 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                return;
             }
-
-            // Corps central
-            ctx.save();
-            ctx.shadowColor = meta.glow;
-            ctx.shadowBlur = 16;
-            ctx.fillStyle = meta.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-            ctx.fill();
-            // Noyau blanc
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-
-            // Icône
-            ctx.save();
-            ctx.fillStyle = '#000';
-            ctx.font = `bold ${r * 0.9}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(meta.icon, this.x, this.y + 1);
-            ctx.restore();
 
             // Rareté : contour doré pour epic
             if (meta.rarity === 'epic') {
