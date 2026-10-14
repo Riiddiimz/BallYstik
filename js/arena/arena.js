@@ -306,11 +306,11 @@
             this._roundRectPath(ctx, x, y, w, h, cornerRadius);
             ctx.clip();
             if (this.mapStyle === 'reactor') {
-                const phase = this.time % 5.5;
+                const phase = this.time % 4.2;
                 const cx = x + w / 2, cy = y + h / 2;
-                const radius = phase < 1.7 ? 22 + phase * 8 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.7) / 1.2));
-                ctx.globalAlpha = phase < 1.7 ? 0.25 + phase * 0.28 : phase < 2.9 ? 0.9 : 0.2;
-                ctx.strokeStyle = phase < 1.7 ? '#fb923c' : '#ff2a85';
+                const radius = phase < 1.25 ? 22 + phase * 9 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.25) / 1.1));
+                ctx.globalAlpha = phase < 1.25 ? 0.25 + phase * 0.34 : phase < 2.35 ? 0.9 : 0.2;
+                ctx.strokeStyle = phase < 1.25 ? '#fb923c' : '#ff2a85';
                 ctx.lineWidth = phase < 1.7 ? 2 + phase : 4;
                 ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 20;
                 ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
@@ -318,10 +318,10 @@
                 ctx.fillStyle = '#fb923c';
                 ctx.beginPath(); ctx.arc(cx, cy, 9 + 4 * Math.sin(this.time * 6), 0, Math.PI * 2); ctx.fill();
             } else if (this.mapStyle === 'crossfire') {
-                const phase = this.time % 4.8;
-                const laneY = y + h * (0.18 + 0.64 * Math.min(phase / 3.6, 1));
-                const firing = phase >= 3.6 && phase <= 4.25;
-                ctx.globalAlpha = firing ? 0.95 : phase < 3.6 ? 0.18 + phase * 0.12 : Math.max(0, 0.3 * (4.8 - phase));
+                const phase = this.time % 4.0;
+                const laneY = y + h * (0.18 + 0.64 * Math.min(phase / 2.8, 1));
+                const firing = phase >= 2.8 && phase <= 3.45;
+                ctx.globalAlpha = firing ? 0.95 : phase < 2.8 ? 0.18 + phase * 0.15 : Math.max(0, 0.5 * (4.0 - phase));
                 ctx.strokeStyle = firing ? '#ff2a85' : '#fbbf24';
                 ctx.lineWidth = firing ? 9 : 2;
                 ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = firing ? 28 : 8;
