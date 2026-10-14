@@ -115,8 +115,8 @@
             ctx.restore();
 
             // Pour l'épée, le pickup EST l'image de l'arme : aucun orbe ni icône générique.
-            if (meta.id === 'blade') {
-                const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade;
+            if (meta.id === 'blade' || meta.id === 'blade2') {
+                const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages[meta.id];
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 const appear = this.state === 'spawning' ? Math.max(0.25, 1 - this.spawnTimer / 0.7) : 1;
@@ -229,11 +229,11 @@
             if (!best) return false;
             const pickup = new Pickup(best.x, best.y, meta, this.prng);
             pickup.spawnTimer = 0.7;
-            pickup.radius = meta.id === 'blade' ? 19 : 16;
+            pickup.radius = (meta.id === 'blade' || meta.id === 'blade2') ? 19 : 16;
             this.items.push(pickup);
             world.spawnParticle(best.x, best.y, { color: meta.color || '#67e8f9', count: 24, speed: 190, life: 0.65, spread: Math.PI * 2, size: 2.8 });
             world.addShockwave(best.x, best.y, { radius: 54, color: meta.color || '#67e8f9', life: 0.45 });
-            world.playSound('pickup-spawn', { pitch: meta.id === 'blade' ? 1.15 : 0.9 });
+            world.playSound('pickup-spawn', { pitch: (meta.id === 'blade' || meta.id === 'blade2') ? 1.15 : 0.9 });
             return true;
         }
 
