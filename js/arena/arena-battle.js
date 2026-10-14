@@ -46,7 +46,6 @@
             this.winner = null;
             this._nextBallId = 1;
             this._killFeedHooked = false;
-            this.spectacle = window.SpectacleDirector ? new window.SpectacleDirector() : null;
         }
 
         applyOptions(opts) {
@@ -81,7 +80,6 @@
             this.shockwaves.length = 0;
             this.floatingPlus.length = 0;
             this._nextBallId = 1;
-            if (this.spectacle) this.spectacle.reset();
 
             // Arène
             if (!world.arena || world.arena.canvas !== world.canvas) {
@@ -912,29 +910,21 @@
         _renderBall(ctx, ball, world) {
             const alpha = ball.isClone ? (ball.alpha ?? 0.55) : 1;
 
-            // Aura vivante : anneau énergétique et trois satellites lumineux.
-            // Le mouvement dépend du temps de simulation pour rester fluide à 60 FPS.
-            const t = world.time || 0;
-            const pulse = 0.5 + 0.5 * Math.sin(t * 5.2 + ball.id * 1.7);
-            ctx.save();
-            ctx.globalAlpha = alpha * (0.18 + pulse * 0.16);
-            ctx.strokeStyle = ball.color;
-            ctx.lineWidth = 1.1 + pulse * 1.1;
-            ctx.shadowColor = ball.color;
-            ctx.shadowBlur = 10 + pulse * 12;
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ball.radius + 4 + pulse * 3, t * 0.8, t * 0.8 + Math.PI * (1.15 + pulse * 0.25));
-            ctx.stroke();
-            for (let i = 0; i < 3; i++) {
-                const angle = t * (1.2 + i * 0.12) + ball.id * 2.1 + i * Math.PI * 2 / 3;
-                const orbit = ball.radius + 7 + pulse * 3;
-                ctx.globalAlpha = alpha * (0.38 + pulse * 0.42);
-                ctx.fillStyle = i === 0 ? '#ffffff' : ball.color;
+            // Signal d'état lisible : l'anneau rouge n'apparaît qu'en danger critique.
+            const hpRatio = ball.health && ball.health.max > 0 ? ball.health.current / ball.health.max : 1;
+            if (hpRatio <= 0.3) {
+                const t = world.time || 0;
+                ctx.save();
+                ctx.globalAlpha = alpha * (0.35 + 0.45 * (0.5 + 0.5 * Math.sin(t * 13 + ball.id)));
+                ctx.strokeStyle = '#ff334f';
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = '#ff1f46';
+                ctx.shadowBlur = 13;
                 ctx.beginPath();
-                ctx.arc(ball.x + Math.cos(angle) * orbit, ball.y + Math.sin(angle) * orbit, 1.4 + pulse * 1.1, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.arc(ball.x, ball.y, ball.radius + 5 + 2 * Math.sin(t * 9), 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
             }
-            ctx.restore();
 
             // Trail
             if (!ball.isClone && ball.trail) {
