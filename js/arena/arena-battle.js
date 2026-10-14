@@ -51,11 +51,15 @@
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
             if (this._world && this._world.arena) {
-                this._world.arena.shrinkEnabled = !!this.options.shrinkEnabled;
-                this._world.arena.shrinkStart = Number(this.options.shrinkStart);
-                this._world.arena.shrinkRate = Number(this.options.shrinkRate);
-                this._world.arena.shrinkMax = Number(this.options.shrinkMax);
-                this._world.arena.mapStyle = this.options.arenaMap || 'neon';
+                const arena = this._world.arena;
+                const nextMap = this.options.arenaMap || 'neon';
+                const mapChanged = arena.mapStyle !== nextMap;
+                arena.shrinkEnabled = !!this.options.shrinkEnabled;
+                arena.shrinkStart = Number(this.options.shrinkStart);
+                arena.shrinkRate = Number(this.options.shrinkRate);
+                arena.shrinkMax = Number(this.options.shrinkMax);
+                arena.mapStyle = nextMap;
+                if (mapChanged) arena._buildObstacles(this.options.obstacles);
             }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
