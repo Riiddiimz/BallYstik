@@ -696,6 +696,103 @@
         }
     };
 
+    // ═══════ BOBINE TESLA ═══════
+    window.AbilityBehaviors.teslaCoil = {
+        attach(ball) {
+            ball.weapon = 'teslaCoil';
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data || (slot.data = { cooldown: 0.7, charge: 0, charging: false, targetId: null, zaps: [] });
+            d.cooldown -= dt;
+            d.zaps = d.zaps.filter(z => (z.life -= dt) > 0);
+            const range = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'range', 260) : 260;
+            const target = findNearestEnemy(ball, world, range);
+            d.targetId = target ? target.id : null;
+
+            if (d.charging) {
+                d.charge -= dt;
+                if (d.charge > 0) return;
+                d.charging = false;
+                if (!target) return;
+                const damage = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'damage', 14) : 14;
+                const chainRange = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chainRange', 110) : 110;
+                const chainDamage = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chainDamage', 8) : 8;
+                world.damage(target, ball, damage, 'tesla');
+                d.zaps.push({ x1: ball.x, y1: ball.y, x2: target.x, y2: target.y, life: 0.2, maxLife: 0.2 });
+                world.spawnParticle(target.x, target.y, { color: '#cffafe', count: 20, speed: 240, life: 0.42, spread: Math.PI * 2, size: 2.6 });
+                world.addShockwave(target.x, target.y, { radius: 34, color: '#67e8f9', life: 0.25 });
+
+                let chained = null, best = chainRange * chainRange;
+                for (const other of world.balls) {
+                    if (!other.alive || other === ball || other === target || other.team === ball.team) continue;
+                    const dx = other.x - target.x, dy = other.y - target.y, dist2 = dx * dx + dy * dy;
+                    if (dist2 < best) { best = dist2; chained = other; }
+                }
+                if (chained) {
+                    world.damage(chained, ball, chainDamage, 'tesla');
+                    d.zaps.push({ x1: target.x, y1: target.y, x2: chained.x, y2: chained.y, life: 0.2, maxLife: 0.2 });
+                    world.spawnParticle(chained.x, chained.y, { color: '#67e8f9', count: 14, speed: 200, life: 0.38, spread: Math.PI * 2, size: 2.3 });
+                }
+                d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'cooldown', 2.4) : 2.4;
+                world.playSound('chain', { pitch: 1.35 });
+                return;
+            }
+            if (target && d.cooldown <= 0) {
+                d.charging = true;
+                d.charge = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chargeTime', 0.5) : 0.5;
+            }
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const t = world.time || 0;
+            const pulse = d.charging ? 1 - d.charge / (window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chargeTime', 0.5) : 0.5) : 0.35 + 0.2 * Math.sin(t * 5);
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(t * 1.8 + ball.id);
+            ctx.shadowColor = '#67e8f9';
+            ctx.shadowBlur = 12 + pulse * 20;
+            ctx.strokeStyle = '#cffafe';
+            ctx.fillStyle = '#155e75';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 2; i++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius + 5 + i * 4, i * Math.PI + t, i * Math.PI + t + Math.PI * 0.7);
+                ctx.stroke();
+            }
+            ctx.fillRect(ball.radius - 1, -4, 8, 8);
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.45 + pulse * 0.55;
+            ctx.beginPath(); ctx.arc(ball.radius + 8, 0, 2 + pulse * 3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
+            for (const z of d.zaps) {
+                ctx.save();
+                ctx.globalAlpha = z.life / z.maxLife;
+                ctx.strokeStyle = '#67e8f9';
+                ctx.lineWidth = 5;
+                ctx.shadowColor = '#22d3ee';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                for (let i = 0; i <= 7; i++) {
+                    const t = i / 7;
+                    const bend = (i === 0 || i === 7) ? 0 : Math.sin(i * 12.989 + (world.time || 0) * 60) * 11;
+                    const x = z.x1 + (z.x2 - z.x1) * t;
+                    const y = z.y1 + (z.y2 - z.y1) * t + bend;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
+        detach(ball) {
+            if (ball.weapon === 'teslaCoil') delete ball.weapon;
+        }
+    };
+
     function renderPlasmaShell(ctx, p) {
         ctx.save();
         ctx.shadowColor = '#fb923c';
