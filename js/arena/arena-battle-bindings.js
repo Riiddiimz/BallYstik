@@ -120,7 +120,12 @@
                     this.saveOptions();
                     this.syncMatchTime();
                     this.syncShrinkOptions();
-                    if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
+                    if (id === 'abArenaMap') {
+                        // Changer de carte relance proprement la manche pour éviter les boules coincées dans les nouveaux obstacles.
+                        this.start();
+                    } else if (window.ArenaBattle) {
+                        window.ArenaBattle.applyOptions(this.getOptions());
+                    }
                 });
             });
             const seed = document.getElementById('manualSeedInput');
