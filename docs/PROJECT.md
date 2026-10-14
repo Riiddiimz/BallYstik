@@ -13,6 +13,10 @@
 - `css/style.css`: Core design system, neon glow, custom scrollbars, strict accordion hiding.
 - `js/prng.js`: Mulberry32 deterministic PRNG for exact seed reproducibility.
 - `js/audio.js`: Polyphonic Web Audio synth with safe volume ADSR ramps.
+- `js/arena/arena.js`: rounded arena geometry, four map styles with distinct obstacle layouts and telegraphed map hazards.
+- `js/arena/arena-battle.js`: Arena Brawl simulation, Reactor radial pulse, Crossfire laser lane, Void gravity wells, projectile collision and explosive area damage.
+- `js/arena/ability-offensive.js`: includes two pickup weapons: Plasma Cannon (visible turret, telegraphed charge, explosive shells and splash damage) and Tesla Coil (visible coil, charge, primary zap and chain lightning).
+- `js/arena/ability-settings.js`: tunable plasma-cannon parameters integrated into the ability settings UI.
 - `js/effects.js`: Particle explosions and shockwave rings.
 - `js/ball.js`: Ball entity with glowing trail and 3D specular highlight.
 - `js/modes/classic.js`: Classic Escape mode (concentric rings, normalized spike collisions).

@@ -604,4 +604,337 @@
         }
     };
 
+
+    // ═══════ CANON À PLASMA ═══════
+    window.AbilityBehaviors.plasmaCannon = {
+        attach(ball) {
+            ball.weapon = 'plasmaCannon';
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data || (slot.data = { cooldown: 0.65, charge: 0, charging: false, targetId: null });
+            d.cooldown -= dt;
+            const range = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'targetRange', 560) : 560;
+            const target = findNearestEnemy(ball, world, range);
+            d.targetId = target ? target.id : null;
+
+            // Le canon annonce d'abord son tir. L'obus ne part qu'après la charge visible.
+            if (d.charging) {
+                d.charge -= dt;
+                if (d.charge > 0) return;
+                d.charging = false;
+                if (!target) return;
+                const dx = target.x - ball.x, dy = target.y - ball.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len, uy = dy / len;
+                const projectileSpeed = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390;
+                world.projectiles.push({
+                    x: ball.x + ux * (ball.radius + 8),
+                    y: ball.y + uy * (ball.radius + 8),
+                    vx: ux * projectileSpeed, vy: uy * projectileSpeed,
+                    radius: 7, life: 2.2, bounces: 0,
+                    ownerId: ball.id, color: '#fb923c',
+                    damage: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'damage', 17) : 17,
+                    splashRadius: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'blastRadius', 58) : 58,
+                    type: 'plasma', trail: [], render: renderPlasmaShell
+                });
+                d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'fireRate', 1.55) : 1.55;
+                world.spawnParticle(ball.x + ux * (ball.radius + 9), ball.y + uy * (ball.radius + 9), {
+                    color: '#fed7aa', count: 12, speed: 210, life: 0.35, spread: 0.6, angle: Math.atan2(uy, ux), size: 2.8
+                });
+                world.playSound('shoot', { pitch: 0.72 });
+                return;
+            }
+
+            if (!target || d.cooldown > 0) return;
+            d.charging = true;
+            d.charge = 0.32;
+            d.aimX = target.x;
+            d.aimY = target.y;
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const target = world.balls.find(b => b.id === d.targetId && b.alive);
+            const angle = target ? Math.atan2(target.y - ball.y, target.x - ball.x) : Math.atan2(ball.vy, ball.vx);
+            const pulse = d.charging ? 1 - d.charge / 0.32 : 0.3 + 0.15 * Math.sin((world.time || 0) * 5 + ball.id);
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(angle);
+            ctx.shadowColor = '#fb923c';
+            ctx.shadowBlur = 12 + pulse * 14;
+            ctx.fillStyle = '#292524';
+            ctx.strokeStyle = '#fed7aa';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius * 0.56, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#fb923c';
+            ctx.fillRect(ball.radius * 0.12, -4, ball.radius + 11, 8);
+            ctx.fillStyle = '#fff7ed';
+            ctx.fillRect(ball.radius + 5, -2, 8, 4);
+            if (d.charging) {
+                ctx.globalAlpha = 0.75 + pulse * 0.25;
+                ctx.strokeStyle = '#fdba74';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(ball.radius + 18, 0, 7 + pulse * 4, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+            if (target && d.charging) {
+                ctx.save();
+                ctx.globalAlpha = 0.25 + pulse * 0.55;
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#fb923c';
+                ctx.lineWidth = 1.5 + pulse;
+                ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(target.x, target.y); ctx.stroke();
+                ctx.restore();
+            }
+        },
+        detach(ball) {
+            if (ball.weapon === 'plasmaCannon') delete ball.weapon;
+        }
+    };
+
+    // ═══════ BOBINE TESLA ═══════
+    window.AbilityBehaviors.teslaCoil = {
+        attach(ball) {
+            ball.weapon = 'teslaCoil';
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data || (slot.data = { cooldown: 0.7, charge: 0, charging: false, targetId: null, zaps: [] });
+            d.cooldown -= dt;
+            d.zaps = d.zaps.filter(z => (z.life -= dt) > 0);
+            const range = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'range', 260) : 260;
+            const target = findNearestEnemy(ball, world, range);
+            d.targetId = target ? target.id : null;
+
+            if (d.charging) {
+                d.charge -= dt;
+                if (d.charge > 0) return;
+                d.charging = false;
+                if (!target) return;
+                const damage = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'damage', 14) : 14;
+                const chainRange = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chainRange', 110) : 110;
+                const chainDamage = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chainDamage', 8) : 8;
+                world.damage(target, ball, damage, 'tesla');
+                d.zaps.push({ x1: ball.x, y1: ball.y, x2: target.x, y2: target.y, life: 0.2, maxLife: 0.2 });
+                world.spawnParticle(target.x, target.y, { color: '#cffafe', count: 20, speed: 240, life: 0.42, spread: Math.PI * 2, size: 2.6 });
+                world.addShockwave(target.x, target.y, { radius: 34, color: '#67e8f9', life: 0.25 });
+
+                let chained = null, best = chainRange * chainRange;
+                for (const other of world.balls) {
+                    if (!other.alive || other === ball || other === target || other.team === ball.team) continue;
+                    const dx = other.x - target.x, dy = other.y - target.y, dist2 = dx * dx + dy * dy;
+                    if (dist2 < best) { best = dist2; chained = other; }
+                }
+                if (chained) {
+                    world.damage(chained, ball, chainDamage, 'tesla');
+                    d.zaps.push({ x1: target.x, y1: target.y, x2: chained.x, y2: chained.y, life: 0.2, maxLife: 0.2 });
+                    world.spawnParticle(chained.x, chained.y, { color: '#67e8f9', count: 14, speed: 200, life: 0.38, spread: Math.PI * 2, size: 2.3 });
+                }
+                d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'cooldown', 2.4) : 2.4;
+                world.playSound('chain', { pitch: 1.35 });
+                return;
+            }
+            if (target && d.cooldown <= 0) {
+                d.charging = true;
+                d.charge = window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chargeTime', 0.5) : 0.5;
+            }
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const t = world.time || 0;
+            const pulse = d.charging ? 1 - d.charge / (window.AbilitySettings ? window.AbilitySettings.getParam('teslaCoil', 'chargeTime', 0.5) : 0.5) : 0.35 + 0.2 * Math.sin(t * 5);
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(t * 1.8 + ball.id);
+            ctx.shadowColor = '#67e8f9';
+            ctx.shadowBlur = 12 + pulse * 20;
+            ctx.strokeStyle = '#cffafe';
+            ctx.fillStyle = '#155e75';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 2; i++) {
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius + 5 + i * 4, i * Math.PI + t, i * Math.PI + t + Math.PI * 0.7);
+                ctx.stroke();
+            }
+            ctx.fillRect(ball.radius - 1, -4, 8, 8);
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.45 + pulse * 0.55;
+            ctx.beginPath(); ctx.arc(ball.radius + 8, 0, 2 + pulse * 3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+
+            for (const z of d.zaps) {
+                ctx.save();
+                ctx.globalAlpha = z.life / z.maxLife;
+                ctx.strokeStyle = '#67e8f9';
+                ctx.lineWidth = 5;
+                ctx.shadowColor = '#22d3ee';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                for (let i = 0; i <= 7; i++) {
+                    const t = i / 7;
+                    const bend = (i === 0 || i === 7) ? 0 : Math.sin(i * 12.989 + (world.time || 0) * 60) * 11;
+                    const x = z.x1 + (z.x2 - z.x1) * t;
+                    const y = z.y1 + (z.y2 - z.y1) * t + bend;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1.6;
+                ctx.stroke();
+                ctx.restore();
+            }
+        },
+        detach(ball) {
+            if (ball.weapon === 'teslaCoil') delete ball.weapon;
+        }
+    };
+
+    // ═══════ LAME ORBITALE (asset PNG) ═══════
+    // Rendu commun des armes portées : taille constante et ratio de l'image conservé.
+    // Les futures armes peuvent réutiliser window.BallYstikWeaponRenderer.drawHeld(...).
+    window.BallYstikWeaponRenderer = window.BallYstikWeaponRenderer || {};
+    window.BallYstikWeaponRenderer.drawHeld = function (ctx, image, ball, length = 48, offset = 0.35) {
+        if (!ctx || !image || !image.complete || !image.naturalWidth || !image.naturalHeight) return false;
+        const ratio = image.naturalWidth / image.naturalHeight;
+        const width = image.naturalHeight > image.naturalWidth ? length * ratio : length;
+        const height = image.naturalHeight > image.naturalWidth ? length : length / ratio;
+        ctx.save();
+        ctx.translate((ball.radius || 0) * offset, 0);
+        if (image.naturalHeight > image.naturalWidth) ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(image, -width / 2, -height / 2, width, height);
+        ctx.restore();
+        return true;
+    };
+
+    window.BallYstikWeaponImages = window.BallYstikWeaponImages || {};
+    if (!window.BallYstikWeaponImages.blade) {
+        const bladeImage = new Image();
+        bladeImage.src = '/assets/weapons/blade.png?v=2';
+        window.BallYstikWeaponImages.blade = bladeImage;
+    }
+
+    if (!window.BallYstikWeaponImages.blade2) {
+        const blade2Image = new Image();
+        blade2Image.src = '/assets/weapons/blade2.png?v=2';
+        window.BallYstikWeaponImages.blade2 = blade2Image;
+    }
+
+    window.AbilityBehaviors.blade = {
+        attach(ball, world, slot) {
+            ball.weapon = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+            slot.data = { hitCooldowns: Object.create(null), swing: 0, swingCooldown: 0, angle: 0, hitIds: [] };
+            world.spawnParticle(ball.x, ball.y, { color: '#bfdbfe', count: 26, speed: 220, life: 0.65, spread: Math.PI * 2, size: 3 });
+            world.addShockwave(ball.x, ball.y, { radius: 58, color: '#93c5fd', life: 0.48 });
+            world.playSound('pickup', { pitch: 1.35 });
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data;
+            if (!d) return;
+            d.swingCooldown = Math.max(0, d.swingCooldown - dt);
+            d.swing = Math.max(0, d.swing - dt);
+            for (const id of Object.keys(d.hitCooldowns)) {
+                d.hitCooldowns[id] -= dt;
+                if (d.hitCooldowns[id] <= 0) delete d.hitCooldowns[id];
+            }
+            let target = null, best = Infinity;
+            for (const other of world.balls) {
+                if (!other.alive || other === ball || other.team === ball.team) continue;
+                const dist = Math.hypot(other.x - ball.x, other.y - ball.y);
+                if (dist < best) { best = dist; target = other; }
+            }
+            const movementAngle = Math.hypot(ball.vx || 0, ball.vy || 0) > 8
+                ? Math.atan2(ball.vy, ball.vx)
+                : (target ? Math.atan2(target.y - ball.y, target.x - ball.x) : 0);
+            d.angle = target && best < ball.radius * 3.2
+                ? Math.atan2(target.y - ball.y, target.x - ball.x)
+                : movementAngle;
+            const reach = ball.radius + 27;
+            const hitRange = ball.radius + reach + (target ? target.radius : 0);
+            const inReach = target && best <= hitRange;
+            if (inReach && d.swingCooldown <= 0 && !d.hitCooldowns[target.id]) {
+                const dx = target.x - ball.x, dy = target.y - ball.y;
+                const angleToTarget = Math.atan2(dy, dx);
+                const diff = Math.atan2(Math.sin(angleToTarget - d.angle), Math.cos(angleToTarget - d.angle));
+                if (Math.abs(diff) < 1.25) {
+                            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam(weaponId, 'damage', weaponId === 'blade2' ? 20 : 18) : (weaponId === 'blade2' ? 20 : 18);
+                    world.damage(target, ball, damage, 'blade');
+                    const len = Math.hypot(dx, dy) || 1;
+                    target.vx += (dx / len) * 190;
+                    target.vy += (dy / len) * 190;
+                    d.hitCooldowns[target.id] = 0.72;
+                    d.swingCooldown = 0.34;
+                    d.swing = 0.24;
+                    d.angle = angleToTarget;
+                    world.spawnParticle(target.x, target.y, { color: '#dbeafe', count: 18, speed: 230, life: 0.38, spread: Math.PI * 2, size: 2.8 });
+                    world.addHitFlash(target.x, target.y);
+                    world.addShockwave(target.x, target.y, { radius: 28, color: '#93c5fd', life: 0.22 });
+                    world.playSound('hit', { pitch: 1.25 });
+                }
+            }
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+            const image = window.BallYstikWeaponImages && window.BallYstikWeaponImages[weaponId];
+            const swingProgress = d.swing > 0 ? 1 - d.swing / 0.24 : 0;
+            const swingAngle = d.swing > 0 ? Math.sin(swingProgress * Math.PI) * 0.95 - 0.45 : 0;
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(d.angle + swingAngle);
+            ctx.shadowColor = '#93c5fd';
+            ctx.shadowBlur = d.swing > 0 ? 20 : 8;
+            if (image && image.complete && image.naturalWidth > 0) {
+                // Taille fixe, ratio d'origine respecté : l'épée ne s'aplatit pas selon la boule.
+                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, 82, 0.35);
+            } else {
+                // Fallback visible si le PNG n'est pas encore chargé.
+                ctx.strokeStyle = '#dbeafe';
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(ball.radius * 0.25, 0);
+                ctx.lineTo(ball.radius + 25, 0);
+                ctx.stroke();
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(ball.radius * 0.2, 0);
+                ctx.lineTo(ball.radius * 0.55, 0);
+                ctx.stroke();
+            }
+            if (d.swing > 0) {
+                ctx.globalAlpha = 0.65 * (d.swing / 0.24);
+                ctx.strokeStyle = '#bfdbfe';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius + 24, -0.8, 0.8);
+                ctx.stroke();
+            }
+            ctx.restore();
+        },
+        detach(ball) {
+            if (ball.weapon === 'blade' || ball.weapon === 'blade2') delete ball.weapon;
+        }
+    };
+
+    // La seconde arme réutilise la logique de combat, avec sa propre image et ses propres réglages.
+    window.AbilityBehaviors.blade2 = window.AbilityBehaviors.blade;
+
+    function renderPlasmaShell(ctx, p) {
+        ctx.save();
+        ctx.shadowColor = '#fb923c';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#fb923c';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff7ed';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 0.52, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
 })();

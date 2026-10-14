@@ -25,7 +25,8 @@
         shrinkStart: 30,
         shrinkRate: 6,
         shrinkMax: 0.16,
-        obstacles: 1
+        obstacles: 1,
+        arenaMap: 'neon'
     };
 
     class ArenaBattleMode {
@@ -50,16 +51,30 @@
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
             if (this._world && this._world.arena) {
-                this._world.arena.shrinkEnabled = !!this.options.shrinkEnabled;
-                this._world.arena.shrinkStart = Number(this.options.shrinkStart);
-                this._world.arena.shrinkRate = Number(this.options.shrinkRate);
-                this._world.arena.shrinkMax = Number(this.options.shrinkMax);
+                const arena = this._world.arena;
+                const nextMap = this.options.arenaMap || 'neon';
+                const mapChanged = arena.mapStyle !== nextMap;
+                arena.shrinkEnabled = !!this.options.shrinkEnabled;
+                arena.shrinkStart = Number(this.options.shrinkStart);
+                arena.shrinkRate = Number(this.options.shrinkRate);
+                arena.shrinkMax = Number(this.options.shrinkMax);
+                arena.mapStyle = nextMap;
+                if (mapChanged) arena._buildObstacles(this.options.obstacles);
             }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
             }
         }
         getOptions() { return Object.assign({}, this.options); }
+
+        // Appelé par les boutons « Spawn » du panneau des capacités.
+        spawnPickup(id) {
+            const world = this._world;
+            if (!world || !this.pickupSystem || !window.AbilityRegistry) return false;
+            const meta = window.AbilityRegistry.get(id);
+            if (!meta) return false;
+            return this.pickupSystem.spawnAbility(meta, world);
+        }
 
         // ═══════════════════════════════════════════════════════════
         // INIT / RESET
@@ -72,6 +87,8 @@
             this.finishedByTimer = false;
             this.winner = null;
             this.projectiles.length = 0;
+            // Les capacités ajoutent leurs tirs via world.projectiles : partager le même tableau que le moteur.
+            world.projectiles = this.projectiles;
             this.particles.length = 0;
             this.shockwaves.length = 0;
             this.floatingPlus.length = 0;
@@ -83,6 +100,7 @@
                     padding: 16,
                     cornerRadius: 44,
                     obstacles: this.options.obstacles,
+                    mapStyle: this.options.arenaMap || 'neon',
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
@@ -93,6 +111,7 @@
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
+                world.arena.mapStyle = this.options.arenaMap || 'neon';
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._buildObstacles(this.options.obstacles);
@@ -342,12 +361,18 @@
             if (!ball.alive) return;
             ball.alive = false;
 
-            // Feedback mort
+            // Explosion de KO en trois temps : éclats colorés, flash blanc, double onde.
             world.spawnParticle(ball.x, ball.y, {
-                color: ball.color, count: 20, speed: 320, life: 0.9, spread: Math.PI * 2
+                color: ball.color, count: 42, speed: 420, life: 1.05, spread: Math.PI * 2, size: 3.2
+            });
+            world.spawnParticle(ball.x, ball.y, {
+                color: '#ffffff', count: 18, speed: 230, life: 0.42, spread: Math.PI * 2, size: 2.1
             });
             world.addShockwave(ball.x, ball.y, {
-                radius: ball.radius * 6, color: ball.color, life: 0.5
+                radius: ball.radius * 8, color: ball.color, life: 0.62
+            });
+            world.addShockwave(ball.x, ball.y, {
+                radius: ball.radius * 4.5, color: '#ffffff', life: 0.24
             });
 
             // Applique les capacités de mort
@@ -378,6 +403,68 @@
         // ═══════════════════════════════════════════════════════════
         // UPDATE
         // ═══════════════════════════════════════════════════════════
+        _updateMapMechanics(dt, world) {
+            const arena = world.arena;
+            const style = arena.mapStyle || 'neon';
+            const cx = arena.x + arena.w / 2;
+            const cy = arena.y + arena.h / 2;
+
+            if (style === 'reactor') {
+                const cycle = arena.time % 4.2;
+                if (cycle >= 1.25 && cycle <= 2.35) {
+                    const progress = (cycle - 1.25) / 1.1;
+                    const ring = Math.min(arena.w, arena.h) * 0.47 * progress;
+                    for (const ball of world.balls) {
+                        if (!ball.alive) continue;
+                        const dist = Math.hypot(ball.x - cx, ball.y - cy);
+                        if (Math.abs(dist - ring) < ball.radius + 11 && ball._reactorCycle !== Math.floor(arena.time / 4.2)) {
+                            ball._reactorCycle = Math.floor(arena.time / 4.2);
+                            world.damage(ball, null, 14, 'reactor');
+                            const nx = (ball.x - cx) / (dist || 1), ny = (ball.y - cy) / (dist || 1);
+                            ball.vx += nx * 115; ball.vy += ny * 115;
+                            this._keepBaseSpeed(ball);
+                            world.spawnParticle(ball.x, ball.y, { color: '#fb923c', count: 18, speed: 230, life: 0.55, spread: Math.PI * 2, size: 2.8 });
+                            world.addShockwave(ball.x, ball.y, { radius: 46, color: '#ff2a85', life: 0.32 });
+                            world.playSound('hit', { pitch: 0.72 });
+                        }
+                    }
+                }
+            } else if (style === 'crossfire') {
+                const cycle = arena.time % 4.0;
+                const laneY = arena.y + arena.h * (0.18 + 0.64 * Math.min(cycle / 2.8, 1));
+                if (cycle >= 2.8 && cycle <= 3.45) {
+                    for (const ball of world.balls) {
+                        if (!ball.alive || Math.abs(ball.y - laneY) > ball.radius + 13) continue;
+                        if (ball._crossfireCycle === Math.floor(arena.time / 4.0)) continue;
+                        ball._crossfireCycle = Math.floor(arena.time / 4.0);
+                        world.damage(ball, null, 11, 'crossfire');
+                        ball.vy += ball.y < cy ? -135 : 135;
+                        this._keepBaseSpeed(ball);
+                        world.spawnParticle(ball.x, laneY, { color: '#fbbf24', count: 15, speed: 210, life: 0.45, spread: Math.PI * 2, size: 2.5 });
+                        world.addShockwave(ball.x, laneY, { radius: 34, color: '#ff2a85', life: 0.28 });
+                    }
+                }
+            } else if (style === 'void') {
+                const wells = [
+                    { x: arena.x + arena.w * 0.28, y: arena.y + arena.h * 0.32, power: 115 },
+                    { x: arena.x + arena.w * 0.72, y: arena.y + arena.h * 0.68, power: 115 }
+                ];
+                for (const ball of world.balls) {
+                    if (!ball.alive) continue;
+                    for (const well of wells) {
+                        const dx = well.x - ball.x, dy = well.y - ball.y;
+                        const dist2 = dx * dx + dy * dy;
+                        if (dist2 < 180 * 180 && dist2 > 1) {
+                            const dist = Math.sqrt(dist2);
+                            const force = well.power * (1 - dist / 180);
+                            ball.vx += dx / dist * force * dt;
+                            ball.vy += dy / dist * force * dt;
+                        }
+                    }
+                }
+            }
+        }
+
         _keepBaseSpeed(ball) {
             const target = ball.baseMoveSpeed || 180;
             const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
@@ -407,8 +494,9 @@
             world.elapsedTime = this.elapsedTime;
             world.matchTime = this.options.matchTime;
 
-            // Arena
+            // La carte a ses propres mécaniques lisibles : télégraphe puis danger réel.
             world.arena.update(dt);
+            this._updateMapMechanics(dt, world);
 
             // Pickups
             this.pickupSystem.update(dt, world);
@@ -577,18 +665,45 @@
                     }
                 }
 
-                // Collisions balles
+                // Collision directe ou explosion à impact (les armes explosives ont une vraie zone de dégâts).
+                let impact = false;
                 for (const ball of world.balls) {
                     if (!ball.alive || ball.id === p.ownerId) continue;
                     const dx = ball.x - p.x;
                     const dy = ball.y - p.y;
                     if (dx * dx + dy * dy < (ball.radius + p.radius) ** 2) {
-                        const owner = world.balls.find(b => b.id === p.ownerId);
-                        world.damage(ball, owner, p.damage, 'arrow');
-                        world.spawnParticle(p.x, p.y, { color: p.color, count: 8, speed: 180, life: 0.4, spread: Math.PI * 2 });
-                        this.projectiles.splice(i, 1);
+                        impact = true;
                         break;
                     }
+                }
+                if (impact) {
+                    const owner = world.balls.find(b => b.id === p.ownerId);
+                    if (p.splashRadius) {
+                        world.spawnParticle(p.x, p.y, { color: p.color, count: 34, speed: 310, life: 0.72, spread: Math.PI * 2, size: 3 });
+                        world.spawnParticle(p.x, p.y, { color: '#fff7ed', count: 12, speed: 190, life: 0.3, spread: Math.PI * 2, size: 2.4 });
+                        world.addShockwave(p.x, p.y, { radius: p.splashRadius, color: p.color, life: 0.38 });
+                        for (const victim of world.balls) {
+                            if (!victim.alive || victim.id === p.ownerId) continue;
+                            const dx = victim.x - p.x, dy = victim.y - p.y;
+                            const distance = Math.hypot(dx, dy);
+                            if (distance <= p.splashRadius + victim.radius) {
+                                const falloff = Math.max(0.35, 1 - distance / (p.splashRadius + victim.radius));
+                                world.damage(victim, owner, p.damage * falloff, 'plasma');
+                                const push = 155 * falloff;
+                                const len = distance || 1;
+                                victim.vx += (dx / len) * push;
+                                victim.vy += (dy / len) * push;
+                                this._keepBaseSpeed(victim);
+                            }
+                        }
+                    } else {
+                        const victim = world.balls.find(ball => ball.alive && ball.id !== p.ownerId &&
+                            (ball.x - p.x) ** 2 + (ball.y - p.y) ** 2 < (ball.radius + p.radius) ** 2);
+                        if (victim) world.damage(victim, owner, p.damage, p.type || 'arrow');
+                        world.spawnParticle(p.x, p.y, { color: p.color, count: 8, speed: 180, life: 0.4, spread: Math.PI * 2 });
+                    }
+                    this.projectiles.splice(i, 1);
+                    continue;
                 }
 
                 if (p.life <= 0) this.projectiles.splice(i, 1);
@@ -808,6 +923,22 @@
         _renderBall(ctx, ball, world) {
             const alpha = ball.isClone ? (ball.alpha ?? 0.55) : 1;
 
+            // Signal d'état lisible : l'anneau rouge n'apparaît qu'en danger critique.
+            const hpRatio = ball.health && ball.health.max > 0 ? ball.health.current / ball.health.max : 1;
+            if (hpRatio <= 0.3) {
+                const t = world.time || 0;
+                ctx.save();
+                ctx.globalAlpha = alpha * (0.35 + 0.45 * (0.5 + 0.5 * Math.sin(t * 13 + ball.id)));
+                ctx.strokeStyle = '#ff334f';
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = '#ff1f46';
+                ctx.shadowBlur = 13;
+                ctx.beginPath();
+                ctx.arc(ball.x, ball.y, ball.radius + 5 + 2 * Math.sin(t * 9), 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
             // Trail
             if (!ball.isClone && ball.trail) {
                 ball.trail.push({ x: ball.x, y: ball.y });
@@ -841,6 +972,26 @@
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            // Reflet spéculaire net pour un rendu plus proche d'une sphère 3D.
+            ctx.globalAlpha = alpha * 0.88;
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.beginPath();
+            ctx.ellipse(
+                ball.x - ball.radius * 0.31,
+                ball.y - ball.radius * 0.38,
+                Math.max(2, ball.radius * 0.24),
+                Math.max(1.5, ball.radius * 0.13),
+                -0.58, 0, Math.PI * 2
+            );
+            ctx.fill();
+            ctx.globalAlpha = alpha * 0.22;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius - 1, -Math.PI * 0.88, -Math.PI * 0.18);
+            ctx.stroke();
             ctx.restore();
 
             // Statuts (burn, freeze, poison, stun)

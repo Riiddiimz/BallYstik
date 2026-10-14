@@ -115,7 +115,7 @@
                     <!-- Fréquence pickups -->
                     <div>
                         <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abPickupInterval">Fréquence des capacités</label>
+                            <label for="abPickupInterval">Fréquence des orbes (armes & capacités)</label>
                             <span id="abPickupIntervalVal" class="text-amber-400 font-mono font-semibold">5s</span>
                         </div>
                         <input id="abPickupInterval" type="range" min="2" max="10" step="0.5" value="5" class="w-full">
@@ -181,6 +181,18 @@
                             </div>
                             <input id="abShrinkMax" type="range" min="5" max="30" step="1" value="16" class="w-full">
                         </div>
+                    </div>
+
+                    <!-- Carte et mécanique de combat -->
+                    <div>
+                        <label for="abArenaMap" class="text-[11px] text-zinc-400 block mb-1">Carte de combat</label>
+                        <select id="abArenaMap" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <option value="neon">Néon — arène classique</option>
+                            <option value="reactor">Réacteur — onde d'énergie périodique</option>
+                            <option value="crossfire">Crossfire — ligne de tir télégraphiée</option>
+                            <option value="void">Néant — puits gravitationnels</option>
+                        </select>
+                        <p class="text-[10px] text-zinc-500 mt-1">Chaque carte change les règles du combat, pas seulement le décor.</p>
                     </div>
 
                     <!-- Obstacles centraux -->
@@ -323,7 +335,7 @@
         <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
             <div class="flex items-center space-x-2">
                 <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
-                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">CAPACITÉS</h2>
+                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">ARMES &amp; CAPACITÉS</h2>
             </div>
             <div class="flex items-center gap-2">
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">

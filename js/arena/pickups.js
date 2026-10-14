@@ -14,7 +14,7 @@
             this.meta = abilityMeta;
             this.age = 0;
             this.state = 'spawning'; // spawning | idle | sucked | taken
-            this.spawnTimer = 0.5;
+            this.spawnTimer = 1.0;
             this.life = 22;
             this.taken = false;
             this.seed = (prng && prng.next ? prng.next() : Math.random()) * 1000;
@@ -77,11 +77,44 @@
 
             // Colonne de lumière pendant le spawn
             if (this.state === 'spawning') {
-                const sp = 1 - this.spawnTimer / 0.5;
+                const progress = Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.0));
+                const pulse = 0.65 + Math.sin(t * 9) * 0.2;
+                const beamHeight = 260 + progress * 100;
+                const beamWidth = 18 + Math.sin(t * 12) * 5;
                 ctx.save();
-                ctx.globalAlpha = (1 - sp) * 0.7;
-                ctx.fillStyle = meta.color;
-                ctx.fillRect(this.x - 8, this.y - 200, 16, 200);
+                ctx.globalCompositeOperation = 'lighter';
+                const beam = ctx.createLinearGradient(this.x, this.y - beamHeight, this.x, this.y + 24);
+                beam.addColorStop(0, 'rgba(255,255,255,0)');
+                beam.addColorStop(0.48, meta.glow || meta.color);
+                beam.addColorStop(0.82, '#ffffff');
+                beam.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.globalAlpha = pulse * (1 - progress * 0.45);
+                ctx.fillStyle = beam;
+                ctx.shadowColor = meta.glow || meta.color;
+                ctx.shadowBlur = 34;
+                ctx.fillRect(this.x - beamWidth / 2, this.y - beamHeight, beamWidth, beamHeight + 28);
+                for (let ring = 0; ring < 3; ring++) {
+                    const phase = (progress * 1.7 + ring / 3) % 1;
+                    const ringRadius = 12 + phase * 108;
+                    ctx.globalAlpha = (1 - phase) * 0.95;
+                    ctx.strokeStyle = ring === 0 ? '#ffffff' : (meta.glow || meta.color);
+                    ctx.lineWidth = ring === 0 ? 3 : 2;
+                    ctx.beginPath();
+                    ctx.ellipse(this.x, this.y + 5, ringRadius, ringRadius * 0.32, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.translate(this.x, this.y);
+                ctx.rotate(-t * 2.4);
+                ctx.globalAlpha = (1 - progress) * 0.9;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                for (let ray = 0; ray < 12; ray++) {
+                    ctx.rotate(Math.PI / 6);
+                    ctx.beginPath();
+                    ctx.moveTo(22, 0);
+                    ctx.lineTo(42 + Math.sin(t * 5 + ray) * 10, 0);
+                    ctx.stroke();
+                }
                 ctx.restore();
             }
 
@@ -114,29 +147,47 @@
             ctx.setLineDash([]);
             ctx.restore();
 
-            // Corps central
-            ctx.save();
-            ctx.shadowColor = meta.glow;
-            ctx.shadowBlur = 16;
-            ctx.fillStyle = meta.color;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-            ctx.fill();
-            // Noyau blanc
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.restore();
-
-            // Icône
-            ctx.save();
-            ctx.fillStyle = '#000';
-            ctx.font = `bold ${r * 0.9}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(meta.icon, this.x, this.y + 1);
-            ctx.restore();
+            // Pour l'épée, le pickup EST l'image de l'arme : aucun orbe ni icône générique.
+            if (meta.id === 'blade' || meta.id === 'blade2') {
+                const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages[meta.id];
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const spawnProgress = this.state === 'spawning' ? Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.0)) : 1;
+                const appear = this.state === 'spawning' ? Math.max(0.2, spawnProgress) : 1;
+                const weaponScale = this.state === 'spawning' ? 0.45 + 0.55 * spawnProgress : 1;
+                ctx.scale(weaponScale, weaponScale);
+                ctx.globalAlpha = appear;
+                ctx.rotate(-Math.PI / 4);
+                ctx.shadowColor = '#93c5fd';
+                ctx.shadowBlur = 22;
+                if (weaponImage && weaponImage.complete && weaponImage.naturalWidth > 0) {
+                    // Plus grande que l'ancienne icône, pour que l'épée soit clairement identifiable au sol.
+                    const size = r * 5.2;
+                    ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
+                } else {
+                    // Fallback si l'image de cette arme ne se charge pas.
+                    ctx.fillStyle = '#dbeafe';
+                    ctx.font = 'bold 34px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('⚔', 0, 0);
+                }
+                ctx.restore();
+                // Conserver l'anneau de rareté éventuel, sans dessiner le corps d'un orbe.
+                if (meta.rarity === 'epic') {
+                    ctx.save();
+                    ctx.globalAlpha = 0.7 + 0.3 * Math.sin(t * 4);
+                    ctx.strokeStyle = '#fbbf24';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#fbbf24';
+                    ctx.shadowBlur = 18;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, r + 5, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+                return;
+            }
 
             // Rareté : contour doré pour epic
             if (meta.rarity === 'epic') {
@@ -194,6 +245,34 @@
                     }
                 }
             }
+        }
+
+        spawnAbility(meta, world) {
+            if (!meta || !world || !world.arena) return false;
+            const a = world.arena;
+            let best = null, bestMinDist = -Infinity;
+            for (let attempt = 0; attempt < 18; attempt++) {
+                const x = a.x + 36 + this.prng.next() * Math.max(1, a.w - 72);
+                const y = a.y + 36 + this.prng.next() * Math.max(1, a.h - 72);
+                let minD = Infinity;
+                for (const b of world.balls) {
+                    if (!b.alive) continue;
+                    minD = Math.min(minD, Math.hypot(b.x - x, b.y - y));
+                }
+                for (const o of (a.obstacles || [])) minD = Math.min(minD, Math.hypot(o.x - x, o.y - y) - o.r);
+                if (minD > bestMinDist) { bestMinDist = minD; best = { x, y }; }
+            }
+            if (!best) return false;
+            const pickup = new Pickup(best.x, best.y, meta, this.prng);
+            pickup.spawnTimer = 1.0;
+            pickup.radius = (meta.id === 'blade' || meta.id === 'blade2') ? 19 : 16;
+            this.items.push(pickup);
+            world.spawnParticle(best.x, best.y, { color: '#ffffff', count: 18, speed: 260, life: 0.9, spread: Math.PI * 2, size: 3.2 });
+            world.spawnParticle(best.x, best.y, { color: meta.glow || meta.color || '#67e8f9', count: 42, speed: 220, life: 1.15, spread: Math.PI * 2, size: 3.5 });
+            world.addShockwave(best.x, best.y, { radius: 110, color: '#ffffff', life: 0.7 });
+            world.addShockwave(best.x, best.y, { radius: 76, color: meta.glow || meta.color || '#67e8f9', life: 0.95 });
+            world.playSound('pickup-spawn', { pitch: (meta.id === 'blade' || meta.id === 'blade2') ? 1.15 : 0.9 });
+            return true;
         }
 
         _trySpawn(world) {

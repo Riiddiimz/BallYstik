@@ -23,6 +23,7 @@
 
             this.padding      = options.padding      ?? 16;
             this.cornerRadius = options.cornerRadius ?? 44;
+            this.mapStyle = options.mapStyle || 'neon';
 
             this.time        = 0;
             this.elapsed     = 0;
@@ -59,18 +60,53 @@
             if (count <= 0) return;
             const cx = this.canvas.width / 2;
             const cy = this.canvas.height / 2;
-            const baseR = 24;
-            const spacing = 110;
+            const r = 24;
+            const gap = 110;
+            const map = this.mapStyle || 'neon';
 
-            if (count === 1) {
-                this.obstacles.push({ x: cx, y: cy, r: baseR + 6 });
-            } else if (count === 2) {
-                this.obstacles.push({ x: cx, y: cy - spacing, r: baseR });
-                this.obstacles.push({ x: cx, y: cy + spacing, r: baseR });
+            if (map === 'reactor') {
+                // Le cœur reste libre pour rendre lisible l'onde radiale.
+                if (count === 1) this.obstacles.push({ x: cx + 92, y: cy, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx - 100, y: cy - 70, r });
+                    this.obstacles.push({ x: cx + 100, y: cy + 70, r });
+                } else {
+                    this.obstacles.push({ x: cx - 105, y: cy - 125, r });
+                    this.obstacles.push({ x: cx + 105, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 105, y: cy + 125, r });
+                }
+            } else if (map === 'crossfire') {
+                // Obstacles décalés pour créer des abris partiels sous le faisceau.
+                if (count === 1) this.obstacles.push({ x: cx, y: cy - gap, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx - 85, y: cy, r });
+                    this.obstacles.push({ x: cx + 85, y: cy, r });
+                } else {
+                    this.obstacles.push({ x: cx - 90, y: cy - gap, r });
+                    this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 90, y: cy + gap, r });
+                }
+            } else if (map === 'void') {
+                // Le passage central reste dégagé entre deux singularités latérales.
+                if (count === 1) this.obstacles.push({ x: cx, y: cy - gap, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                } else {
+                    this.obstacles.push({ x: cx - 90, y: cy - gap, r });
+                    this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 90, y: cy + gap, r });
+                }
             } else {
-                this.obstacles.push({ x: cx, y: cy - spacing, r: baseR });
-                this.obstacles.push({ x: cx, y: cy,           r: baseR + 4 });
-                this.obstacles.push({ x: cx, y: cy + spacing, r: baseR });
+                if (count === 1) this.obstacles.push({ x: cx, y: cy, r: r + 6 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                } else {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                }
             }
         }
 
@@ -262,6 +298,49 @@
             }
             for (let gy = y; gy < y + h; gy += grid) {
                 ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy); ctx.stroke();
+            }
+            ctx.restore();
+
+            // Décor et signaux de danger propres à chaque carte.
+            ctx.save();
+            this._roundRectPath(ctx, x, y, w, h, cornerRadius);
+            ctx.clip();
+            if (this.mapStyle === 'reactor') {
+                const phase = this.time % 4.2;
+                const cx = x + w / 2, cy = y + h / 2;
+                const radius = phase < 1.25 ? 22 + phase * 9 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.25) / 1.1));
+                ctx.globalAlpha = phase < 1.25 ? 0.25 + phase * 0.34 : phase < 2.35 ? 0.9 : 0.2;
+                ctx.strokeStyle = phase < 1.25 ? '#fb923c' : '#ff2a85';
+                ctx.lineWidth = phase < 1.25 ? 2 + phase : 4;
+                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 20;
+                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+                ctx.globalAlpha = 0.4 + 0.3 * Math.sin(this.time * 5);
+                ctx.fillStyle = '#fb923c';
+                ctx.beginPath(); ctx.arc(cx, cy, 9 + 4 * Math.sin(this.time * 6), 0, Math.PI * 2); ctx.fill();
+            } else if (this.mapStyle === 'crossfire') {
+                const phase = this.time % 4.0;
+                const laneY = y + h * (0.18 + 0.64 * Math.min(phase / 2.8, 1));
+                const firing = phase >= 2.8 && phase <= 3.45;
+                ctx.globalAlpha = firing ? 0.95 : phase < 2.8 ? 0.18 + phase * 0.15 : Math.max(0, 0.5 * (4.0 - phase));
+                ctx.strokeStyle = firing ? '#ff2a85' : '#fbbf24';
+                ctx.lineWidth = firing ? 9 : 2;
+                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = firing ? 28 : 8;
+                ctx.setLineDash(phase < 2.8 ? [10, 10] : []);
+                ctx.beginPath(); ctx.moveTo(x, laneY); ctx.lineTo(x + w, laneY); ctx.stroke();
+                ctx.setLineDash([]);
+            } else if (this.mapStyle === 'void') {
+                for (let i = 0; i < 2; i++) {
+                    const cx = x + w * (i ? 0.72 : 0.28), cy = y + h * (i ? 0.68 : 0.32);
+                    ctx.globalAlpha = 0.24 + 0.1 * Math.sin(this.time * 3 + i);
+                    ctx.strokeStyle = i ? '#c084fc' : '#00f2fe';
+                    ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16;
+                    for (let j = 0; j < 3; j++) {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 15 + j * 11 + 3 * Math.sin(this.time * 2 + j), this.time * (i ? -0.8 : 0.8) + j, this.time * (i ? -0.8 : 0.8) + j + Math.PI * 1.4);
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+                }
             }
             ctx.restore();
 

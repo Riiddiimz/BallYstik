@@ -15,7 +15,10 @@
 - Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
 
 ## In Progress / Next
-- Progressive migration to Next.js (App Router) + TypeScript + Tailwind when requested.
+- Branche `feature/arena-spectacle-v2` : deux armes récupérables, Canon à plasma (charge visible, obus explosifs et dégâts de zone) et Bobine Tesla (charge, foudre et arc secondaire).
+- Quatre cartes sélectionnables avec règles distinctes : Néon, Réacteur (onde radiale), Crossfire (faisceau télégraphié), Néant (puits gravitationnels).
+- Les avertissements visuels sont synchronisés avec les fenêtres de danger. Les effets d'événements aléatoires sans cause ont été retirés.
+- Vérification navigateur réelle encore nécessaire avant fusion.
 
 ## Open Issues
-- None. All physics, audio, UI stability, and determinism tests pass.
+- La syntaxe JavaScript et les comportements de base ont été testés directement. Les performances et le ressenti en navigateur restent à confirmer.
