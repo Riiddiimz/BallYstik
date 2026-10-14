@@ -129,7 +129,7 @@
                     const size = r * 3.2;
                     ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
                 } else {
-                    // Fallback temporaire pendant le chargement de blade.png.
+                    // Fallback si l'image de cette arme ne se charge pas.
                     ctx.fillStyle = '#dbeafe';
                     ctx.font = 'bold 34px sans-serif';
                     ctx.textAlign = 'center';
