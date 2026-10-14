@@ -124,20 +124,22 @@
             const left = this.x, right = this.x + this.w;
             const top = this.y, bottom = this.y + this.h;
             const corner = Math.min(this.cornerRadius, this.w / 2, this.h / 2);
+            // Le centre de la boule doit rester à l'extérieur de ce cercle réduit.
             const arcRadius = Math.max(0, corner - r);
             const minX = left + r, maxX = right - r;
             const minY = top + r, maxY = bottom - r;
             let hit = null;
             let cornerHit = false;
 
-            // Résoudre les coins avant les côtés : le clamp rectangulaire préalable
-            // empêchait la normale radiale de fonctionner dans les angles arrondis.
+            // Chaque coin ne collisionne que dans son quadrant extérieur.
+            // La collision est déclenchée quand le centre de la boule pénètre
+            // dans le cercle réduit (et non quand il s'en éloigne).
             if (arcRadius > 0) {
                 const corners = [
-                    { cx: left + corner,  cy: top + corner,    sx:  1, sy:  1 },
-                    { cx: right - corner, cy: top + corner,    sx: -1, sy:  1 },
-                    { cx: left + corner,  cy: bottom - corner, sx:  1, sy: -1 },
-                    { cx: right - corner, cy: bottom - corner, sx: -1, sy: -1 }
+                    { cx: left + corner,  cy: top + corner,    sx: -1, sy: -1 },
+                    { cx: right - corner, cy: top + corner,    sx:  1, sy: -1 },
+                    { cx: left + corner,  cy: bottom - corner, sx: -1, sy:  1 },
+                    { cx: right - corner, cy: bottom - corner, sx:  1, sy:  1 }
                 ];
 
                 for (const c of corners) {
@@ -146,30 +148,33 @@
                     if (dx * c.sx < 0 || dy * c.sy < 0) continue;
 
                     const d = Math.hypot(dx, dy);
-                    // Détecte aussi les dépassements importants dus à une vitesse élevée.
-                    const outsideBounds = ball.x < minX || ball.x > maxX || ball.y < minY || ball.y > maxY;
-                    if (d <= arcRadius && !outsideBounds) continue;
+
+                    // Dans le quadrant extérieur, la zone autorisée est À L'INTÉRIEUR
+                    // du cercle réduit. Si le centre est au-delà de l'arc, on le ramène
+                    // sur celui-ci. L'ancienne condition inversée bloquait les boules
+                    // alors qu'elles étaient encore dans la zone jouable.
+                    if (d <= arcRadius) continue;
 
                     const nx = d > 1e-8 ? dx / d : c.sx * Math.SQRT1_2;
                     const ny = d > 1e-8 ? dy / d : c.sy * Math.SQRT1_2;
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
 
-                    // La zone jouable est à l'intérieur du rayon réduit.
-                    // La boule frappe le mur lorsqu'elle s'éloigne du centre de l'arrondi.
+                    // La normale pointe vers l'extérieur de l'arène :
+                    // un produit scalaire positif signifie que la boule va dans le mur.
                     const dot = ball.vx * nx + ball.vy * ny;
                     if (dot > 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
                     }
 
-                    hit = { nx: -nx, ny: -ny, x: c.cx + nx * corner, y: c.cy + ny * corner };
+                    hit = { nx, ny, x: c.cx + nx * corner, y: c.cy + ny * corner };
                     cornerHit = true;
                     break;
                 }
             }
 
-            // Côtés droits, uniquement hors des zones d'arrondis.
+            // Côtés droits, seulement entre les points de tangence des arrondis.
             if (!cornerHit) {
                 const inVerticalStraight = ball.y >= top + corner && ball.y <= bottom - corner;
                 const inHorizontalStraight = ball.x >= left + corner && ball.x <= right - corner;
@@ -195,8 +200,9 @@
                 }
             }
 
-            // Dernière sécurité anti-fuite pour une arène qui rétrécit sous une boule.
-            if (ball.x < minX || ball.x > maxX || ball.y < minY || ball.y > maxY) {
+            // Sécurité pour les changements de taille de l'arène et les dépassements.
+            // Ne s'applique pas aux coins déjà résolus par l'arc de cercle.
+            if (!cornerHit && (ball.x < minX || ball.x > maxX || ball.y < minY || ball.y > maxY)) {
                 const oldX = ball.x, oldY = ball.y;
                 ball.x = Math.max(minX, Math.min(maxX, ball.x));
                 ball.y = Math.max(minY, Math.min(maxY, ball.y));

@@ -188,3 +188,16 @@ input[type=range]::-moz-range-thumb {
 .ability-actions button:nth-child(4){color:#67e8f9;border-color:rgba(0,242,254,.35)}
 .ability-save-note{margin:10px 0 2px;text-align:center;color:#71717a;font-size:9px}
 @media(min-width:768px){#rightSidebar{width:350px}}
+
+
+/* Le canvas et son conteneur doivent partager le même rayon que l'arène rendue (44px). */
+#frameWrapper,
+#simCanvas {
+    border-radius: 44px !important;
+}
+#frameWrapper {
+    overflow: hidden;
+}
+#simCanvas {
+    display: block;
+}
