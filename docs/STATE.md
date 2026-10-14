@@ -15,7 +15,8 @@
 - Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
 
 ## In Progress / Next
-- Progressive migration to Next.js (App Router) + TypeScript + Tailwind when requested.
+- Branche `feature/arena-spectacle-v2` : enrichissement visuel du mode Arena Brawl, événements de spectacle toutes les ~1,8 s, anneaux/éclairs/comètes et auras orbitantes des boules.
+- Vérification navigateur réelle encore nécessaire avant fusion de cette version.
 
 ## Open Issues
-- None. All physics, audio, UI stability, and determinism tests pass.
+- La syntaxe JavaScript des modules modifiés doit être contrôlée après chaque phase. Le rendu et les performances restent à confirmer dans un navigateur.
