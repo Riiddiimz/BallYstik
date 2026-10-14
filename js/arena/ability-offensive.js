@@ -813,13 +813,13 @@
     window.BallYstikWeaponImages = window.BallYstikWeaponImages || {};
     if (!window.BallYstikWeaponImages.blade) {
         const bladeImage = new Image();
-        bladeImage.src = 'assets/weapons/blade.png';
+        bladeImage.src = '/assets/weapons/blade.png?v=2';
         window.BallYstikWeaponImages.blade = bladeImage;
     }
 
     if (!window.BallYstikWeaponImages.blade2) {
         const blade2Image = new Image();
-        blade2Image.src = 'assets/weapons/blade2.png';
+        blade2Image.src = '/assets/weapons/blade2.png?v=2';
         window.BallYstikWeaponImages.blade2 = blade2Image;
     }
 
