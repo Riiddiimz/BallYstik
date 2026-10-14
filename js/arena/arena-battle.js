@@ -409,7 +409,7 @@
                         if (!ball.alive) continue;
                         const dist = Math.hypot(ball.x - cx, ball.y - cy);
                         if (Math.abs(dist - ring) < ball.radius + 11 && ball._reactorCycle !== Math.floor(arena.time / 4.2)) {
-                            ball._reactorCycle = Math.floor(arena.time / 5.5);
+                            ball._reactorCycle = Math.floor(arena.time / 4.2);
                             world.damage(ball, null, 14, 'reactor');
                             const nx = (ball.x - cx) / (dist || 1), ny = (ball.y - cy) / (dist || 1);
                             ball.vx += nx * 115; ball.vy += ny * 115;
@@ -427,7 +427,7 @@
                     for (const ball of world.balls) {
                         if (!ball.alive || Math.abs(ball.y - laneY) > ball.radius + 13) continue;
                         if (ball._crossfireCycle === Math.floor(arena.time / 4.0)) continue;
-                        ball._crossfireCycle = Math.floor(arena.time / 4.8);
+                        ball._crossfireCycle = Math.floor(arena.time / 4.0);
                         world.damage(ball, null, 11, 'crossfire');
                         ball.vy += ball.y < cy ? -135 : 135;
                         this._keepBaseSpeed(ball);
