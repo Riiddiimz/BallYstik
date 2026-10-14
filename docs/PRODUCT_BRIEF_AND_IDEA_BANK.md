@@ -439,3 +439,139 @@ Lorsqu'une autre IA reçoit ce document, elle doit :
 4. Vérifier qu'une proposition n'est pas déjà couverte par une capacité existante.
 5. Privilégier des descriptions compréhensibles pour le joueur : déclencheur, effet, durée, contre-jeu et impact sur la victoire.
 6. Ne pas considérer l'export TikTok, le multijoueur en ligne, les comptes ou les classements comme des fonctionnalités existantes.
+
+
+---
+
+# ANNEXE — OBJECTIF DE RÉTENTION, PLAISIR DU SPECTATEUR ET CONVERSION EN ABONNÉS
+
+**Statut : réflexion produit et pistes créatives uniquement. Rien dans cette annexe ne doit être considéré comme validé, développé ou à mettre en place immédiatement.** Le but est de transmettre le vrai objectif à une autre IA pour qu'elle étudie le concept, propose des ajustements et aide à identifier ce qui peut donner envie de regarder chaque combat jusqu'à la fin, puis de s'abonner.
+
+## 28. L'objectif principal du concept
+
+BallYstik ne doit pas seulement être un jeu où des boules s'entretuent. Le résultat recherché est une vidéo divertissante, compréhensible et suffisamment imprévisible pour que le spectateur ait envie de :
+- rester jusqu'à la dernière seconde pour connaître le vainqueur ;
+- s'attacher à une boule ou choisir son favori ;
+- anticiper les prochains retournements de situation ;
+- commenter son pronostic ou réagir à une élimination surprenante ;
+- regarder une autre partie et, idéalement, s'abonner pour retrouver les prochaines vidéos.
+
+L'enjeu est de rendre les affrontements **lisibles, émotionnels, surprenants et satisfaisants**, sans perdre ce qui fait leur intérêt : des boules, des armes, des capacités, une arène et des éliminations. Il ne s'agit pas d'ajouter des effets visuels gratuitement. Chaque amélioration proposée doit servir une intention : créer de l'anticipation, clarifier le danger, renforcer l'impact d'un coup, rendre une boule mémorable ou donner envie de voir la suite.
+
+## 29. Format de diffusion envisagé
+
+Le format de référence évoqué est une **vidéo d'environ 1 minute (60 secondes)**, destinée notamment à TikTok et aux plateformes de vidéos courtes. Le jeu génère le combat ; certaines idées concernent le montage et la narration ajoutés à la vidéo finale, et non le gameplay lui-même.
+
+La distinction est importante :
+- **Dans le jeu :** règles, capacités, animations, lisibilité du combat, personnalité visuelle des boules, rythme des éliminations et fin de partie.
+- **Au montage de la vidéo :** accroche textuelle, invitation à deviner le gagnant, rappels d'abonnement, incrustations de personnages/réactions sur les côtés et rythme de la narration.
+- **Dans la stratégie de contenu :** séries récurrentes, cohérence d'un épisode à l'autre, raisons de commenter et de revenir.
+
+Une suggestion future devra indiquer clairement à laquelle de ces trois couches elle s'applique.
+
+## 30. Pistes créatives déjà évoquées — À NE PAS IMPLÉMENTER POUR LE MOMENT
+
+Les pistes suivantes sont des exemples à explorer, comparer ou améliorer. Elles ne constituent **ni une demande de développement immédiat ni une décision finale**.
+
+### A. Hook d'ouverture : faire deviner la boule gagnante
+
+Au début de la vidéo, afficher une accroche qui invite le spectateur à **deviner quelle boule va gagner**. Le spectateur choisit mentalement un favori et a alors une raison personnelle de rester jusqu'à la conclusion.
+
+Variantes à étudier :
+- afficher rapidement les boules en compétition avec un numéro, un nom ou un signe distinctif ;
+- demander « Qui va gagner ? » ou « Choisis ton champion avant le premier KO » ;
+- conserver une présentation très courte pour ne pas retarder le début de l'action ;
+- faire en sorte que le gagnant reste inconnu, sans révéler trop tôt l'issue du combat.
+
+Le but n'est pas seulement de poser une question, mais de créer un **engagement anticipé** : le spectateur veut vérifier si son pronostic était bon.
+
+### B. Call to action d'abonnement au montage
+
+Ajouter au montage un message invitant à s'abonner. Le moment, la durée, la formulation et la fréquence restent à étudier. L'appel à l'abonnement doit s'intégrer au divertissement, sans interrompre un combat particulièrement intense ni donner l'impression d'une publicité qui casse le rythme.
+
+Pistes à comparer :
+- un rappel bref pendant un moment de transition ;
+- une invitation liée au prochain combat ou à une future confrontation ;
+- une formule qui promet une raison concrète de revenir, plutôt qu'un simple « abonne-toi » générique ;
+- un rappel final si le résultat du combat vient de donner envie de voir la prochaine partie.
+
+Il faudra éviter de surcharger la vidéo d'appels à l'action : la priorité reste de divertir.
+
+### C. Représenter les boules comme des personnages pendant le montage
+
+Pour la vidéo d'environ 60 secondes, envisager d'ajouter au montage des représentations de boules sous forme de petits personnages apparaissant sur les côtés de l'écran. Ces personnages pourraient réagir à ce qui arrive dans le combat, comme si chaque boule avait une personnalité.
+
+Exemples de réactions possibles :
+- **Gelé :** expression choquée, figée ou tremblante.
+- **Brûlé :** expression de douleur, de panique ou de surprise.
+- **Avant un tir laser :** réaction d'alerte ou de peur au moment où la boule comprend qu'elle est ciblée.
+- **Avant un empalement par un pic :** regard paniqué, incrédulité ou réaction comique juste avant l'impact.
+- **Après une élimination :** expression de défaite, yeux fermés, personnage assommé ou disparition théâtrale.
+- **Lors d'un avantage ou d'un retournement :** confiance excessive, joie, étonnement ou célébration.
+
+Ces réactions sont des exemples, pas une liste imposée. L'IA peut proposer une grammaire d'expressions plus cohérente et plus facile à comprendre rapidement.
+
+Points à explorer :
+- comment donner une personnalité reconnaissable à chaque boule sans cacher le combat ;
+- si les personnages doivent apparaître uniquement lors des moments importants ou rester visibles ;
+- comment synchroniser leur expression avec l'événement exact (juste avant l'impact, au moment du coup, après l'élimination) ;
+- comment conserver une lecture claire sur un écran vertical de téléphone ;
+- comment rendre les réactions drôles ou attachantes sans rendre la vidéo confuse ou trop chargée ;
+- comment faire en sorte que les personnages renforcent l'attachement aux combattants et l'envie de connaître le gagnant.
+
+**Cette piste concerne le montage vidéo envisagé. Elle ne demande pas de transformer maintenant les boules du jeu en personnages, ni de modifier le gameplay pour y ajouter des visages.**
+
+### D. Créer une progression émotionnelle sur les 60 secondes
+
+Étudier comment un combat pourrait produire une petite histoire compréhensible, même sans dialogue :
+1. Présentation rapide du défi et invitation à choisir un favori.
+2. Début de combat immédiatement lisible, sans longue introduction.
+3. Premières surprises qui permettent au spectateur de comprendre les capacités.
+4. Montée de la tension, danger identifiable et changements d'avantage.
+5. Moment fort ou retournement de situation.
+6. Duel final et résultat satisfaisant.
+7. Message d'abonnement ou invitation à revenir, placé sans casser la conclusion.
+
+Cette séquence est un cadre de réflexion, pas un montage imposé. Une IA doit proposer plusieurs rythmes possibles et identifier ce qui risque de faire décrocher le spectateur.
+
+## 31. Questions auxquelles l'autre IA doit réfléchir
+
+L'objectif n'est pas de recevoir une simple liste de nouvelles armes ou d'effets. Il faut analyser le concept sous l'angle du comportement du spectateur et proposer des améliorations concrètes à évaluer.
+
+1. **Rétention :** qu'est-ce qui peut pousser quelqu'un à rester jusqu'au gagnant ? Quels moments donnent envie de quitter la vidéo, et comment les réduire ?
+2. **Compréhension :** un nouveau spectateur comprend-il rapidement qui est en danger, quelles capacités sont utilisées et pourquoi une boule prend l'avantage ?
+3. **Anticipation :** comment créer un suspense équitable, sans cacher artificiellement l'action ni rendre le résultat prévisible ?
+4. **Attachement :** comment faire reconnaître, choisir et mémoriser une boule sans compliquer l'image ?
+5. **Satisfaction :** comment rendre les coups, les éliminations, les esquives, les retournements et la victoire plus gratifiants ?
+6. **Humour et personnalité :** quelles réactions visuelles peuvent rendre les combats drôles, surprenants ou mémorables sans ralentir l'action ?
+7. **Abonnement :** quelle raison claire donner au spectateur de vouloir voir la prochaine vidéo ? Comment intégrer l'appel à l'action naturellement ?
+8. **Répétabilité :** comment faire en sorte que deux vidéos ne donnent pas la sensation de revoir exactement la même chose, même avec les mêmes règles de base ?
+9. **Équilibre :** comment préserver le sentiment que le vainqueur a gagné grâce à la simulation et à ses décisions/réactions, plutôt qu'à un scénario truqué pour provoquer une réaction ?
+10. **Priorisation :** quelles pistes peuvent être testées au montage sans toucher au jeu, lesquelles nécessiteraient un changement du gameplay, et lesquelles sont trop coûteuses ou trop risquées pour leur bénéfice potentiel ?
+
+## 32. Méthode de recommandation attendue
+
+Pour chaque proposition, l'autre IA devrait fournir :
+- **L'idée :** description simple, concrète et compréhensible.
+- **Le besoin spectateur :** curiosité, suspense, surprise, humour, attachement, satisfaction ou envie de revenir.
+- **L'effet attendu :** ce que la personne pourrait avoir envie de faire ou de ressentir, sans prétendre que le résultat est garanti.
+- **Le moment :** début, milieu, moment de danger, élimination, finale ou fin de vidéo.
+- **La couche concernée :** gameplay, montage ou stratégie de contenu.
+- **Le coût/complexité estimés :** faible, moyen ou élevé.
+- **Le risque :** surcharge visuelle, interruption du combat, répétition, confusion, effet injuste ou appel à l'action trop insistant.
+- **Le test :** comment comparer deux variantes et quels indicateurs observer (rétention, durée moyenne regardée, taux de complétion, relectures, commentaires, abonnements par vue).
+
+L'IA doit distinguer ce qui relève d'une hypothèse à tester d'un fait établi. Elle ne doit pas garantir qu'une astuce psychologique augmentera la rétention ou les abonnements.
+
+## 33. Instructions à transmettre à l'autre IA
+
+> Tu es analyste produit, spécialiste du comportement du spectateur et partenaire de réflexion créative. Ton objectif est d'aider BallYstik à devenir un format de vidéos de combat de boules que les gens prennent plaisir à regarder jusqu'à la fin, puis ont envie de retrouver et de suivre.
+>
+> Étudie le jeu et son inventaire existant avant de proposer des changements. Cherche d'abord les ajustements qui améliorent la lisibilité, le rythme, l'anticipation, la surprise, l'humour, l'attachement aux boules et la satisfaction du résultat. Ne te limite pas à inventer des armes.
+>
+> Les pistes déjà évoquées — faire deviner le gagnant dès le début, ajouter un appel à l'abonnement au montage, représenter les boules comme des personnages sur les côtés avec des expressions synchronisées aux événements, et structurer une vidéo d'environ 60 secondes comme une progression émotionnelle — sont des idées à explorer, pas des fonctionnalités à développer maintenant.
+>
+> Pour chaque proposition, indique si elle concerne le gameplay, le montage ou la stratégie de contenu ; explique le bénéfice spectateur recherché, les risques, le coût estimé et un moyen de la tester. Classe les recommandations par impact potentiel, confiance et facilité de test. Évite les idées qui ne font qu'ajouter des effets visuels sans améliorer l'expérience. Ne suppose pas qu'une hypothèse psychologique fonctionne sans mesure.
+>
+> **Contrainte essentielle : pour le moment, tu dois analyser, challenger et proposer des concepts. Tu ne dois pas implémenter, coder ni présenter ces pistes comme des décisions validées.** Le but est de construire une stratégie de contenu divertissante et durable, pas de lancer immédiatement tous les changements.
+
