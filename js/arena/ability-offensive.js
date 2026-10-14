@@ -604,4 +604,93 @@
         }
     };
 
+
+    // ═══════ CANON À PLASMA ═══════
+    window.AbilityBehaviors.plasmaCannon = {
+        attach(ball) {
+            ball.weapon = 'plasmaCannon';
+            return { data: null };
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data || (slot.data = { cooldown: 0.65, charge: 0, targetId: null });
+            d.cooldown -= dt;
+            if (d.charge > 0) d.charge = Math.max(0, d.charge - dt);
+            const target = findNearestEnemy(ball, world, 560);
+            d.targetId = target ? target.id : null;
+            if (!target || d.cooldown > 0) return;
+            const dx = target.x - ball.x, dy = target.y - ball.y;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            d.charge = 0.32;
+            world.projectiles.push({
+                x: ball.x + ux * (ball.radius + 8),
+                y: ball.y + uy * (ball.radius + 8),
+                vx: ux * 390, vy: uy * 390,
+                radius: 7, life: 2.2, bounces: 0,
+                ownerId: ball.id, color: '#fb923c', damage: 17,
+                splashRadius: 58, type: 'plasma', trail: [],
+                render: renderPlasmaShell
+            });
+            d.cooldown = 1.55;
+            world.spawnParticle(ball.x + ux * (ball.radius + 9), ball.y + uy * (ball.radius + 9), {
+                color: '#fed7aa', count: 12, speed: 210, life: 0.35, spread: 0.6, angle: Math.atan2(uy, ux), size: 2.8
+            });
+            world.playSound('shoot', { pitch: 0.72 });
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const target = world.balls.find(b => b.id === d.targetId && b.alive);
+            const angle = target ? Math.atan2(target.y - ball.y, target.x - ball.x) : Math.atan2(ball.vy, ball.vx);
+            const pulse = d.charge > 0 ? 1 : 0.3 + 0.15 * Math.sin((world.time || 0) * 5 + ball.id);
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(angle);
+            ctx.shadowColor = '#fb923c';
+            ctx.shadowBlur = 12 + pulse * 14;
+            ctx.fillStyle = '#292524';
+            ctx.strokeStyle = '#fed7aa';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(0, 0, ball.radius * 0.56, 0, Math.PI * 2);
+            ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#fb923c';
+            ctx.fillRect(ball.radius * 0.12, -4, ball.radius + 11, 8);
+            ctx.fillStyle = '#fff7ed';
+            ctx.fillRect(ball.radius + 5, -2, 8, 4);
+            if (d.charge > 0) {
+                ctx.globalAlpha = 0.75;
+                ctx.strokeStyle = '#fdba74';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(ball.radius + 18, 0, 7 + (0.32 - d.charge) * 24, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+            if (target && d.charge > 0) {
+                ctx.save();
+                ctx.globalAlpha = Math.min(0.65, d.charge * 2);
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#fb923c';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(target.x, target.y); ctx.stroke();
+                ctx.restore();
+            }
+        },
+        detach(ball) {
+            if (ball.weapon === 'plasmaCannon') delete ball.weapon;
+        }
+    };
+
+    function renderPlasmaShell(ctx, p) {
+        ctx.save();
+        ctx.shadowColor = '#fb923c';
+        ctx.shadowBlur = 20;
+        ctx.fillStyle = '#fb923c';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius + 2, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff7ed';
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.radius * 0.52, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+    }
+
 })();
