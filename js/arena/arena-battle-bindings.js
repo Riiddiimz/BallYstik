@@ -54,6 +54,8 @@
                 });
                 const mode = document.getElementById('abMatchMode');
                 if (mode && saved.matchMode) mode.value = saved.matchMode;
+                const arenaMap = document.getElementById('abArenaMap');
+                if (arenaMap && saved.arenaMap) arenaMap.value = saved.arenaMap;
                 const shrink = document.getElementById('abShrinkToggle');
                 if (shrink && saved.shrinkEnabled != null) shrink.checked = !!saved.shrinkEnabled;
             } catch (_) {}
@@ -73,6 +75,8 @@
             const mode = document.getElementById('abMatchMode');
             const shrink = document.getElementById('abShrinkToggle');
             options.matchMode = mode ? mode.value : 'lastStanding';
+            const arenaMap = document.getElementById('abArenaMap');
+            options.arenaMap = arenaMap ? arenaMap.value : 'neon';
             options.shrinkEnabled = !!(shrink && shrink.checked);
             return options;
         },
@@ -110,7 +114,7 @@
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
-            ['abMatchMode', 'abShrinkToggle'].forEach(id => {
+            ['abMatchMode', 'abShrinkToggle', 'abArenaMap'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('change', () => {
                     this.saveOptions();
