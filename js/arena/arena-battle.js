@@ -34,6 +34,7 @@
             this.matchTime = 60;
             this.elapsedTime = 0;
             this.finished = false;
+            this.finishedByTimer = false;
             this.hud = null;
             this.pickupSystem = null;
             this.projectiles = [];
@@ -68,6 +69,7 @@
             this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
+            this.finishedByTimer = false;
             this.winner = null;
             this.projectiles.length = 0;
             this.particles.length = 0;
@@ -392,7 +394,7 @@
 
         update(dt, world) {
             // Une manche chronométrée est figée dès que le gagnant est déterminé.
-            if (this.finished && this.options.matchMode === 'timed') return;
+            if (this.finished && (this.options.matchMode === 'timed' || this.finishedByTimer)) return;
 
             if (this.finished && this.options.matchMode === 'lastStanding') {
                 // Ralenti dramatique après fin
@@ -628,8 +630,9 @@
 
             // Fin d'une manche chronométrée : le survivant avec le plus de PV restants gagne,
             // même si plusieurs boules sont encore en vie à zéro sur le chronomètre.
-            if (this.options.matchMode === 'timed' && !this.finished && this.elapsedTime >= this.matchTime) {
+            if (!this.finished && this.elapsedTime >= this.matchTime) {
                 this.finished = true;
+                this.finishedByTimer = true;
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
                 const candidates = alive.length ? alive : world.balls.filter(b => !b.isClone);
 
