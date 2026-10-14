@@ -15,8 +15,10 @@
 - Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
 
 ## In Progress / Next
-- Branche `feature/arena-spectacle-v2` : enrichissement visuel du mode Arena Brawl, événements de spectacle toutes les ~1,8 s, anneaux/éclairs/comètes et auras orbitantes des boules.
-- Vérification navigateur réelle encore nécessaire avant fusion de cette version.
+- Branche `feature/arena-spectacle-v2` : nouvelle arme Canon à plasma (tourelle visible, ciblage, charge, obus explosifs et dégâts de zone).
+- Quatre cartes sélectionnables avec règles distinctes : Néon, Réacteur (onde radiale), Crossfire (faisceau télégraphié), Néant (puits gravitationnels).
+- Les avertissements visuels sont synchronisés avec les fenêtres de danger. Les effets d'événements aléatoires sans cause ont été retirés.
+- Vérification navigateur réelle encore nécessaire avant fusion.
 
 ## Open Issues
-- La syntaxe JavaScript des modules modifiés doit être contrôlée après chaque phase. Le rendu et les performances restent à confirmer dans un navigateur.
+- La syntaxe JavaScript et les comportements de base ont été testés directement. Les performances et le ressenti en navigateur restent à confirmer.
