@@ -148,17 +148,22 @@
                     if (dx * c.sx < 0 || dy * c.sy < 0) continue;
 
                     const d = Math.hypot(dx, dy);
-                    if (d >= arcRadius) continue;
+
+                    // Dans le quadrant extérieur, la zone autorisée est À L'INTÉRIEUR
+                    // du cercle réduit. Si le centre est au-delà de l'arc, on le ramène
+                    // sur celui-ci. L'ancienne condition inversée bloquait les boules
+                    // alors qu'elles étaient encore dans la zone jouable.
+                    if (d <= arcRadius) continue;
 
                     const nx = d > 1e-8 ? dx / d : c.sx * Math.SQRT1_2;
                     const ny = d > 1e-8 ? dy / d : c.sy * Math.SQRT1_2;
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
 
-                    // La normale pointe du centre du cercle vers la boule.
-                    // Un produit scalaire négatif signifie qu'elle entre dans le mur.
+                    // La normale pointe vers l'extérieur de l'arène :
+                    // un produit scalaire positif signifie que la boule va dans le mur.
                     const dot = ball.vx * nx + ball.vy * ny;
-                    if (dot < 0) {
+                    if (dot > 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
                     }
