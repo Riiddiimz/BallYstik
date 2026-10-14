@@ -45,6 +45,7 @@
             this.winner = null;
             this._nextBallId = 1;
             this._killFeedHooked = false;
+            this.spectacle = window.SpectacleDirector ? new window.SpectacleDirector() : null;
         }
 
         applyOptions(opts) {
@@ -76,6 +77,7 @@
             this.shockwaves.length = 0;
             this.floatingPlus.length = 0;
             this._nextBallId = 1;
+            if (this.spectacle) this.spectacle.reset();
 
             // Arène
             if (!world.arena || world.arena.canvas !== world.canvas) {
@@ -407,8 +409,9 @@
             world.elapsedTime = this.elapsedTime;
             world.matchTime = this.options.matchTime;
 
-            // Arena
+            // Arena + directeur d'événements visuels fréquents.
             world.arena.update(dt);
+            if (this.spectacle) this.spectacle.update(dt, world);
 
             // Pickups
             this.pickupSystem.update(dt, world);
@@ -733,6 +736,9 @@
 
             // HUD
             this.hud.render(ctx, world);
+
+            // Événements visuels au-dessus du combat, sans toucher à la physique.
+            if (this.spectacle) this.spectacle.render(ctx, world);
 
             // Résultat de manche : boule gagnante agrandie et label lumineux.
             if (this.finished) this._renderWinner(ctx, world);
