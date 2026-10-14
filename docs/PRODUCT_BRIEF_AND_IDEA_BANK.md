@@ -539,7 +539,30 @@ Questions à étudier :
 
 **Statut : idée spéculative uniquement.** Les ultimes, leurs conditions de déclenchement et le changement de couleur du terrain ne sont pas présentés comme des fonctions existantes, validées ou à implémenter maintenant. L'autre IA doit analyser cette piste, proposer des variantes et en évaluer l'intérêt pour le gameplay comme pour le spectacle.
 
-### E. Créer une progression émotionnelle sur les 60 secondes
+### E. Dash neutralisant : foncer sur un adversaire et lui faire perdre ses pouvoirs
+
+Explorer une refonte du Dash pour en faire une capacité offensive de neutralisation, plutôt qu'une simple accélération ou une attaque qui inflige des dégâts.
+
+Fonctionnement envisagé :
+- **Ciblage :** la boule qui possède le Dash fonce rapidement vers la boule adverse la plus proche, dans une portée à définir.
+- **Obstacle :** si un obstacle bloque la trajectoire, le Dash échoue contre cet obstacle et c'est la boule qui charge qui en subit les conséquences. Elle ne traverse pas les obstacles et ne les contourne pas automatiquement.
+- **Impact réussi :** la boule touchée est étourdie pendant **3 secondes** et perd les compétences/pouvoirs qu'elle avait récupérés.
+- **Après l'impact :** lorsque la victime reprend le combat, elle doit ramasser de nouveaux pouvoirs pour en obtenir à nouveau. Les pouvoirs retirés ne reviennent donc pas simplement après la fin du stun.
+- **Dégâts :** l'idée principale est que le Dash ne fasse pas de dégâts directs ; son effet fort est de neutraliser l'adversaire et de lui faire perdre ses pouvoirs.
+
+Points à clarifier et équilibrer :
+- Quels pouvoirs sont retirés exactement, notamment les armes portées ou effets déjà actifs ?
+- Les orbes correspondant aux pouvoirs perdus doivent-elles réapparaître au sol, être détruites ou retourner dans le système de spawn ?
+- Comment rendre la perte des pouvoirs immédiatement compréhensible à l'écran, par exemple avec une onde de choc, les icônes qui s'éteignent et les effets visuels de la victime qui disparaissent ?
+- Quelle portée, quel délai de recharge et quelle règle de ciblage empêcheraient le Dash d'être trop facile à déclencher ?
+- Le stun de 3 secondes est-il adapté, sachant que la victime perd déjà tous les pouvoirs qu'elle avait ramassés ?
+- Comment gérer une collision avec un obstacle pour que l'échec soit spectaculaire et compréhensible, sans rendre le pouvoir inutilisable dans certaines arènes ?
+
+**Risque majeur à tester :** combiner la perte définitive des pouvoirs ramassés et 3 secondes de stun peut être extrêmement punitif. Le concept doit être évalué en partie réelle et ajusté pour qu'il crée un retournement spectaculaire sans rendre la victime presque condamnée à perdre.
+
+**Statut : piste spéculative à analyser, pas une demande d'implémentation immédiate.** Cette version précise le concept de Dash proposé pour la refonte ; elle ne décrit pas le comportement actuel du jeu.
+
+### F. Créer une progression émotionnelle sur les 60 secondes
 
 Étudier comment un combat pourrait produire une petite histoire compréhensible, même sans dialogue :
 1. Présentation rapide du défi et invitation à choisir un favori.
