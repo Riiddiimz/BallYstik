@@ -56,6 +56,14 @@
             duration: 5, weight: 3, maxStacks: 1
         },
 
+        plasmaCannon: {
+            id: 'plasmaCannon', name: 'Canon à plasma',
+            desc: 'Monte un canon sur la boule. Charge une cible puis tire un obus qui explose et blesse les ennemis proches.',
+            category: 'offensive', rarity: 'epic',
+            color: '#fb923c', glow: '#fed7aa', icon: '✹',
+            duration: 12, weight: 5, maxStacks: 1
+        },
+
         // ──────────── DEFENSIVE ────────────
         shield: {
             id: 'shield', name: 'Bouclier',
