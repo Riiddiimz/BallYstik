@@ -23,6 +23,7 @@
 
             this.padding      = options.padding      ?? 16;
             this.cornerRadius = options.cornerRadius ?? 44;
+            this.mapStyle = options.mapStyle || 'neon';
 
             this.time        = 0;
             this.elapsed     = 0;
@@ -262,6 +263,48 @@
             }
             for (let gy = y; gy < y + h; gy += grid) {
                 ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy); ctx.stroke();
+            }
+            ctx.restore();
+
+            // Décor et signaux de danger propres à chaque carte.
+            ctx.save();
+            this._roundRectPath(ctx, x, y, w, h, cornerRadius);
+            ctx.clip();
+            if (this.mapStyle === 'reactor') {
+                const phase = this.time % 5.5;
+                const cx = x + w / 2, cy = y + h / 2;
+                const radius = phase < 1.7 ? 22 + phase * 8 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.7) / 1.2));
+                ctx.globalAlpha = phase < 1.7 ? 0.25 + phase * 0.28 : phase < 2.9 ? 0.9 : 0.2;
+                ctx.strokeStyle = phase < 1.7 ? '#fb923c' : '#ff2a85';
+                ctx.lineWidth = phase < 1.7 ? 2 + phase : 4;
+                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 20;
+                ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+                ctx.globalAlpha = 0.4 + 0.3 * Math.sin(this.time * 5);
+                ctx.fillStyle = '#fb923c';
+                ctx.beginPath(); ctx.arc(cx, cy, 9 + 4 * Math.sin(this.time * 6), 0, Math.PI * 2); ctx.fill();
+            } else if (this.mapStyle === 'crossfire') {
+                const phase = this.time % 4.8;
+                const laneY = y + h * (0.2 + 0.6 * ((phase / 4.8) % 1));
+                ctx.globalAlpha = phase < 3.6 ? 0.18 + phase * 0.12 : 0.95;
+                ctx.strokeStyle = phase < 3.6 ? '#fbbf24' : '#ff2a85';
+                ctx.lineWidth = phase < 3.6 ? 2 : 9;
+                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = phase < 3.6 ? 8 : 28;
+                ctx.setLineDash(phase < 3.6 ? [10, 10] : []);
+                ctx.beginPath(); ctx.moveTo(x, laneY); ctx.lineTo(x + w, laneY); ctx.stroke();
+                ctx.setLineDash([]);
+            } else if (this.mapStyle === 'void') {
+                for (let i = 0; i < 2; i++) {
+                    const cx = x + w * (i ? 0.72 : 0.28), cy = y + h * (i ? 0.68 : 0.32);
+                    ctx.globalAlpha = 0.24 + 0.1 * Math.sin(this.time * 3 + i);
+                    ctx.strokeStyle = i ? '#c084fc' : '#00f2fe';
+                    ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16;
+                    for (let j = 0; j < 3; j++) {
+                        ctx.beginPath();
+                        ctx.arc(cx, cy, 15 + j * 11 + 3 * Math.sin(this.time * 2 + j), this.time * (i ? -0.8 : 0.8) + j, this.time * (i ? -0.8 : 0.8) + j + Math.PI * 1.4);
+                        ctx.stroke();
+                    }
+                    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
+                }
             }
             ctx.restore();
 
