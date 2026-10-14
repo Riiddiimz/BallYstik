@@ -64,6 +64,14 @@
             duration: 12, weight: 5, maxStacks: 1
         },
 
+        teslaCoil: {
+            id: 'teslaCoil', name: 'Bobine Tesla',
+            desc: 'Une bobine montée sur la boule charge puis foudroie une cible, avec un arc secondaire vers un ennemi voisin.',
+            category: 'offensive', rarity: 'rare',
+            color: '#67e8f9', glow: '#cffafe', icon: 'ϟ',
+            duration: 12, weight: 4, maxStacks: 1
+        },
+
         // ──────────── DEFENSIVE ────────────
         shield: {
             id: 'shield', name: 'Bouclier',
