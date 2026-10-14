@@ -4,7 +4,7 @@
 >
 > **Règle de lecture :** les éléments décrits comme connus proviennent des descriptions échangées autour du projet. Les hypothèses ne sont pas des fonctionnalités confirmées. Les informations manquantes sont indiquées explicitement.
 >
-> **Dernière mise à jour :** 2026-10-14
+> **Dernière mise à jour :** 2026-10-14 — inventaire détaillé des armes, capacités, arènes et réglages ajouté
 
 ## 1. Résumé exécutif
 
@@ -257,3 +257,185 @@ Principe éditorial : même sans connaître toutes les règles, le spectateur de
 ## Consigne pour les futures IA
 
 Tu es analyste produit et partenaire de brainstorming pour BallYstik. Ton rôle est de comprendre le jeu à partir des informations de ce document et de proposer des concepts, mécaniques, modes, contenus et améliorations. Ne fournis pas de code, d'architecture technique, de tutoriel ni de plan de développement. Ne présente pas les idées comme des fonctions déjà existantes. Sépare les faits, les hypothèses et les informations manquantes. Ne demande pas de fichiers, captures, vidéos, code ou dépôt GitHub : pose uniquement des questions auxquelles le créateur peut répondre en texte. L'export vidéo TikTok est une idée future et n'est pas développé ; ne le détaille pas et ne propose pas de plan technique pour le construire.
+
+
+---
+
+# ANNEXE DE RÉFÉRENCE DÉTAILLÉE — FONCTIONNALITÉS ACTUELLES
+
+> Cette annexe est la référence détaillée de l'état du jeu dans le dépôt `main` au 14 octobre 2026. Elle complète et précise les tableaux plus généraux précédents. Les capacités sont celles déclarées dans le registre du jeu ; leur présence dans le code ne garantit pas que chaque effet soit parfaitement équilibré ou exempt de bug en partie. Les idées listées dans la banque d'idées restent distinctes des fonctionnalités existantes.
+
+## 18. Le jeu en pratique
+
+BallYstik est un jeu web de combat de boules en arène, avec un mode intitulé **Arena Brawl / Battle Royale**. Les boules évoluent dans un terrain fermé, se déplacent avec une physique propre, rebondissent contre les limites et les obstacles, subissent des dégâts et peuvent être éliminées. Des capacités peuvent modifier leur attaque, leur défense, leur déplacement ou leur interaction avec les autres boules. Des armes et des capacités apparaissent sous forme de pickups à récupérer.
+
+Le jeu est configurable depuis deux panneaux latéraux :
+- **Panneau gauche :** paramètres du combat, de l'arène, de la victoire et de la seed.
+- **Panneau droit :** inventaire des armes et capacités, activation/désactivation, réglages individuels et apparition manuelle d'un pickup.
+
+La partie peut être rejouée à partir d'une seed afin de reproduire les positions de départ et les apparitions aléatoires dans des conditions identiques.
+
+## 19. Modes de victoire et paramètres de combat
+
+Le code du mode Arena Brawl prévoit trois modes de victoire :
+- **Dernier survivant (`lastStanding`) :** la victoire revient à la dernière boule encore en vie.
+- **Chronométré (`timed`) :** le combat se termine à la fin du temps imparti et doit déterminer un gagnant.
+- **Kills (`kills`) :** mode de victoire référencé dans les options du jeu ; les règles exactes de comptage et de départage sont à confirmer.
+
+Autres réglages visibles :
+- **Durée du combat / chronomètre.**
+- **Réduction de l'arène :** activation ou désactivation, moment du début, vitesse et réduction maximale. Les valeurs initiales du code sont un début à 30 secondes, une vitesse de 6 px/s et une réduction maximale de 16 %, réglables dans l'interface.
+- **Carte / style d'arène :** Néon, Réacteur, Crossfire ou Néant.
+- **Obstacles centraux :** nombre réglable de 0 à 3.
+- **Seed :** génération, affichage, copie et application d'une seed pour reproduire une configuration.
+- **Réglages de capacités :** presets prédéfinis, réglages globaux et individuels, sauvegarde locale automatique.
+
+Le critère précis utilisé pour départager plusieurs boules encore vivantes à la fin du temps doit être vérifié en jeu et expliqué clairement au joueur. Le code affiche une présentation de victoire avec « WINNER » et l'identifiant de la boule gagnante.
+
+## 20. Les quatre styles d'arène
+
+### Néon — arène classique
+Le terrain de référence, avec l'apparence néon, des rebonds sur les bords et des obstacles circulaires éventuels. C'est le style le plus neutre.
+
+### Réacteur — onde d'énergie périodique
+L'arène ajoute un événement d'énergie qui se déclenche périodiquement. L'onde inflige des dégâts et repousse les boules touchées. Il faut surveiller le timing de l'événement, et pas seulement les adversaires.
+
+### Crossfire — ligne de tir télégraphiée
+Une ligne dangereuse traverse l'arène. Le jeu annonce visuellement le danger avant son déclenchement afin de donner une possibilité de l'éviter. Les boules prises dans la ligne subissent des dégâts. Les obstacles sont disposés pour créer des abris partiels.
+
+### Néant — puits gravitationnels
+Le style met en scène des zones de gravité qui attirent les boules et perturbent leurs trajectoires. Il faut composer avec la force exercée par l'arène en plus des collisions et des attaques.
+
+**Rétrécissement commun :** lorsqu'il est activé, le terrain avertit visuellement de la contraction, puis la zone jouable diminue par cycles. Cela pousse les boules à se rapprocher et augmente la pression en fin de combat.
+
+## 21. Inventaire complet des capacités et armes déclarées
+
+Le registre contient **17 entrées** : 7 offensives classiques, 2 entrées offensives de type arme à distance/technologique, 2 armes portées, 4 défensives et 4 utilitaires. Les armes portées sont regroupées séparément dans le panneau de réglages. Les durées ci-dessous sont les durées de base déclarées dans le registre ; elles peuvent être modifiées par les paramètres. Une durée négative correspond à une présence sans expiration programmée dans le registre.
+
+### 21.1 Offensives
+
+| Capacité | Rareté / durée de base | Effet décrit dans le jeu |
+|---|---|---|
+| **Picosphère** | Commune / 8 s | Quatre piques tournent autour de la boule et infligent des dégâts au contact. Elles créent une zone offensive mobile tout autour du porteur. |
+| **Flèche** | Commune / 10 s | Tire automatiquement un projectile en direction de l'ennemi le plus proche. Le projectile peut rebondir une fois. Le tir est visuellement annoncé avant le départ. |
+| **Mine** | Commune / 10 s | Dépose périodiquement des mines derrière la boule. Après armement, une mine détecte un adversaire proche, explose dans une zone et inflige des dégâts avec recul. Le système prévoit jusqu'à trois mines simultanées par défaut. |
+| **Laser** | Rare / 6 s | Après une charge, émet un rayon continu qui suit l'ennemi. Le réglage prévoit notamment les dégâts par seconde, la charge, la durée de tir, la vitesse de suivi et un éventuel effet additionnel. |
+| **Éclair en chaîne** | Rare / 10 s | Foudroie automatiquement plusieurs adversaires proches. Les réglages prévoient le nombre de cibles, les dégâts initiaux, la diminution des dégâts à chaque saut, la portée et un éventuel étourdissement. |
+| **Traînée de feu** | Commune / 10 s | Laisse des zones enflammées derrière la boule. Les zones persistent un certain temps et infligent des dégâts. Leur fréquence, taille, durée et dissipation sont paramétrables. |
+| **Scintille (clone)** | Épique / 5 s | Crée un clone temporaire qui combat aux côtés de la boule d'origine. Les options prévues règlent sa durée de vie, sa proportion de points de vie, son opacité, l'héritage éventuel des capacités et une éventuelle explosion à sa mort. |
+| **Canon à plasma** | Épique / 12 s | Monte un canon sur la boule. Il cible un adversaire, charge/tire un obus qui inflige des dégâts directs et explose en zone, avec des dégâts aux ennemis proches. Les paramètres couvrent cadence, vitesse de l'obus, dégâts, rayon d'explosion et portée de ciblage. |
+| **Bobine Tesla** | Rare / 12 s | Monte une bobine sur la boule. Après charge, elle foudroie une cible et peut transmettre un arc électrique secondaire à un adversaire voisin. Les paramètres règlent intervalle, charge, portée et dégâts des deux impacts. |
+
+### 21.2 Armes portées
+
+Ces armes sont des objets physiques ramassables et non de simples effets temporaires d'orbe. Leur icône/image est visible au sol, puis l'arme est représentée sur la boule qui la porte.
+
+| Arme | Effet déclaré | Paramètres prévus |
+|---|---|---|
+| **Épée / Lame orbitale** (`blade`) | Une épée est tenue par la boule et frappe les adversaires qui s'approchent. Le coup doit être visuellement identifiable et provoquer des dégâts ainsi qu'un recul. L'image est fournie par `assets/weapons/blade.png`. | Dégâts par coup et délai minimal entre deux coups sur une même cible. |
+| **Lame noire** (`blade2`) | Seconde arme portée, avec sa propre image `assets/weapons/blade2.png`. Elle frappe les adversaires proches. Son comportement est enregistré séparément de l'épée classique. | Dégâts par coup et délai minimal entre deux coups sur une même cible. |
+
+**Règle visuelle des armes :** le pickup d'une arme utilise l'image de l'arme plutôt qu'un orbe générique. Lorsqu'elle apparaît, elle bénéficie d'une animation d'environ une seconde avec colonne lumineuse, anneaux, particules, ondes de choc et son. Les armes doivent rester lisibles une fois portées, sans s'aplatir ni changer de taille de manière incohérente.
+
+### 21.3 Défensives
+
+| Capacité | Rareté / durée de base | Effet décrit dans le jeu |
+|---|---|---|
+| **Bouclier** | Commune / 12 s | Absorbe jusqu'à 40 points de dégâts dans la configuration de base, puis peut commencer à se régénérer après trois secondes sans recevoir de coup. Le panneau prévoit aussi la résistance, la vitesse de régénération et un effet éventuel à la rupture. |
+| **Épines** | Commune / 10 s | Renvoie 40 % des dégâts reçus dans la configuration de base. Le panneau permet de régler le taux de renvoi, l'apparence des épines et des effets additionnels éventuels. |
+| **Régénération** | Commune / 10 s | Restaure 4 points de vie par seconde dans la configuration de base. Les options comprennent la vitesse et la durée du soin, un éventuel dépassement des PV maximum et un bonus si les PV sont bas. |
+| **Téléportation** | Rare / 12 s | Déplace périodiquement la boule par téléportation dans une direction. Le panneau prévoit la distance, le délai entre téléportations, une courte invulnérabilité éventuelle, et le choix de destination (direction du mouvement, ennemi le plus proche ou position aléatoire). |
+
+### 21.4 Utilitaires et mobilité
+
+| Capacité | Rareté / durée de base | Effet décrit dans le jeu |
+|---|---|---|
+| **Charge / Dash** | Commune / 12 s | Déclenche des accélérations périodiques, à vitesse multipliée par trois dans la configuration de base. Les dégâts de contact peuvent être augmentés. Le panneau prévoit la durée, le délai, le recul, le passage éventuel à travers les ennemis et un effet à l'arrivée. |
+| **Aimant** | Commune / 10 s | Attire les boules adverses à proximité et attire aussi les pickups. Le champ est matérialisé visuellement. La portée et la force sont réglables ; l'interface prévoit également des options pour activer séparément l'attraction des boules et des objets. |
+| **Trou noir** | Épique / usage unique | Crée une singularité qui grossit pendant sa charge, attire les adversaires dans une large zone, inflige des dégâts au contact puis se termine par une implosion/explosion. Le panneau permet de régler la portée d'effet, la force d'aspiration, la durée, les dégâts et le comportement vis-à-vis du créateur ou des projectiles. |
+| **Bombe posthume** | Rare / jusqu'à la mort du porteur | La boule explose lorsqu'elle est éliminée, infligeant des dégâts de zone et un fort recul aux adversaires proches. Une alerte visuelle rouge peut signaler la menace. Les paramètres couvrent les dégâts, le rayon, le recul et l'avertissement. |
+
+## 22. Comment les capacités sont obtenues et utilisées
+
+- **Apparition automatique :** le système de pickups essaie de faire apparaître des capacités périodiquement. L'intervalle est configurable.
+- **Ramassage :** une boule vivante qui entre en contact avec un pickup le récupère. L'objet est attiré vers la boule avant d'être accordé, avec son et effets de particules/onde de choc.
+- **Apparition manuelle :** le panneau de droite permet de choisir une arme ou une capacité et de cliquer sur **Spawn**. Chaque fiche possède également son bouton **＋ Spawn**.
+- **Durée :** les capacités temporaires expirent selon leur durée configurée. Les armes portées ont une durée de base sans expiration programmée dans le registre.
+- **Activation :** chaque capacité peut être activée ou désactivée. Le poids de tirage règle sa fréquence relative d'apparition ; un poids de zéro l'exclut du tirage aléatoire.
+- **Paramètres :** chaque capacité dispose de réglages spécifiques. Les paramètres communs comprennent le poids de tirage, un multiplicateur de durée, le nombre maximal de cumuls (« stacks »), la possibilité d'apparaître dès le début et la désactivation dans le mode.
+- **Presets :** presets intégrés nommés **Classique**, **Offensive**, **Défensive**, **Chaos**, **Duel**, **Sniper** et **Tank**. L'utilisateur peut charger un preset, enregistrer une configuration personnalisée, tout activer, tout désactiver ou réinitialiser les valeurs par défaut.
+- **Sauvegarde :** les réglages sont sauvegardés automatiquement localement dans le navigateur. Les presets personnalisés utilisent également le stockage local du navigateur.
+
+Les options exactes visibles varient selon la capacité : par exemple, dégâts, cadence, portée, vitesse de projectile, rayon d'explosion, force d'aspiration, nombre de cibles, durée, effets secondaires, direction de déplacement et options d'affichage.
+
+## 23. Effets visuels et sonores documentés
+
+Le système de pickups et les capacités emploient plusieurs éléments de feedback :
+- Colonne de lumière à l'apparition d'un pickup.
+- Anneaux qui s'étendent au sol, halo coloré et rayons.
+- Particules et ondes de choc lors de l'apparition ou du ramassage.
+- Icône de capacité dessinée au centre des orbes.
+- Contour distinctif pour les capacités épiques.
+- Image spécifique pour les armes, au lieu de l'orbe générique.
+- Sons de spawn, de ramassage, de tir, d'impact, d'explosion ou de capacités particulières.
+- Affichage de nombres de dégâts et écran de victoire.
+
+La présence de ces éléments dans le code ne signifie pas que chaque son ou effet est finalisé sur tous les navigateurs. La qualité visuelle finale doit être contrôlée en situation réelle.
+
+## 24. Interface et personnalisation
+
+### Panneau gauche — mode et arène
+- Réglages du mode Arena Brawl.
+- Choix du mode de victoire.
+- Activation et réglages du rétrécissement.
+- Choix parmi les quatre styles d'arène.
+- Nombre d'obstacles centraux.
+- Gestion de la seed pour reproduire une partie.
+- Bouton de nouvelle partie.
+
+### Panneau droit — capacités
+- Inventaire classé en **Armes**, **Offensives**, **Défensives** et **Utilitaires**.
+- Fiches dépliables pour chaque élément.
+- Interrupteur d'activation.
+- Réglage du poids d'apparition, de la durée et du nombre de cumuls.
+- Paramètres spécifiques par arme/capacité.
+- Bouton Spawn par fiche et sélecteur de spawn manuel.
+- Presets intégrés et presets personnalisés.
+- Commandes pour tout activer, tout désactiver ou réinitialiser.
+
+### Zone de combat
+- Arène et boules.
+- Chronomètre.
+- Effets des capacités, projectiles, mines et événements d'arène.
+- Nombres de dégâts.
+- Présentation du gagnant à la fin du combat.
+
+## 25. Inventaire des fonctionnalités : état et limites
+
+| Fonction | État d'après le dépôt | Limite à garder en tête |
+|---|---|---|
+| Combat Arena Brawl | Implémenté dans le code | Le comportement réel doit être validé en partie. |
+| Trois identifiants de mode de victoire | Déclarés dans le code | Les règles détaillées du mode Kills et les départages doivent être contrôlés. |
+| Quatre styles d'arène | Présents dans l'interface et le code | L'équilibrage et la lisibilité de chaque événement sont à tester. |
+| Obstacles centraux | Réglables de 0 à 3 | Leur collision et leur placement peuvent nécessiter des ajustements. |
+| Arène rétrécissante | Implémentée et configurable | Option désactivable ; valeurs ajustables. |
+| 17 entrées d'armes/capacités au registre | Déclarées | Certaines options de réglage peuvent être plus avancées que le comportement actuellement éprouvé ; vérifier les effets un par un. |
+| Spawn manuel | Bouton et sélecteur dans le panneau | Nécessite qu'une partie soit lancée. |
+| Presets et sauvegarde locale | Interface et logique présentes | Les paramètres sont stockés dans le navigateur, pas dans un compte cloud. |
+| Seed reproductible | Interface et logique présentes | À utiliser pour comparer des essais à paramètres identiques. |
+| Export vidéo TikTok | **Non implémenté** | Idée future uniquement. |
+| Multijoueur en ligne, comptes, classement en ligne | Non confirmé dans le dépôt examiné | Ne pas les présenter comme existants sans preuve supplémentaire. |
+
+## 26. Idées évoquées mais non confirmées comme développées
+
+Les noms suivants ont été évoqués comme pistes de futures armes : **Lance-missiles**, **Canon cryogénique**, **Émetteur magnétique**, **Drone sentinelle** et **Canon gravitationnel**. Ils ne font pas partie des 17 entrées du registre actuel et ne doivent donc pas être présentés comme des armes déjà disponibles. De même, la collection de skins, les classements, les défis quotidiens, les tournois et l'export vidéo sont des idées et non des fonctions confirmées.
+
+## 27. Consignes pour les prochaines IA qui analyseront BallYstik
+
+Lorsqu'une autre IA reçoit ce document, elle doit :
+1. Distinguer systématiquement les fonctions présentes dans le dépôt, les comportements à tester en jeu et les idées futures.
+2. Utiliser les noms et effets de l'inventaire ci-dessus comme base de référence, sans inventer des armes déjà existantes.
+3. Proposer des concepts qui ajoutent de la profondeur au combat, et pas seulement des effets visuels.
+4. Vérifier qu'une proposition n'est pas déjà couverte par une capacité existante.
+5. Privilégier des descriptions compréhensibles pour le joueur : déclencheur, effet, durée, contre-jeu et impact sur la victoire.
+6. Ne pas considérer l'export TikTok, le multijoueur en ligne, les comptes ou les classements comme des fonctionnalités existantes.
