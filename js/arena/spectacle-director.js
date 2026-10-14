@@ -25,6 +25,7 @@
             this.streaks = [];
             this.flash = 0;
             this.serial = 0;
+            this.randomState = 0x6d2b79f5;
         }
 
         reset() {
@@ -37,12 +38,13 @@
             this.streaks.length = 0;
             this.flash = 0;
             this.serial = 0;
+            this.randomState = 0x6d2b79f5;
         }
 
-        _random(world) {
-            return world && world.prng && typeof world.prng.next === 'function'
-                ? world.prng.next()
-                : Math.random();
+        _random() {
+            // PRNG privé : les animations ne consomment jamais la seed de combat.
+            this.randomState = (Math.imul(1664525, this.randomState) + 1013904223) >>> 0;
+            return this.randomState / 4294967296;
         }
 
         _point(world) {
@@ -249,7 +251,7 @@
             // Cartouche événementiel premium, animé en entrée/sortie.
             if (fadeOut > 0) {
                 const bannerW = Math.min(arena.w - 28, 300);
-                const bannerH = 54;
+                const bannerH = 62;
                 const slide = (1 - progress) * -22;
                 const bx = arena.x + (arena.w - bannerW) / 2;
                 const by = arena.y + 18 + slide;
@@ -270,12 +272,15 @@
                 ctx.font = '900 12px Outfit, system-ui, sans-serif';
                 ctx.fillStyle = color;
                 ctx.fillText('✦  ÉVÉNEMENT ARENA  ✦', arena.x + arena.w / 2, by + 15);
-                ctx.font = '900 16px Outfit, system-ui, sans-serif';
+                ctx.font = '900 15px Outfit, system-ui, sans-serif';
                 ctx.fillStyle = '#ffffff';
                 ctx.shadowColor = color;
                 ctx.shadowBlur = 12;
-                ctx.fillText(this.event.title, arena.x + arena.w / 2, by + 34, bannerW - 20);
+                ctx.fillText(this.event.title, arena.x + arena.w / 2, by + 33, bannerW - 20);
                 ctx.shadowBlur = 0;
+                ctx.font = '700 8px Outfit, system-ui, sans-serif';
+                ctx.fillStyle = 'rgba(226,232,240,0.78)';
+                ctx.fillText(this.event.sub, arena.x + arena.w / 2, by + 48, bannerW - 20);
                 ctx.globalAlpha = fadeOut * 0.82;
                 ctx.fillStyle = color;
                 ctx.fillRect(bx + 8, by + bannerH - 3, (bannerW - 16) * Math.min(1, this.age / 1.6), 2);
