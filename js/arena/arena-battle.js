@@ -586,18 +586,45 @@
                     }
                 }
 
-                // Collisions balles
+                // Collision directe ou explosion à impact (les armes explosives ont une vraie zone de dégâts).
+                let impact = false;
                 for (const ball of world.balls) {
                     if (!ball.alive || ball.id === p.ownerId) continue;
                     const dx = ball.x - p.x;
                     const dy = ball.y - p.y;
                     if (dx * dx + dy * dy < (ball.radius + p.radius) ** 2) {
-                        const owner = world.balls.find(b => b.id === p.ownerId);
-                        world.damage(ball, owner, p.damage, 'arrow');
-                        world.spawnParticle(p.x, p.y, { color: p.color, count: 8, speed: 180, life: 0.4, spread: Math.PI * 2 });
-                        this.projectiles.splice(i, 1);
+                        impact = true;
                         break;
                     }
+                }
+                if (impact) {
+                    const owner = world.balls.find(b => b.id === p.ownerId);
+                    if (p.splashRadius) {
+                        world.spawnParticle(p.x, p.y, { color: p.color, count: 34, speed: 310, life: 0.72, spread: Math.PI * 2, size: 3 });
+                        world.spawnParticle(p.x, p.y, { color: '#fff7ed', count: 12, speed: 190, life: 0.3, spread: Math.PI * 2, size: 2.4 });
+                        world.addShockwave(p.x, p.y, { radius: p.splashRadius, color: p.color, life: 0.38 });
+                        for (const victim of world.balls) {
+                            if (!victim.alive || victim.id === p.ownerId) continue;
+                            const dx = victim.x - p.x, dy = victim.y - p.y;
+                            const distance = Math.hypot(dx, dy);
+                            if (distance <= p.splashRadius + victim.radius) {
+                                const falloff = Math.max(0.35, 1 - distance / (p.splashRadius + victim.radius));
+                                world.damage(victim, owner, p.damage * falloff, 'plasma');
+                                const push = 155 * falloff;
+                                const len = distance || 1;
+                                victim.vx += (dx / len) * push;
+                                victim.vy += (dy / len) * push;
+                                this._keepBaseSpeed(victim);
+                            }
+                        }
+                    } else {
+                        const victim = world.balls.find(ball => ball.alive && ball.id !== p.ownerId &&
+                            (ball.x - p.x) ** 2 + (ball.y - p.y) ** 2 < (ball.radius + p.radius) ** 2);
+                        if (victim) world.damage(victim, owner, p.damage, p.type || 'arrow');
+                        world.spawnParticle(p.x, p.y, { color: p.color, count: 8, speed: 180, life: 0.4, spread: Math.PI * 2 });
+                    }
+                    this.projectiles.splice(i, 1);
+                    continue;
                 }
 
                 if (p.life <= 0) this.projectiles.splice(i, 1);
