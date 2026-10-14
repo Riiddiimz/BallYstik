@@ -891,7 +891,7 @@
             ctx.shadowBlur = d.swing > 0 ? 20 : 8;
             if (image && image.complete && image.naturalWidth > 0) {
                 // Taille fixe, ratio d'origine respecté : l'épée ne s'aplatit pas selon la boule.
-                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, 48, 0.35);
+                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, 82, 0.35);
             } else {
                 // Fallback visible si le PNG n'est pas encore chargé.
                 ctx.strokeStyle = '#dbeafe';
