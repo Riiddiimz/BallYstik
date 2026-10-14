@@ -615,7 +615,8 @@
             const d = slot.data || (slot.data = { cooldown: 0.65, charge: 0, targetId: null });
             d.cooldown -= dt;
             if (d.charge > 0) d.charge = Math.max(0, d.charge - dt);
-            const target = findNearestEnemy(ball, world, 560);
+            const range = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'targetRange', 560) : 560;
+            const target = findNearestEnemy(ball, world, range);
             d.targetId = target ? target.id : null;
             if (!target || d.cooldown > 0) return;
             const dx = target.x - ball.x, dy = target.y - ball.y;
@@ -625,13 +626,16 @@
             world.projectiles.push({
                 x: ball.x + ux * (ball.radius + 8),
                 y: ball.y + uy * (ball.radius + 8),
-                vx: ux * 390, vy: uy * 390,
+                vx: ux * (window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390),
+                vy: uy * (window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390),
                 radius: 7, life: 2.2, bounces: 0,
-                ownerId: ball.id, color: '#fb923c', damage: 17,
-                splashRadius: 58, type: 'plasma', trail: [],
+                ownerId: ball.id, color: '#fb923c',
+                damage: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'damage', 17) : 17,
+                splashRadius: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'blastRadius', 58) : 58,
+                type: 'plasma', trail: [],
                 render: renderPlasmaShell
             });
-            d.cooldown = 1.55;
+            d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'fireRate', 1.55) : 1.55;
             world.spawnParticle(ball.x + ux * (ball.radius + 9), ball.y + uy * (ball.radius + 9), {
                 color: '#fed7aa', count: 12, speed: 210, life: 0.35, spread: 0.6, angle: Math.atan2(uy, ux), size: 2.8
             });
