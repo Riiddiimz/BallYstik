@@ -67,6 +67,15 @@
         }
         getOptions() { return Object.assign({}, this.options); }
 
+        // Appelé par les boutons « Spawn » du panneau des capacités.
+        spawnPickup(id) {
+            const world = this._world;
+            if (!world || !this.pickupSystem || !window.AbilityRegistry) return false;
+            const meta = window.AbilityRegistry.get(id);
+            if (!meta) return false;
+            return this.pickupSystem.spawnAbility(meta, world);
+        }
+
         // ═══════════════════════════════════════════════════════════
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
