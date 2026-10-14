@@ -56,6 +56,14 @@
             duration: 5, weight: 3, maxStacks: 1
         },
 
+        blade: {
+            id: 'blade', name: 'Lame orbitale',
+            desc: 'Une épée tenue par la boule frappe les adversaires qui s’approchent, avec un coup visible et un recul.',
+            category: 'offensive', rarity: 'rare',
+            color: '#dbeafe', glow: '#93c5fd', icon: '⚔',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+
         plasmaCannon: {
             id: 'plasmaCannon', name: 'Canon à plasma',
             desc: 'Monte un canon sur la boule. Charge une cible puis tire un obus qui explose et blesse les ennemis proches.',
