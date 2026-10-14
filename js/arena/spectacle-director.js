@@ -51,15 +51,15 @@
             const a = world.arena;
             const pad = 54;
             return {
-                x: a.x + pad + this._random(world) * Math.max(1, a.w - pad * 2),
+                x: a.x + pad + this._random() * Math.max(1, a.w - pad * 2),
                 y: a.y + pad + this._random(world) * Math.max(1, a.h - pad * 2)
             };
         }
 
         _launch(world) {
             this.eventIndex = (this.eventIndex + 1) % EVENTS.length;
-            // Déplace l'ordre de départ selon la seed sans introduire d'aléatoire à chaque frame.
-            if (this.serial === 0) this.eventIndex = Math.floor(this._random(world) * EVENTS.length);
+            // Départ varié de façon reproductible, sans consommer le RNG du combat.
+            if (this.serial === 0) this.eventIndex = Math.floor(this._random() * EVENTS.length);
             this.serial++;
             this.event = EVENTS[this.eventIndex];
             this.age = 0;
