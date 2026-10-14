@@ -75,6 +75,8 @@
             this.finishedByTimer = false;
             this.winner = null;
             this.projectiles.length = 0;
+            // Les capacités ajoutent leurs tirs via world.projectiles : partager le même tableau que le moteur.
+            world.projectiles = this.projectiles;
             this.particles.length = 0;
             this.shockwaves.length = 0;
             this.floatingPlus.length = 0;
