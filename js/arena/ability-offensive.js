@@ -794,6 +794,22 @@
     };
 
     // ═══════ LAME ORBITALE (asset PNG) ═══════
+    // Rendu commun des armes portées : taille constante et ratio de l'image conservé.
+    // Les futures armes peuvent réutiliser window.BallYstikWeaponRenderer.drawHeld(...).
+    window.BallYstikWeaponRenderer = window.BallYstikWeaponRenderer || {};
+    window.BallYstikWeaponRenderer.drawHeld = function (ctx, image, ball, length = 48, offset = 0.35) {
+        if (!ctx || !image || !image.complete || !image.naturalWidth || !image.naturalHeight) return false;
+        const ratio = image.naturalWidth / image.naturalHeight;
+        const width = image.naturalHeight > image.naturalWidth ? length * ratio : length;
+        const height = image.naturalHeight > image.naturalWidth ? length : length / ratio;
+        ctx.save();
+        ctx.translate((ball.radius || 0) * offset, 0);
+        if (image.naturalHeight > image.naturalWidth) ctx.rotate(-Math.PI / 2);
+        ctx.drawImage(image, -width / 2, -height / 2, width, height);
+        ctx.restore();
+        return true;
+    };
+
     window.BallYstikWeaponImages = window.BallYstikWeaponImages || {};
     if (!window.BallYstikWeaponImages.blade) {
         const bladeImage = new Image();
@@ -866,18 +882,8 @@
             ctx.shadowColor = '#93c5fd';
             ctx.shadowBlur = d.swing > 0 ? 20 : 8;
             if (image && image.complete && image.naturalWidth > 0) {
-                // Le PNG est orienté pointe vers le haut : on le couche dans l'axe de la cible.
-                const length = ball.radius * 2.05 + 26;
-                const thickness = Math.max(8, ball.radius * 0.62);
-                ctx.translate(ball.radius * 0.35, 0);
-                if (image.naturalHeight > image.naturalWidth) {
-                    // PNG portrait : la pointe est vers le haut, on couche l'épée dans l'axe de visée.
-                    ctx.rotate(-Math.PI / 2);
-                    ctx.drawImage(image, -thickness * 0.5, -length * 0.5, thickness, length);
-                } else {
-                    // PNG déjà horizontal : on conserve son orientation.
-                    ctx.drawImage(image, -length * 0.5, -thickness * 0.5, length, thickness);
-                }
+                // Taille fixe, ratio d'origine respecté : l'épée ne s'aplatit pas selon la boule.
+                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, 48, 0.35);
             } else {
                 // Fallback visible si le PNG n'est pas encore chargé.
                 ctx.strokeStyle = '#dbeafe';
