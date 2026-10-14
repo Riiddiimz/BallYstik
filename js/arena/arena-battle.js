@@ -814,6 +814,30 @@
         _renderBall(ctx, ball, world) {
             const alpha = ball.isClone ? (ball.alpha ?? 0.55) : 1;
 
+            // Aura vivante : anneau énergétique et trois satellites lumineux.
+            // Le mouvement dépend du temps de simulation pour rester fluide à 60 FPS.
+            const t = world.time || 0;
+            const pulse = 0.5 + 0.5 * Math.sin(t * 5.2 + ball.id * 1.7);
+            ctx.save();
+            ctx.globalAlpha = alpha * (0.18 + pulse * 0.16);
+            ctx.strokeStyle = ball.color;
+            ctx.lineWidth = 1.1 + pulse * 1.1;
+            ctx.shadowColor = ball.color;
+            ctx.shadowBlur = 10 + pulse * 12;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius + 4 + pulse * 3, t * 0.8, t * 0.8 + Math.PI * (1.15 + pulse * 0.25));
+            ctx.stroke();
+            for (let i = 0; i < 3; i++) {
+                const angle = t * (1.2 + i * 0.12) + ball.id * 2.1 + i * Math.PI * 2 / 3;
+                const orbit = ball.radius + 7 + pulse * 3;
+                ctx.globalAlpha = alpha * (0.38 + pulse * 0.42);
+                ctx.fillStyle = i === 0 ? '#ffffff' : ball.color;
+                ctx.beginPath();
+                ctx.arc(ball.x + Math.cos(angle) * orbit, ball.y + Math.sin(angle) * orbit, 1.4 + pulse * 1.1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
             // Trail
             if (!ball.isClone && ball.trail) {
                 ball.trail.push({ x: ball.x, y: ball.y });
@@ -847,6 +871,26 @@
             ctx.beginPath();
             ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            // Reflet spéculaire net pour un rendu plus proche d'une sphère 3D.
+            ctx.globalAlpha = alpha * 0.88;
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(255,255,255,0.9)';
+            ctx.beginPath();
+            ctx.ellipse(
+                ball.x - ball.radius * 0.31,
+                ball.y - ball.radius * 0.38,
+                Math.max(2, ball.radius * 0.24),
+                Math.max(1.5, ball.radius * 0.13),
+                -0.58, 0, Math.PI * 2
+            );
+            ctx.fill();
+            ctx.globalAlpha = alpha * 0.22;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius - 1, -Math.PI * 0.88, -Math.PI * 0.18);
+            ctx.stroke();
             ctx.restore();
 
             // Statuts (burn, freeze, poison, stun)
