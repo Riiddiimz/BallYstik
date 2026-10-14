@@ -134,10 +134,10 @@
             // empêchait la normale radiale de fonctionner dans les angles arrondis.
             if (arcRadius > 0) {
                 const corners = [
-                    { cx: left + corner,  cy: top + corner,    sx: -1, sy: -1 },
-                    { cx: right - corner, cy: top + corner,    sx:  1, sy: -1 },
-                    { cx: left + corner,  cy: bottom - corner, sx: -1, sy:  1 },
-                    { cx: right - corner, cy: bottom - corner, sx:  1, sy:  1 }
+                    { cx: left + corner,  cy: top + corner,    sx:  1, sy:  1 },
+                    { cx: right - corner, cy: top + corner,    sx: -1, sy:  1 },
+                    { cx: left + corner,  cy: bottom - corner, sx:  1, sy: -1 },
+                    { cx: right - corner, cy: bottom - corner, sx: -1, sy: -1 }
                 ];
 
                 for (const c of corners) {
@@ -155,10 +155,10 @@
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
 
-                    // La normale radiale pointe vers l'extérieur de l'arc.
-                    // Un produit scalaire positif signifie que la boule frappe le mur.
+                    // La normale pointe du centre de l'arrondi vers la zone jouable.
+                    // La boule frappe le mur lorsqu'elle se dirige vers le centre de l'arrondi.
                     const dot = ball.vx * nx + ball.vy * ny;
-                    if (dot > 0) {
+                    if (dot < 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
                     }
