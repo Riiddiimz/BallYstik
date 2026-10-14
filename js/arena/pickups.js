@@ -202,6 +202,52 @@
                 ctx.stroke();
                 ctx.restore();
             }
+
+            // Orbe lisible + icône de la compétence au centre.
+            // Les armes gardent leur rendu dédié basé sur leur image.
+            ctx.save();
+            const spawnProgress = this.state === 'spawning'
+                ? Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.0))
+                : 1;
+            const appear = this.state === 'spawning' ? 0.35 + 0.65 * spawnProgress : 1;
+            ctx.globalAlpha = appear;
+            ctx.shadowColor = meta.glow || meta.color || '#67e8f9';
+            ctx.shadowBlur = 16;
+
+            const orb = ctx.createRadialGradient(
+                this.x - r * 0.3, this.y - r * 0.35, 1,
+                this.x, this.y, r * 1.15
+            );
+            orb.addColorStop(0, '#ffffff');
+            orb.addColorStop(0.22, meta.glow || meta.color || '#67e8f9');
+            orb.addColorStop(1, '#111827');
+            ctx.fillStyle = orb;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r * 0.92, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#ffffff';
+            ctx.globalAlpha = appear * 0.9;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, r * 0.92, 0, Math.PI * 2);
+            ctx.stroke();
+
+            const icon = meta.icon || '?';
+            ctx.globalAlpha = appear;
+            ctx.font = 'bold 19px "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineJoin = 'round';
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(10, 15, 28, 0.9)';
+            ctx.strokeText(icon, this.x, this.y + 0.5);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#0b1020';
+            ctx.shadowBlur = 5;
+            ctx.fillText(icon, this.x, this.y + 0.5);
+            ctx.restore();
         }
     }
 
