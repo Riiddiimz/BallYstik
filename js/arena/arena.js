@@ -311,7 +311,7 @@
                 const radius = phase < 1.25 ? 22 + phase * 9 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.25) / 1.1));
                 ctx.globalAlpha = phase < 1.25 ? 0.25 + phase * 0.34 : phase < 2.35 ? 0.9 : 0.2;
                 ctx.strokeStyle = phase < 1.25 ? '#fb923c' : '#ff2a85';
-                ctx.lineWidth = phase < 1.7 ? 2 + phase : 4;
+                ctx.lineWidth = phase < 1.25 ? 2 + phase : 4;
                 ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 20;
                 ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
                 ctx.globalAlpha = 0.4 + 0.3 * Math.sin(this.time * 5);
@@ -325,7 +325,7 @@
                 ctx.strokeStyle = firing ? '#ff2a85' : '#fbbf24';
                 ctx.lineWidth = firing ? 9 : 2;
                 ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = firing ? 28 : 8;
-                ctx.setLineDash(phase < 3.6 ? [10, 10] : []);
+                ctx.setLineDash(phase < 2.8 ? [10, 10] : []);
                 ctx.beginPath(); ctx.moveTo(x, laneY); ctx.lineTo(x + w, laneY); ctx.stroke();
                 ctx.setLineDash([]);
             } else if (this.mapStyle === 'void') {
