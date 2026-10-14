@@ -15,7 +15,7 @@
 - Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
 
 ## In Progress / Next
-- Branche `feature/arena-spectacle-v2` : nouvelle arme Canon à plasma (tourelle visible, ciblage, charge, obus explosifs et dégâts de zone).
+- Branche `feature/arena-spectacle-v2` : deux armes récupérables, Canon à plasma (charge visible, obus explosifs et dégâts de zone) et Bobine Tesla (charge, foudre et arc secondaire).
 - Quatre cartes sélectionnables avec règles distinctes : Néon, Réacteur (onde radiale), Crossfire (faisceau télégraphié), Néant (puits gravitationnels).
 - Les avertissements visuels sont synchronisés avec les fenêtres de danger. Les effets d'événements aléatoires sans cause ont été retirés.
 - Vérification navigateur réelle encore nécessaire avant fusion.
