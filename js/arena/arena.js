@@ -284,11 +284,12 @@
                 ctx.beginPath(); ctx.arc(cx, cy, 9 + 4 * Math.sin(this.time * 6), 0, Math.PI * 2); ctx.fill();
             } else if (this.mapStyle === 'crossfire') {
                 const phase = this.time % 4.8;
-                const laneY = y + h * (0.2 + 0.6 * ((phase / 4.8) % 1));
-                ctx.globalAlpha = phase < 3.6 ? 0.18 + phase * 0.12 : 0.95;
-                ctx.strokeStyle = phase < 3.6 ? '#fbbf24' : '#ff2a85';
-                ctx.lineWidth = phase < 3.6 ? 2 : 9;
-                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = phase < 3.6 ? 8 : 28;
+                const laneY = y + h * (0.18 + 0.64 * Math.min(phase / 3.6, 1));
+                const firing = phase >= 3.6 && phase <= 4.25;
+                ctx.globalAlpha = firing ? 0.95 : phase < 3.6 ? 0.18 + phase * 0.12 : Math.max(0, 0.3 * (4.8 - phase));
+                ctx.strokeStyle = firing ? '#ff2a85' : '#fbbf24';
+                ctx.lineWidth = firing ? 9 : 2;
+                ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = firing ? 28 : 8;
                 ctx.setLineDash(phase < 3.6 ? [10, 10] : []);
                 ctx.beginPath(); ctx.moveTo(x, laneY); ctx.lineTo(x + w, laneY); ctx.stroke();
                 ctx.setLineDash([]);
