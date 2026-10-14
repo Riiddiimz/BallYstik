@@ -626,13 +626,26 @@
             // HUD
             this.hud.update(dt, world);
 
-            // Fin timer
-            if (this.options.matchMode === 'timed' && this.elapsedTime >= this.matchTime) {
+            // Fin d'une manche chronométrée : le survivant avec le plus de PV restants gagne,
+            // même si plusieurs boules sont encore en vie à zéro sur le chronomètre.
+            if (this.options.matchMode === 'timed' && !this.finished && this.elapsedTime >= this.matchTime) {
                 this.finished = true;
-                // Gagnant = plus de HP
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
                 const candidates = alive.length ? alive : world.balls.filter(b => !b.isClone);
-                candidates.sort((a, b) => (b.health?.current || 0) - (a.health?.current || 0));
+
+                // Classement déterministe : PV restants, puis pourcentage de vie, puis ID le plus bas.
+                candidates.sort((a, b) => {
+                    const hpA = Number(a.health?.current) || 0;
+                    const hpB = Number(b.health?.current) || 0;
+                    if (hpB !== hpA) return hpB - hpA;
+
+                    const ratioA = a.health?.max ? hpA / a.health.max : 0;
+                    const ratioB = b.health?.max ? hpB / b.health.max : 0;
+                    if (ratioB !== ratioA) return ratioB - ratioA;
+
+                    return (a.id || 0) - (b.id || 0);
+                });
+
                 this.winner = candidates[0] || null;
             }
         }
