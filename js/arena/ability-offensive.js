@@ -867,11 +867,17 @@
             ctx.shadowBlur = d.swing > 0 ? 20 : 8;
             if (image && image.complete && image.naturalWidth > 0) {
                 // Le PNG est orienté pointe vers le haut : on le couche dans l'axe de la cible.
-                const w = ball.radius * 2.05 + 26;
-                const h = w * image.naturalHeight / image.naturalWidth;
+                const length = ball.radius * 2.05 + 26;
+                const thickness = Math.max(8, ball.radius * 0.62);
                 ctx.translate(ball.radius * 0.35, 0);
-                ctx.rotate(-Math.PI / 2);
-                ctx.drawImage(image, -w * 0.5, -h * 0.5, w, h);
+                if (image.naturalHeight > image.naturalWidth) {
+                    // PNG portrait : la pointe est vers le haut, on couche l'épée dans l'axe de visée.
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.drawImage(image, -thickness * 0.5, -length * 0.5, thickness, length);
+                } else {
+                    // PNG déjà horizontal : on conserve son orientation.
+                    ctx.drawImage(image, -length * 0.5, -thickness * 0.5, length, thickness);
+                }
             } else {
                 // Fallback visible si le PNG n'est pas encore chargé.
                 ctx.strokeStyle = '#dbeafe';
