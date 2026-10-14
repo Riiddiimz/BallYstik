@@ -148,17 +148,17 @@
                     const d = Math.hypot(dx, dy);
                     // Détecte aussi les dépassements importants dus à une vitesse élevée.
                     const outsideBounds = ball.x < minX || ball.x > maxX || ball.y < minY || ball.y > maxY;
-                    if (d >= arcRadius && !outsideBounds) continue;
+                    if (d <= arcRadius && !outsideBounds) continue;
 
                     const nx = d > 1e-8 ? dx / d : c.sx * Math.SQRT1_2;
                     const ny = d > 1e-8 ? dy / d : c.sy * Math.SQRT1_2;
                     ball.x = c.cx + nx * arcRadius;
                     ball.y = c.cy + ny * arcRadius;
 
-                    // La normale pointe du centre de l'arrondi vers la zone jouable.
-                    // La boule frappe le mur lorsqu'elle se dirige vers le centre de l'arrondi.
+                    // La zone jouable est à l'intérieur du rayon réduit.
+                    // La boule frappe le mur lorsqu'elle s'éloigne du centre de l'arrondi.
                     const dot = ball.vx * nx + ball.vy * ny;
-                    if (dot < 0) {
+                    if (dot > 0) {
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
                     }
