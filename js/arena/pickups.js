@@ -14,7 +14,7 @@
             this.meta = abilityMeta;
             this.age = 0;
             this.state = 'spawning'; // spawning | idle | sucked | taken
-            this.spawnTimer = 0.5;
+            this.spawnTimer = 1.25;
             this.life = 22;
             this.taken = false;
             this.seed = (prng && prng.next ? prng.next() : Math.random()) * 1000;
@@ -77,11 +77,44 @@
 
             // Colonne de lumière pendant le spawn
             if (this.state === 'spawning') {
-                const sp = 1 - this.spawnTimer / 0.5;
+                const progress = Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.25));
+                const pulse = 0.65 + Math.sin(t * 9) * 0.2;
+                const beamHeight = 260 + progress * 100;
+                const beamWidth = 18 + Math.sin(t * 12) * 5;
                 ctx.save();
-                ctx.globalAlpha = (1 - sp) * 0.7;
-                ctx.fillStyle = meta.color;
-                ctx.fillRect(this.x - 8, this.y - 200, 16, 200);
+                ctx.globalCompositeOperation = 'lighter';
+                const beam = ctx.createLinearGradient(this.x, this.y - beamHeight, this.x, this.y + 24);
+                beam.addColorStop(0, 'rgba(255,255,255,0)');
+                beam.addColorStop(0.48, meta.glow || meta.color);
+                beam.addColorStop(0.82, '#ffffff');
+                beam.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.globalAlpha = pulse * (1 - progress * 0.45);
+                ctx.fillStyle = beam;
+                ctx.shadowColor = meta.glow || meta.color;
+                ctx.shadowBlur = 34;
+                ctx.fillRect(this.x - beamWidth / 2, this.y - beamHeight, beamWidth, beamHeight + 28);
+                for (let ring = 0; ring < 3; ring++) {
+                    const phase = (progress * 1.7 + ring / 3) % 1;
+                    const ringRadius = 12 + phase * 108;
+                    ctx.globalAlpha = (1 - phase) * 0.95;
+                    ctx.strokeStyle = ring === 0 ? '#ffffff' : (meta.glow || meta.color);
+                    ctx.lineWidth = ring === 0 ? 3 : 2;
+                    ctx.beginPath();
+                    ctx.ellipse(this.x, this.y + 5, ringRadius, ringRadius * 0.32, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+                ctx.translate(this.x, this.y);
+                ctx.rotate(-t * 2.4);
+                ctx.globalAlpha = (1 - progress) * 0.9;
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                for (let ray = 0; ray < 12; ray++) {
+                    ctx.rotate(Math.PI / 6);
+                    ctx.beginPath();
+                    ctx.moveTo(22, 0);
+                    ctx.lineTo(42 + Math.sin(t * 5 + ray) * 10, 0);
+                    ctx.stroke();
+                }
                 ctx.restore();
             }
 
@@ -119,7 +152,10 @@
                 const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages[meta.id];
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                const appear = this.state === 'spawning' ? Math.max(0.25, 1 - this.spawnTimer / 0.7) : 1;
+                const spawnProgress = this.state === 'spawning' ? Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.25)) : 1;
+                const appear = this.state === 'spawning' ? Math.max(0.2, spawnProgress) : 1;
+                const weaponScale = this.state === 'spawning' ? 0.45 + 0.75 * spawnProgress : 1;
+                ctx.scale(weaponScale, weaponScale);
                 ctx.globalAlpha = appear;
                 ctx.rotate(-Math.PI / 4);
                 ctx.shadowColor = '#93c5fd';
@@ -228,11 +264,13 @@
             }
             if (!best) return false;
             const pickup = new Pickup(best.x, best.y, meta, this.prng);
-            pickup.spawnTimer = 0.7;
+            pickup.spawnTimer = 1.25;
             pickup.radius = (meta.id === 'blade' || meta.id === 'blade2') ? 19 : 16;
             this.items.push(pickup);
-            world.spawnParticle(best.x, best.y, { color: meta.color || '#67e8f9', count: 24, speed: 190, life: 0.65, spread: Math.PI * 2, size: 2.8 });
-            world.addShockwave(best.x, best.y, { radius: 54, color: meta.color || '#67e8f9', life: 0.45 });
+            world.spawnParticle(best.x, best.y, { color: '#ffffff', count: 18, speed: 260, life: 0.9, spread: Math.PI * 2, size: 3.2 });
+            world.spawnParticle(best.x, best.y, { color: meta.glow || meta.color || '#67e8f9', count: 42, speed: 220, life: 1.15, spread: Math.PI * 2, size: 3.5 });
+            world.addShockwave(best.x, best.y, { radius: 110, color: '#ffffff', life: 0.7 });
+            world.addShockwave(best.x, best.y, { radius: 76, color: meta.glow || meta.color || '#67e8f9', life: 0.95 });
             world.playSound('pickup-spawn', { pitch: (meta.id === 'blade' || meta.id === 'blade2') ? 1.15 : 0.9 });
             return true;
         }
