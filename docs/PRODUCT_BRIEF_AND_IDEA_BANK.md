@@ -310,7 +310,7 @@ Le style met en scène des zones de gravité qui attirent les boules et perturbe
 
 ## 21. Inventaire complet des capacités et armes déclarées
 
-Le registre contient **17 entrées** : 7 offensives classiques, 2 entrées offensives de type arme à distance/technologique, 2 armes portées, 4 défensives et 4 utilitaires. Les armes portées sont regroupées séparément dans le panneau de réglages. Les durées ci-dessous sont les durées de base déclarées dans le registre ; elles peuvent être modifiées par les paramètres. Une durée négative correspond à une présence sans expiration programmée dans le registre.
+Le registre contient **19 entrées** : 9 offensives (7 capacités classiques, plus le Canon à plasma et la Bobine Tesla), 2 armes portées, 4 défensives et 4 utilitaires. Les armes portées sont regroupées séparément dans le panneau de réglages. Les durées ci-dessous sont les durées de base déclarées dans le registre ; elles peuvent être modifiées par les paramètres. Une durée négative correspond à une présence sans expiration programmée dans le registre.
 
 ### 21.1 Offensives
 
@@ -419,7 +419,7 @@ La présence de ces éléments dans le code ne signifie pas que chaque son ou ef
 | Quatre styles d'arène | Présents dans l'interface et le code | L'équilibrage et la lisibilité de chaque événement sont à tester. |
 | Obstacles centraux | Réglables de 0 à 3 | Leur collision et leur placement peuvent nécessiter des ajustements. |
 | Arène rétrécissante | Implémentée et configurable | Option désactivable ; valeurs ajustables. |
-| 17 entrées d'armes/capacités au registre | Déclarées | Certaines options de réglage peuvent être plus avancées que le comportement actuellement éprouvé ; vérifier les effets un par un. |
+| 19 entrées d'armes/capacités au registre | Déclarées | Certaines options de réglage peuvent être plus avancées que le comportement actuellement éprouvé ; vérifier les effets un par un. |
 | Spawn manuel | Bouton et sélecteur dans le panneau | Nécessite qu'une partie soit lancée. |
 | Presets et sauvegarde locale | Interface et logique présentes | Les paramètres sont stockés dans le navigateur, pas dans un compte cloud. |
 | Seed reproductible | Interface et logique présentes | À utiliser pour comparer des essais à paramètres identiques. |
@@ -428,7 +428,7 @@ La présence de ces éléments dans le code ne signifie pas que chaque son ou ef
 
 ## 26. Idées évoquées mais non confirmées comme développées
 
-Les noms suivants ont été évoqués comme pistes de futures armes : **Lance-missiles**, **Canon cryogénique**, **Émetteur magnétique**, **Drone sentinelle** et **Canon gravitationnel**. Ils ne font pas partie des 17 entrées du registre actuel et ne doivent donc pas être présentés comme des armes déjà disponibles. De même, la collection de skins, les classements, les défis quotidiens, les tournois et l'export vidéo sont des idées et non des fonctions confirmées.
+Les noms suivants ont été évoqués comme pistes de futures armes : **Lance-missiles**, **Canon cryogénique**, **Émetteur magnétique**, **Drone sentinelle** et **Canon gravitationnel**. Ils ne font pas partie des 19 entrées du registre actuel et ne doivent donc pas être présentés comme des armes déjà disponibles. De même, la collection de skins, les classements, les défis quotidiens, les tournois et l'export vidéo sont des idées et non des fonctions confirmées.
 
 ## 27. Consignes pour les prochaines IA qui analyseront BallYstik
 
