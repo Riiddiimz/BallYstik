@@ -923,6 +923,9 @@
         }
     };
 
+    // La seconde arme réutilise la logique de combat, avec sa propre image et ses propres réglages.
+    window.AbilityBehaviors.blade2 = window.AbilityBehaviors.blade;
+
     function renderPlasmaShell(ctx, p) {
         ctx.save();
         ctx.shadowColor = '#fb923c';
