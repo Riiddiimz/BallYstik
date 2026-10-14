@@ -114,6 +114,19 @@
             ctx.setLineDash([]);
             ctx.restore();
 
+            // La lame possède un pickup dédié, visible dans son image réelle.
+            if (meta.id === 'blade' && window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade && window.BallYstikWeaponImages.blade.complete && window.BallYstikWeaponImages.blade.naturalWidth) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                const appear = this.state === 'spawning' ? Math.max(0.25, 1 - this.spawnTimer / 0.5) : 1;
+                ctx.globalAlpha = appear;
+                ctx.rotate(-Math.PI / 4);
+                ctx.shadowColor = '#93c5fd';
+                ctx.shadowBlur = 18;
+                ctx.drawImage(window.BallYstikWeaponImages.blade, -r * 1.25, -r * 1.25, r * 2.5, r * 2.5);
+                ctx.restore();
+            }
+
             // Corps central
             ctx.save();
             ctx.shadowColor = meta.glow;
@@ -194,6 +207,32 @@
                     }
                 }
             }
+        }
+
+        spawnAbility(meta, world) {
+            if (!meta || !world || !world.arena) return false;
+            const a = world.arena;
+            let best = null, bestMinDist = -Infinity;
+            for (let attempt = 0; attempt < 18; attempt++) {
+                const x = a.x + 36 + this.prng.next() * Math.max(1, a.w - 72);
+                const y = a.y + 36 + this.prng.next() * Math.max(1, a.h - 72);
+                let minD = Infinity;
+                for (const b of world.balls) {
+                    if (!b.alive) continue;
+                    minD = Math.min(minD, Math.hypot(b.x - x, b.y - y));
+                }
+                for (const o of (a.obstacles || [])) minD = Math.min(minD, Math.hypot(o.x - x, o.y - y) - o.r);
+                if (minD > bestMinDist) { bestMinDist = minD; best = { x, y }; }
+            }
+            if (!best) return false;
+            const pickup = new Pickup(best.x, best.y, meta, this.prng);
+            pickup.spawnTimer = 0.7;
+            pickup.radius = meta.id === 'blade' ? 19 : 16;
+            this.items.push(pickup);
+            world.spawnParticle(best.x, best.y, { color: meta.color || '#67e8f9', count: 24, speed: 190, life: 0.65, spread: Math.PI * 2, size: 2.8 });
+            world.addShockwave(best.x, best.y, { radius: 54, color: meta.color || '#67e8f9', life: 0.45 });
+            world.playSound('pickup-spawn', { pitch: meta.id === 'blade' ? 1.15 : 0.9 });
+            return true;
         }
 
         _trySpawn(world) {
