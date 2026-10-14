@@ -420,7 +420,7 @@
                 }
             } else if (style === 'crossfire') {
                 const cycle = arena.time % 4.8;
-                const laneY = arena.y + arena.h * (0.2 + 0.6 * (cycle / 4.8));
+                const laneY = arena.y + arena.h * (0.18 + 0.64 * Math.min(cycle / 3.6, 1));
                 if (cycle >= 3.6 && cycle <= 4.25) {
                     for (const ball of world.balls) {
                         if (!ball.alive || Math.abs(ball.y - laneY) > ball.radius + 13) continue;
