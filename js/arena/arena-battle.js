@@ -344,12 +344,18 @@
             if (!ball.alive) return;
             ball.alive = false;
 
-            // Feedback mort
+            // Explosion de KO en trois temps : éclats colorés, flash blanc, double onde.
             world.spawnParticle(ball.x, ball.y, {
-                color: ball.color, count: 20, speed: 320, life: 0.9, spread: Math.PI * 2
+                color: ball.color, count: 42, speed: 420, life: 1.05, spread: Math.PI * 2, size: 3.2
+            });
+            world.spawnParticle(ball.x, ball.y, {
+                color: '#ffffff', count: 18, speed: 230, life: 0.42, spread: Math.PI * 2, size: 2.1
             });
             world.addShockwave(ball.x, ball.y, {
-                radius: ball.radius * 6, color: ball.color, life: 0.5
+                radius: ball.radius * 8, color: ball.color, life: 0.62
+            });
+            world.addShockwave(ball.x, ball.y, {
+                radius: ball.radius * 4.5, color: '#ffffff', life: 0.24
             });
 
             // Applique les capacités de mort
