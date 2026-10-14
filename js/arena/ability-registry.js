@@ -64,6 +64,14 @@
             duration: -1, weight: 0, maxStacks: 1
         },
 
+        blade2: {
+            id: 'blade2', name: 'Lame noire',
+            desc: 'Une seconde arme tenue par la boule frappe les adversaires proches.',
+            category: 'weapons', rarity: 'rare',
+            color: '#c4b5fd', glow: '#a78bfa', icon: '⚔',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+
         plasmaCannon: {
             id: 'plasmaCannon', name: 'Canon à plasma',
             desc: 'Monte un canon sur la boule. Charge une cible puis tire un obus qui explose et blesse les ennemis proches.',
