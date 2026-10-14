@@ -793,6 +793,116 @@
         }
     };
 
+    // ═══════ LAME ORBITALE (asset PNG) ═══════
+    window.BallYstikWeaponImages = window.BallYstikWeaponImages || {};
+    if (!window.BallYstikWeaponImages.blade) {
+        const bladeImage = new Image();
+        bladeImage.src = 'assets/weapons/blade.png';
+        window.BallYstikWeaponImages.blade = bladeImage;
+    }
+
+    window.AbilityBehaviors.blade = {
+        attach(ball, world, slot) {
+            ball.weapon = 'blade';
+            slot.data = { hitCooldowns: Object.create(null), swing: 0, swingCooldown: 0, angle: 0, hitIds: [] };
+            world.spawnParticle(ball.x, ball.y, { color: '#bfdbfe', count: 26, speed: 220, life: 0.65, spread: Math.PI * 2, size: 3 });
+            world.addShockwave(ball.x, ball.y, { radius: 58, color: '#93c5fd', life: 0.48 });
+            world.playSound('pickup', { pitch: 1.35 });
+        },
+        update(ball, world, slot, dt) {
+            const d = slot.data;
+            if (!d) return;
+            d.swingCooldown = Math.max(0, d.swingCooldown - dt);
+            d.swing = Math.max(0, d.swing - dt);
+            for (const id of Object.keys(d.hitCooldowns)) {
+                d.hitCooldowns[id] -= dt;
+                if (d.hitCooldowns[id] <= 0) delete d.hitCooldowns[id];
+            }
+            let target = null, best = Infinity;
+            for (const other of world.balls) {
+                if (!other.alive || other === ball || other.team === ball.team) continue;
+                const dist = Math.hypot(other.x - ball.x, other.y - ball.y);
+                if (dist < best) { best = dist; target = other; }
+            }
+            const movementAngle = Math.hypot(ball.vx || 0, ball.vy || 0) > 8
+                ? Math.atan2(ball.vy, ball.vx)
+                : (target ? Math.atan2(target.y - ball.y, target.x - ball.x) : 0);
+            d.angle = target && best < ball.radius * 3.2
+                ? Math.atan2(target.y - ball.y, target.x - ball.x)
+                : movementAngle;
+            const reach = ball.radius + 27;
+            const hitRange = ball.radius + reach + (target ? target.radius : 0);
+            const inReach = target && best <= hitRange;
+            if (inReach && d.swingCooldown <= 0 && !d.hitCooldowns[target.id]) {
+                const dx = target.x - ball.x, dy = target.y - ball.y;
+                const angleToTarget = Math.atan2(dy, dx);
+                const diff = Math.atan2(Math.sin(angleToTarget - d.angle), Math.cos(angleToTarget - d.angle));
+                if (Math.abs(diff) < 1.25) {
+                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam('blade', 'damage', 18) : 18;
+                    world.damage(target, ball, damage, 'blade');
+                    const len = Math.hypot(dx, dy) || 1;
+                    target.vx += (dx / len) * 190;
+                    target.vy += (dy / len) * 190;
+                    d.hitCooldowns[target.id] = 0.72;
+                    d.swingCooldown = 0.34;
+                    d.swing = 0.24;
+                    d.angle = angleToTarget;
+                    world.spawnParticle(target.x, target.y, { color: '#dbeafe', count: 18, speed: 230, life: 0.38, spread: Math.PI * 2, size: 2.8 });
+                    world.addHitFlash(target.x, target.y);
+                    world.addShockwave(target.x, target.y, { radius: 28, color: '#93c5fd', life: 0.22 });
+                    world.playSound('hit', { pitch: 1.25 });
+                }
+            }
+        },
+        render(ctx, ball, world, slot) {
+            const d = slot.data;
+            if (!d) return;
+            const image = window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade;
+            const swingProgress = d.swing > 0 ? 1 - d.swing / 0.24 : 0;
+            const swingAngle = d.swing > 0 ? Math.sin(swingProgress * Math.PI) * 0.95 - 0.45 : 0;
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(d.angle + swingAngle);
+            ctx.shadowColor = '#93c5fd';
+            ctx.shadowBlur = d.swing > 0 ? 20 : 8;
+            if (image && image.complete && image.naturalWidth > 0) {
+                // Le PNG est orienté pointe vers le haut : on le couche dans l'axe de la cible.
+                const w = ball.radius * 2.05 + 26;
+                const h = w * image.naturalHeight / image.naturalWidth;
+                ctx.translate(ball.radius * 0.35, 0);
+                ctx.rotate(-Math.PI / 2);
+                ctx.drawImage(image, -w * 0.5, -h * 0.5, w, h);
+            } else {
+                // Fallback visible si le PNG n'est pas encore chargé.
+                ctx.strokeStyle = '#dbeafe';
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.beginPath();
+                ctx.moveTo(ball.radius * 0.25, 0);
+                ctx.lineTo(ball.radius + 25, 0);
+                ctx.stroke();
+                ctx.strokeStyle = '#64748b';
+                ctx.lineWidth = 8;
+                ctx.beginPath();
+                ctx.moveTo(ball.radius * 0.2, 0);
+                ctx.lineTo(ball.radius * 0.55, 0);
+                ctx.stroke();
+            }
+            if (d.swing > 0) {
+                ctx.globalAlpha = 0.65 * (d.swing / 0.24);
+                ctx.strokeStyle = '#bfdbfe';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, ball.radius + 24, -0.8, 0.8);
+                ctx.stroke();
+            }
+            ctx.restore();
+        },
+        detach(ball) {
+            if (ball.weapon === 'blade') delete ball.weapon;
+        }
+    };
+
     function renderPlasmaShell(ctx, p) {
         ctx.save();
         ctx.shadowColor = '#fb923c';
