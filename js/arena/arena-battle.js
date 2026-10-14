@@ -25,7 +25,8 @@
         shrinkStart: 30,
         shrinkRate: 6,
         shrinkMax: 0.16,
-        obstacles: 1
+        obstacles: 1,
+        arenaMap: 'neon'
     };
 
     class ArenaBattleMode {
@@ -55,6 +56,7 @@
                 this._world.arena.shrinkStart = Number(this.options.shrinkStart);
                 this._world.arena.shrinkRate = Number(this.options.shrinkRate);
                 this._world.arena.shrinkMax = Number(this.options.shrinkMax);
+                this._world.arena.mapStyle = this.options.arenaMap || 'neon';
             }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
@@ -85,6 +87,7 @@
                     padding: 16,
                     cornerRadius: 44,
                     obstacles: this.options.obstacles,
+                    mapStyle: this.options.arenaMap || 'neon',
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
@@ -95,6 +98,7 @@
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
+                world.arena.mapStyle = this.options.arenaMap || 'neon';
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._buildObstacles(this.options.obstacles);
@@ -386,6 +390,68 @@
         // ═══════════════════════════════════════════════════════════
         // UPDATE
         // ═══════════════════════════════════════════════════════════
+        _updateMapMechanics(dt, world) {
+            const arena = world.arena;
+            const style = arena.mapStyle || 'neon';
+            const cx = arena.x + arena.w / 2;
+            const cy = arena.y + arena.h / 2;
+
+            if (style === 'reactor') {
+                const cycle = arena.time % 5.5;
+                if (cycle >= 1.7 && cycle <= 2.9) {
+                    const progress = (cycle - 1.7) / 1.2;
+                    const ring = Math.min(arena.w, arena.h) * 0.47 * progress;
+                    for (const ball of world.balls) {
+                        if (!ball.alive) continue;
+                        const dist = Math.hypot(ball.x - cx, ball.y - cy);
+                        if (Math.abs(dist - ring) < ball.radius + 11 && ball._reactorCycle !== Math.floor(arena.time / 5.5)) {
+                            ball._reactorCycle = Math.floor(arena.time / 5.5);
+                            world.damage(ball, null, 14, 'reactor');
+                            const nx = (ball.x - cx) / (dist || 1), ny = (ball.y - cy) / (dist || 1);
+                            ball.vx += nx * 115; ball.vy += ny * 115;
+                            this._keepBaseSpeed(ball);
+                            world.spawnParticle(ball.x, ball.y, { color: '#fb923c', count: 18, speed: 230, life: 0.55, spread: Math.PI * 2, size: 2.8 });
+                            world.addShockwave(ball.x, ball.y, { radius: 46, color: '#ff2a85', life: 0.32 });
+                            world.playSound('hit', { pitch: 0.72 });
+                        }
+                    }
+                }
+            } else if (style === 'crossfire') {
+                const cycle = arena.time % 4.8;
+                const laneY = arena.y + arena.h * (0.2 + 0.6 * (cycle / 4.8));
+                if (cycle >= 3.6 && cycle <= 4.25) {
+                    for (const ball of world.balls) {
+                        if (!ball.alive || Math.abs(ball.y - laneY) > ball.radius + 13) continue;
+                        if (ball._crossfireCycle === Math.floor(arena.time / 4.8)) continue;
+                        ball._crossfireCycle = Math.floor(arena.time / 4.8);
+                        world.damage(ball, null, 11, 'crossfire');
+                        ball.vy += ball.y < cy ? -135 : 135;
+                        this._keepBaseSpeed(ball);
+                        world.spawnParticle(ball.x, laneY, { color: '#fbbf24', count: 15, speed: 210, life: 0.45, spread: Math.PI * 2, size: 2.5 });
+                        world.addShockwave(ball.x, laneY, { radius: 34, color: '#ff2a85', life: 0.28 });
+                    }
+                }
+            } else if (style === 'void') {
+                const wells = [
+                    { x: arena.x + arena.w * 0.28, y: arena.y + arena.h * 0.32, power: 115 },
+                    { x: arena.x + arena.w * 0.72, y: arena.y + arena.h * 0.68, power: 115 }
+                ];
+                for (const ball of world.balls) {
+                    if (!ball.alive) continue;
+                    for (const well of wells) {
+                        const dx = well.x - ball.x, dy = well.y - ball.y;
+                        const dist2 = dx * dx + dy * dy;
+                        if (dist2 < 180 * 180 && dist2 > 1) {
+                            const dist = Math.sqrt(dist2);
+                            const force = well.power * (1 - dist / 180);
+                            ball.vx += dx / dist * force * dt;
+                            ball.vy += dy / dist * force * dt;
+                        }
+                    }
+                }
+            }
+        }
+
         _keepBaseSpeed(ball) {
             const target = ball.baseMoveSpeed || 180;
             const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
@@ -415,9 +481,9 @@
             world.elapsedTime = this.elapsedTime;
             world.matchTime = this.options.matchTime;
 
-            // Arena + directeur d'événements visuels fréquents.
+            // La carte a ses propres mécaniques lisibles : télégraphe puis danger réel.
             world.arena.update(dt);
-            if (this.spectacle) this.spectacle.update(dt, world);
+            this._updateMapMechanics(dt, world);
 
             // Pickups
             this.pickupSystem.update(dt, world);
@@ -769,9 +835,6 @@
 
             // HUD
             this.hud.render(ctx, world);
-
-            // Événements visuels au-dessus du combat, sans toucher à la physique.
-            if (this.spectacle) this.spectacle.render(ctx, world);
 
             // Résultat de manche : boule gagnante agrandie et label lumineux.
             if (this.finished) this._renderWinner(ctx, world);
