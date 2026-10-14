@@ -15,7 +15,7 @@
 - `js/audio.js`: Polyphonic Web Audio synth with safe volume ADSR ramps.
 - `js/arena/arena.js`: rounded arena geometry, four map styles with distinct obstacle layouts and telegraphed map hazards.
 - `js/arena/arena-battle.js`: Arena Brawl simulation, Reactor radial pulse, Crossfire laser lane, Void gravity wells, projectile collision and explosive area damage.
-- `js/arena/ability-offensive.js`: includes the plasma cannon weapon, with visible turret, target tracking, charge telegraph, plasma shells and splash damage.
+- `js/arena/ability-offensive.js`: includes two pickup weapons: Plasma Cannon (visible turret, telegraphed charge, explosive shells and splash damage) and Tesla Coil (visible coil, charge, primary zap and chain lightning).
 - `js/arena/ability-settings.js`: tunable plasma-cannon parameters integrated into the ability settings UI.
 - `js/effects.js`: Particle explosions and shockwave rings.
 - `js/ball.js`: Ball entity with glowing trail and 3D specular highlight.
