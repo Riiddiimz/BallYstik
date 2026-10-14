@@ -817,9 +817,15 @@
         window.BallYstikWeaponImages.blade = bladeImage;
     }
 
+    if (!window.BallYstikWeaponImages.blade2) {
+        const blade2Image = new Image();
+        blade2Image.src = 'assets/weapons/blade2.png';
+        window.BallYstikWeaponImages.blade2 = blade2Image;
+    }
+
     window.AbilityBehaviors.blade = {
         attach(ball, world, slot) {
-            ball.weapon = 'blade';
+            ball.weapon = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
             slot.data = { hitCooldowns: Object.create(null), swing: 0, swingCooldown: 0, angle: 0, hitIds: [] };
             world.spawnParticle(ball.x, ball.y, { color: '#bfdbfe', count: 26, speed: 220, life: 0.65, spread: Math.PI * 2, size: 3 });
             world.addShockwave(ball.x, ball.y, { radius: 58, color: '#93c5fd', life: 0.48 });
@@ -854,7 +860,8 @@
                 const angleToTarget = Math.atan2(dy, dx);
                 const diff = Math.atan2(Math.sin(angleToTarget - d.angle), Math.cos(angleToTarget - d.angle));
                 if (Math.abs(diff) < 1.25) {
-                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam('blade', 'damage', 18) : 18;
+                            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam(weaponId, 'damage', weaponId === 'blade2' ? 20 : 18) : (weaponId === 'blade2' ? 20 : 18);
                     world.damage(target, ball, damage, 'blade');
                     const len = Math.hypot(dx, dy) || 1;
                     target.vx += (dx / len) * 190;
@@ -873,7 +880,8 @@
         render(ctx, ball, world, slot) {
             const d = slot.data;
             if (!d) return;
-            const image = window.BallYstikWeaponImages && window.BallYstikWeaponImages.blade;
+            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+            const image = window.BallYstikWeaponImages && window.BallYstikWeaponImages[weaponId];
             const swingProgress = d.swing > 0 ? 1 - d.swing / 0.24 : 0;
             const swingAngle = d.swing > 0 ? Math.sin(swingProgress * Math.PI) * 0.95 - 0.45 : 0;
             ctx.save();
@@ -911,7 +919,7 @@
             ctx.restore();
         },
         detach(ball) {
-            if (ball.weapon === 'blade') delete ball.weapon;
+            if (ball.weapon === 'blade' || ball.weapon === 'blade2') delete ball.weapon;
         }
     };
 
