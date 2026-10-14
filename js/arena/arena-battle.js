@@ -401,14 +401,14 @@
             const cy = arena.y + arena.h / 2;
 
             if (style === 'reactor') {
-                const cycle = arena.time % 5.5;
-                if (cycle >= 1.7 && cycle <= 2.9) {
-                    const progress = (cycle - 1.7) / 1.2;
+                const cycle = arena.time % 4.2;
+                if (cycle >= 1.25 && cycle <= 2.35) {
+                    const progress = (cycle - 1.25) / 1.1;
                     const ring = Math.min(arena.w, arena.h) * 0.47 * progress;
                     for (const ball of world.balls) {
                         if (!ball.alive) continue;
                         const dist = Math.hypot(ball.x - cx, ball.y - cy);
-                        if (Math.abs(dist - ring) < ball.radius + 11 && ball._reactorCycle !== Math.floor(arena.time / 5.5)) {
+                        if (Math.abs(dist - ring) < ball.radius + 11 && ball._reactorCycle !== Math.floor(arena.time / 4.2)) {
                             ball._reactorCycle = Math.floor(arena.time / 5.5);
                             world.damage(ball, null, 14, 'reactor');
                             const nx = (ball.x - cx) / (dist || 1), ny = (ball.y - cy) / (dist || 1);
@@ -421,12 +421,12 @@
                     }
                 }
             } else if (style === 'crossfire') {
-                const cycle = arena.time % 4.8;
-                const laneY = arena.y + arena.h * (0.18 + 0.64 * Math.min(cycle / 3.6, 1));
-                if (cycle >= 3.6 && cycle <= 4.25) {
+                const cycle = arena.time % 4.0;
+                const laneY = arena.y + arena.h * (0.18 + 0.64 * Math.min(cycle / 2.8, 1));
+                if (cycle >= 2.8 && cycle <= 3.45) {
                     for (const ball of world.balls) {
                         if (!ball.alive || Math.abs(ball.y - laneY) > ball.radius + 13) continue;
-                        if (ball._crossfireCycle === Math.floor(arena.time / 4.8)) continue;
+                        if (ball._crossfireCycle === Math.floor(arena.time / 4.0)) continue;
                         ball._crossfireCycle = Math.floor(arena.time / 4.8);
                         world.damage(ball, null, 11, 'crossfire');
                         ball.vy += ball.y < cy ? -135 : 135;
