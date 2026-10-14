@@ -126,12 +126,12 @@
                 ctx.shadowBlur = 22;
                 if (weaponImage && weaponImage.complete && weaponImage.naturalWidth > 0) {
                     // Plus grande que l'ancienne icône, pour que l'épée soit clairement identifiable au sol.
-                    const size = r * 3.6;
+                    const size = r * 3.2;
                     ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
                 } else {
                     // Fallback temporaire pendant le chargement de blade.png.
                     ctx.fillStyle = '#dbeafe';
-                    ctx.font = 'bold 38px sans-serif';
+                    ctx.font = 'bold 34px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     ctx.fillText('⚔', 0, 0);
