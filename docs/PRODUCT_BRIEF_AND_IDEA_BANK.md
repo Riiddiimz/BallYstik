@@ -521,7 +521,25 @@ Points à explorer :
 
 **Cette piste concerne le montage vidéo envisagé. Elle ne demande pas de transformer maintenant les boules du jeu en personnages, ni de modifier le gameplay pour y ajouter des visages.**
 
-### D. Créer une progression émotionnelle sur les 60 secondes
+### D. Ultime spectaculaire : changement de couleur du terrain
+
+Imaginer une mécanique d'**ultime** qui déclenche un changement visuel marqué de la couleur du terrain au moment où il est lancé. Le terrain pourrait prendre temporairement une teinte ou une ambiance liée à l'ultime, afin que le spectateur comprenne immédiatement qu'un événement rare ou décisif vient de se produire.
+
+Le mode de déclenchement n'est pas défini : ce sont deux pistes d'exploration, et elles pourraient aussi être combinées ou remplacées par une meilleure idée :
+- **Action réalisée sur le terrain :** une boule déclenche son ultime après avoir accompli une action précise dans l'arène, par exemple atteindre une zone, suivre un parcours ou réussir une condition particulière.
+- **Enchaînement de pouvoirs :** une boule charge ou débloque son ultime après avoir récupéré ou enchaîné une certaine combinaison de capacités/pouvoirs.
+
+Questions à étudier :
+- Quelle condition rendrait l'ultime mérité, compréhensible et intéressante à regarder ?
+- Le déclenchement doit-il être rare, annoncé à l'avance ou surprenant ?
+- Le changement de couleur doit-il être global ou limité à une zone, et combien de temps doit-il durer ?
+- La couleur pourrait-elle annoncer le type d'effet de l'ultime sans révéler toute son issue ?
+- Comment éviter que l'ultime soit trop puissant, trop fréquent ou décide seul du combat ?
+- Comment permettre aux autres boules de réagir ou de contrer l'ultime, pour que le moment reste tendu plutôt que simplement automatique ?
+
+**Statut : idée spéculative uniquement.** Les ultimes, leurs conditions de déclenchement et le changement de couleur du terrain ne sont pas présentés comme des fonctions existantes, validées ou à implémenter maintenant. L'autre IA doit analyser cette piste, proposer des variantes et en évaluer l'intérêt pour le gameplay comme pour le spectacle.
+
+### E. Créer une progression émotionnelle sur les 60 secondes
 
 Étudier comment un combat pourrait produire une petite histoire compréhensible, même sans dialogue :
 1. Présentation rapide du défi et invitation à choisir un favori.
