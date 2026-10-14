@@ -13,6 +13,8 @@
 - `css/style.css`: Core design system, neon glow, custom scrollbars, strict accordion hiding.
 - `js/prng.js`: Mulberry32 deterministic PRNG for exact seed reproducibility.
 - `js/audio.js`: Polyphonic Web Audio synth with safe volume ADSR ramps.
+- `js/arena/spectacle-director.js`: Arena Brawl visual events every ~1.8 s (nova, prism storm, phase rupture, surge, comets, quantum wave), energy rings, lightning and streaks; uses a private PRNG so combat seeds stay unchanged.
+- `js/arena/arena-battle.js`: Arena Brawl simulation, enhanced ball auras/specular highlights and multi-stage KO explosions.
 - `js/effects.js`: Particle explosions and shockwave rings.
 - `js/ball.js`: Ball entity with glowing trail and 3D specular highlight.
 - `js/modes/classic.js`: Classic Escape mode (concentric rings, normalized spike collisions).
