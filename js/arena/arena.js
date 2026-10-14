@@ -60,18 +60,53 @@
             if (count <= 0) return;
             const cx = this.canvas.width / 2;
             const cy = this.canvas.height / 2;
-            const baseR = 24;
-            const spacing = 110;
+            const r = 24;
+            const gap = 110;
+            const map = this.mapStyle || 'neon';
 
-            if (count === 1) {
-                this.obstacles.push({ x: cx, y: cy, r: baseR + 6 });
-            } else if (count === 2) {
-                this.obstacles.push({ x: cx, y: cy - spacing, r: baseR });
-                this.obstacles.push({ x: cx, y: cy + spacing, r: baseR });
+            if (map === 'reactor') {
+                // Le cœur reste libre pour rendre lisible l'onde radiale.
+                if (count === 1) this.obstacles.push({ x: cx + 92, y: cy, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx - 100, y: cy - 70, r });
+                    this.obstacles.push({ x: cx + 100, y: cy + 70, r });
+                } else {
+                    this.obstacles.push({ x: cx - 105, y: cy - 125, r });
+                    this.obstacles.push({ x: cx + 105, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 105, y: cy + 125, r });
+                }
+            } else if (map === 'crossfire') {
+                // Obstacles décalés pour créer des abris partiels sous le faisceau.
+                if (count === 1) this.obstacles.push({ x: cx, y: cy - gap, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx - 85, y: cy, r });
+                    this.obstacles.push({ x: cx + 85, y: cy, r });
+                } else {
+                    this.obstacles.push({ x: cx - 90, y: cy - gap, r });
+                    this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 90, y: cy + gap, r });
+                }
+            } else if (map === 'void') {
+                // Le passage central reste dégagé entre deux singularités latérales.
+                if (count === 1) this.obstacles.push({ x: cx, y: cy - gap, r: r + 5 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                } else {
+                    this.obstacles.push({ x: cx - 90, y: cy - gap, r });
+                    this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx - 90, y: cy + gap, r });
+                }
             } else {
-                this.obstacles.push({ x: cx, y: cy - spacing, r: baseR });
-                this.obstacles.push({ x: cx, y: cy,           r: baseR + 4 });
-                this.obstacles.push({ x: cx, y: cy + spacing, r: baseR });
+                if (count === 1) this.obstacles.push({ x: cx, y: cy, r: r + 6 });
+                else if (count === 2) {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                } else {
+                    this.obstacles.push({ x: cx, y: cy - gap, r });
+                    this.obstacles.push({ x: cx, y: cy, r: r + 4 });
+                    this.obstacles.push({ x: cx, y: cy + gap, r });
+                }
             }
         }
 
