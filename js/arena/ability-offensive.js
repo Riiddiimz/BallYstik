@@ -609,44 +609,54 @@
     window.AbilityBehaviors.plasmaCannon = {
         attach(ball) {
             ball.weapon = 'plasmaCannon';
-            return { data: null };
         },
         update(ball, world, slot, dt) {
-            const d = slot.data || (slot.data = { cooldown: 0.65, charge: 0, targetId: null });
+            const d = slot.data || (slot.data = { cooldown: 0.65, charge: 0, charging: false, targetId: null });
             d.cooldown -= dt;
-            if (d.charge > 0) d.charge = Math.max(0, d.charge - dt);
             const range = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'targetRange', 560) : 560;
             const target = findNearestEnemy(ball, world, range);
             d.targetId = target ? target.id : null;
+
+            // Le canon annonce d'abord son tir. L'obus ne part qu'après la charge visible.
+            if (d.charging) {
+                d.charge -= dt;
+                if (d.charge > 0) return;
+                d.charging = false;
+                if (!target) return;
+                const dx = target.x - ball.x, dy = target.y - ball.y;
+                const len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len, uy = dy / len;
+                const projectileSpeed = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390;
+                world.projectiles.push({
+                    x: ball.x + ux * (ball.radius + 8),
+                    y: ball.y + uy * (ball.radius + 8),
+                    vx: ux * projectileSpeed, vy: uy * projectileSpeed,
+                    radius: 7, life: 2.2, bounces: 0,
+                    ownerId: ball.id, color: '#fb923c',
+                    damage: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'damage', 17) : 17,
+                    splashRadius: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'blastRadius', 58) : 58,
+                    type: 'plasma', trail: [], render: renderPlasmaShell
+                });
+                d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'fireRate', 1.55) : 1.55;
+                world.spawnParticle(ball.x + ux * (ball.radius + 9), ball.y + uy * (ball.radius + 9), {
+                    color: '#fed7aa', count: 12, speed: 210, life: 0.35, spread: 0.6, angle: Math.atan2(uy, ux), size: 2.8
+                });
+                world.playSound('shoot', { pitch: 0.72 });
+                return;
+            }
+
             if (!target || d.cooldown > 0) return;
-            const dx = target.x - ball.x, dy = target.y - ball.y;
-            const len = Math.hypot(dx, dy) || 1;
-            const ux = dx / len, uy = dy / len;
+            d.charging = true;
             d.charge = 0.32;
-            world.projectiles.push({
-                x: ball.x + ux * (ball.radius + 8),
-                y: ball.y + uy * (ball.radius + 8),
-                vx: ux * (window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390),
-                vy: uy * (window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'projectileSpeed', 390) : 390),
-                radius: 7, life: 2.2, bounces: 0,
-                ownerId: ball.id, color: '#fb923c',
-                damage: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'damage', 17) : 17,
-                splashRadius: window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'blastRadius', 58) : 58,
-                type: 'plasma', trail: [],
-                render: renderPlasmaShell
-            });
-            d.cooldown = window.AbilitySettings ? window.AbilitySettings.getParam('plasmaCannon', 'fireRate', 1.55) : 1.55;
-            world.spawnParticle(ball.x + ux * (ball.radius + 9), ball.y + uy * (ball.radius + 9), {
-                color: '#fed7aa', count: 12, speed: 210, life: 0.35, spread: 0.6, angle: Math.atan2(uy, ux), size: 2.8
-            });
-            world.playSound('shoot', { pitch: 0.72 });
+            d.aimX = target.x;
+            d.aimY = target.y;
         },
         render(ctx, ball, world, slot) {
             const d = slot.data;
             if (!d) return;
             const target = world.balls.find(b => b.id === d.targetId && b.alive);
             const angle = target ? Math.atan2(target.y - ball.y, target.x - ball.x) : Math.atan2(ball.vy, ball.vx);
-            const pulse = d.charge > 0 ? 1 : 0.3 + 0.15 * Math.sin((world.time || 0) * 5 + ball.id);
+            const pulse = d.charging ? 1 - d.charge / 0.32 : 0.3 + 0.15 * Math.sin((world.time || 0) * 5 + ball.id);
             ctx.save();
             ctx.translate(ball.x, ball.y);
             ctx.rotate(angle);
@@ -662,21 +672,21 @@
             ctx.fillRect(ball.radius * 0.12, -4, ball.radius + 11, 8);
             ctx.fillStyle = '#fff7ed';
             ctx.fillRect(ball.radius + 5, -2, 8, 4);
-            if (d.charge > 0) {
-                ctx.globalAlpha = 0.75;
+            if (d.charging) {
+                ctx.globalAlpha = 0.75 + pulse * 0.25;
                 ctx.strokeStyle = '#fdba74';
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(ball.radius + 18, 0, 7 + (0.32 - d.charge) * 24, 0, Math.PI * 2);
+                ctx.arc(ball.radius + 18, 0, 7 + pulse * 4, 0, Math.PI * 2);
                 ctx.stroke();
             }
             ctx.restore();
-            if (target && d.charge > 0) {
+            if (target && d.charging) {
                 ctx.save();
-                ctx.globalAlpha = Math.min(0.65, d.charge * 2);
+                ctx.globalAlpha = 0.25 + pulse * 0.55;
                 ctx.setLineDash([5, 5]);
                 ctx.strokeStyle = '#fb923c';
-                ctx.lineWidth = 1.5;
+                ctx.lineWidth = 1.5 + pulse;
                 ctx.beginPath(); ctx.moveTo(ball.x, ball.y); ctx.lineTo(target.x, target.y); ctx.stroke();
                 ctx.restore();
             }
