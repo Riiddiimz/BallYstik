@@ -14,7 +14,7 @@
             this.meta = abilityMeta;
             this.age = 0;
             this.state = 'spawning'; // spawning | idle | sucked | taken
-            this.spawnTimer = 1.25;
+            this.spawnTimer = 1.0;
             this.life = 22;
             this.taken = false;
             this.seed = (prng && prng.next ? prng.next() : Math.random()) * 1000;
@@ -77,7 +77,7 @@
 
             // Colonne de lumière pendant le spawn
             if (this.state === 'spawning') {
-                const progress = Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.25));
+                const progress = Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.0));
                 const pulse = 0.65 + Math.sin(t * 9) * 0.2;
                 const beamHeight = 260 + progress * 100;
                 const beamWidth = 18 + Math.sin(t * 12) * 5;
@@ -152,9 +152,9 @@
                 const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages[meta.id];
                 ctx.save();
                 ctx.translate(this.x, this.y);
-                const spawnProgress = this.state === 'spawning' ? Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.25)) : 1;
+                const spawnProgress = this.state === 'spawning' ? Math.max(0, Math.min(1, 1 - this.spawnTimer / 1.0)) : 1;
                 const appear = this.state === 'spawning' ? Math.max(0.2, spawnProgress) : 1;
-                const weaponScale = this.state === 'spawning' ? 0.45 + 0.75 * spawnProgress : 1;
+                const weaponScale = this.state === 'spawning' ? 0.45 + 0.55 * spawnProgress : 1;
                 ctx.scale(weaponScale, weaponScale);
                 ctx.globalAlpha = appear;
                 ctx.rotate(-Math.PI / 4);
@@ -162,7 +162,7 @@
                 ctx.shadowBlur = 22;
                 if (weaponImage && weaponImage.complete && weaponImage.naturalWidth > 0) {
                     // Plus grande que l'ancienne icône, pour que l'épée soit clairement identifiable au sol.
-                    const size = r * 3.2;
+                    const size = r * 5.2;
                     ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
                 } else {
                     // Fallback si l'image de cette arme ne se charge pas.
@@ -264,7 +264,7 @@
             }
             if (!best) return false;
             const pickup = new Pickup(best.x, best.y, meta, this.prng);
-            pickup.spawnTimer = 1.25;
+            pickup.spawnTimer = 1.0;
             pickup.radius = (meta.id === 'blade' || meta.id === 'blade2') ? 19 : 16;
             this.items.push(pickup);
             world.spawnParticle(best.x, best.y, { color: '#ffffff', count: 18, speed: 260, life: 0.9, spread: Math.PI * 2, size: 3.2 });
