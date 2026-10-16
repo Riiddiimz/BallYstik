@@ -12,7 +12,7 @@
         abShrinkRate: ['shrinkRate', 'int', v => v + ' px/s'],
         abShrinkMax: ['shrinkMax', 'percent', v => v + '%'],
         abObstacles: ['obstacles', 'int', v => String(v)],
-        abSpeed: ['gameSpeed', 'float', v => v.toFixed(1) + 'x']
+        abSpeed: ['gameSpeed', 'int', v => 'Vitesse ' + (v > 0 ? '+' : '') + v]
     };
     const STORAGE_KEY = 'ballystik.arena.options.v1';
     const SEED_KEY = 'ballystik.arena.seed.v1';
@@ -53,7 +53,7 @@
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                 Object.entries(SLIDERS).forEach(([id, cfg]) => {
                     const el = document.getElementById(id);
-                    if (el && saved[cfg[0]] != null) el.value = cfg[1] === 'percent' ? Math.round(saved[cfg[0]] * 100) : saved[cfg[0]];
+                    if (el && saved[cfg[0]] != null) {\n                        let storedValue = saved[cfg[0]];\n                        if (id === 'abSpeed') storedValue = saved.speedLevel != null ? saved.speedLevel : Math.round((Number(storedValue) - 1.5) / 0.25);\n                        el.value = cfg[1] === 'percent' ? Math.round(storedValue * 100) : storedValue;\n                    }
                 });
                 const shrink = document.getElementById('abShrinkToggle');
                 if (shrink && saved.shrinkEnabled != null) shrink.checked = !!saved.shrinkEnabled;
@@ -71,7 +71,7 @@
                 options[cfg[0]] = cfg[1] === 'int' || cfg[1] === 'percent' ? (cfg[1] === 'percent' ? value / 100 : Math.round(value)) : value;
             });
             const shrink = document.getElementById('abShrinkToggle');
-            options.matchMode = 'lastStanding';
+            if (document.getElementById('abSpeed')) options.gameSpeed = 1.5 + Number(document.getElementById('abSpeed').value) * 0.25;\n            options.speedLevel = Number(document.getElementById('abSpeed')?.value || 0);\n            options.matchMode = 'lastStanding';
             const mapSelect = document.getElementById('arenaMapSelect');
             options.arenaMap = mapSelect ? mapSelect.value : 'neon';
             try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
