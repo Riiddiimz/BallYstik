@@ -1,8 +1,7 @@
 # Project State
 
 ## Current Phase
-- Bootstrap completed: memory system, task triage rules, and specialized subagents active.
-- Baseline engine: Modular Canvas 2D + deterministic seed system + Classic Escape mode operational.
+- Branche par défaut : `v2`; développement de l'interface Arena Brawl et de l'export vidéo.
 
 ## Done
 - Audited and fixed initial HTML file (anti-tunneling sub-steps, safe ball spawn, spike angle normalization).
@@ -15,10 +14,8 @@
 - Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
 
 ## In Progress / Next
-- Branche `feature/arena-spectacle-v2` : deux armes récupérables, Canon à plasma (charge visible, obus explosifs et dégâts de zone) et Bobine Tesla (charge, foudre et arc secondaire).
-- Quatre cartes sélectionnables avec règles distinctes : Néon, Réacteur (onde radiale), Crossfire (faisceau télégraphié), Néant (puits gravitationnels).
-- Les avertissements visuels sont synchronisés avec les fenêtres de danger. Les effets d'événements aléatoires sans cause ont été retirés.
-- Vérification navigateur réelle encore nécessaire avant fusion.
+- Le panneau de sélection d'armes doit utiliser les six nouveaux assets (hache, arc, marteau, sceptre, lance, épée) ; les armes sont récupérables et visibles sur les boules.
+- Export MP4 via capture du canvas puis conversion FFmpeg WASM ; test navigateur réel requis.
 
 ## Open Issues
 - La syntaxe JavaScript et les comportements de base ont été testés directement. Les performances et le ressenti en navigateur restent à confirmer.
