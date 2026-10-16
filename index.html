@@ -133,7 +133,7 @@
                     <div class="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition">
                         <span class="text-xs text-zinc-300">Arène qui rétrécit</span>
                         <label class="ability-switch-wrap" title="Activer/désactiver l'arène qui rétrécit">
-                            <input type="checkbox" id="abShrinkToggle">
+                            <input type="checkbox" id="abShrinkToggle" checked>
                             <span class="ability-switch"></span>
                         </label>
                     </div>
@@ -166,10 +166,10 @@
                     <!-- Vitesse du jeu -->
                     <div>
                         <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abSpeed">Vitesse du jeu</label>
-                            <span id="abSpeedVal" class="text-amber-400 font-mono font-semibold">1.0x</span>
+                            <label for="abSpeed">Vitesse</label>
+                            <span id="abSpeedVal" class="text-amber-400 font-mono font-semibold">Vitesse 0</span>
                         </div>
-                        <input id="abSpeed" type="range" min="0.5" max="2" step="0.1" value="1" class="w-full">
+                        <input id="abSpeed" type="range" min="-3" max="3" step="1" value="0" class="w-full">
                     </div>
 
                     <!-- Info déterministe -->
