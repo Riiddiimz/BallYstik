@@ -16,6 +16,13 @@
         danger:    'rgba(255, 42, 133, 0.65)'
     };
 
+    // Paramètres propres à Vortex Spirale, repris de la carte autonome.
+    const VORTEX = {
+        radiusFactor: 0.46, attraction: 220, maxSpeed: 460, minSpeed: 90,
+        tangentialBias: 30, centerSoftRadius: 60, obstacleRadius: 22,
+        wallBounce: 0.7, wallPushBack: 30, spinSign: 1
+    };
+
     class Arena {
         constructor(canvas, options = {}) {
             this.canvas = canvas;
@@ -41,20 +48,42 @@
             this.shrinkWarningLength = 1.6;
 
             this.obstacles = [];
-            this._buildObstacles(options.obstacles ?? 1, options.obstaclePositions);
-
+            this.suckParticles = [];
+            this.spinAngle = 0;
+            this.vortexRadius = 0;
+            this.vortexCx = 0;
+            this.vortexCy = 0;
             this._recompute();
+            this._buildObstacles(options.obstacles ?? 1, options.obstaclePositions);
+            if (this.mapStyle === 'vortex') {
+                // Particules déterministes pour conserver une configuration reproductible.
+                for (let i = 0; i < 40; i++) this.suckParticles.push(this._newSuckParticle(i, true));
+            }
         }
 
         _recompute() {
             const c = this.canvas;
-            // Le décor et le fond de la carte restent fixes pendant toute la partie.
+            if (this.mapStyle === 'vortex') {
+                // Le cercle reste centré et ne subit jamais le shrink rectangulaire.
+                this.shrinkEnabled = false;
+                this.shrinkOffset = 0;
+                this.vortexCx = c.width / 2;
+                this.vortexCy = c.height / 2;
+                this.vortexRadius = Math.min(c.width, c.height) * VORTEX.radiusFactor;
+                this.x = this.vortexCx - this.vortexRadius;
+                this.y = this.vortexCy - this.vortexRadius;
+                this.w = this.vortexRadius * 2;
+                this.h = this.vortexRadius * 2;
+                this.frameX = this.x;
+                this.frameY = this.y;
+                this.frameW = this.w;
+                this.frameH = this.h;
+                return;
+            }
             this.frameX = this.padding;
             this.frameY = this.padding;
             this.frameW = Math.max(60, c.width - this.padding * 2);
             this.frameH = Math.max(60, c.height - this.padding * 2);
-
-            // Seules les limites de collision se déplacent vers l'intérieur.
             const p = this.padding + this.shrinkOffset;
             this.x = p;
             this.y = p;
@@ -62,8 +91,45 @@
             this.h = Math.max(60, c.height - p * 2);
         }
 
+        _newSuckParticle(index, initial = false) {
+            const seed = ((index + 1) * 0.618033988749895) % 1;
+            return {
+                angle: seed * Math.PI * 2,
+                radius: this.vortexRadius * (0.6 + ((index * 37) % 41) / 100),
+                speed: 40 + ((index * 29) % 81),
+                life: initial ? ((index * 17) % 20) / 10 : 0,
+                maxLife: 2.5 + ((index * 13) % 20) / 10,
+                size: 1 + ((index * 7) % 18) / 10,
+                hue: index % 2 === 0 ? '#a855f7' : '#e9d5ff'
+            };
+        }
+
         _buildObstacles(count, customPositions = null) {
             this.obstacles = [];
+            if (this.mapStyle === 'vortex') {
+                const r = VORTEX.obstacleRadius;
+                const rings = [
+                    { radius: 0.42, count: 3, phase: 0.3 },
+                    { radius: 0.68, count: 3, phase: 1.7 }
+                ];
+                for (const ring of rings) {
+                    for (let i = 0; i < ring.count; i++) {
+                        const angle = ring.phase + (i / ring.count) * Math.PI * 2;
+                        this.obstacles.push({
+                            x: this.vortexCx + Math.cos(angle) * this.vortexRadius * ring.radius,
+                            y: this.vortexCy + Math.sin(angle) * this.vortexRadius * ring.radius,
+                            r, hitPulse: 0, baseAngle: angle,
+                            orbitRadius: this.vortexRadius * ring.radius,
+                            rotateSpeed: 0.12 * VORTEX.spinSign
+                        });
+                    }
+                }
+                this.obstacles.push({
+                    x: this.vortexCx, y: this.vortexCy, r: r * 0.85,
+                    hitPulse: 0, baseAngle: 0, orbitRadius: 0, rotateSpeed: 0
+                });
+                return;
+            }
             if (Array.isArray(customPositions)) {
                 customPositions.slice(0, Math.max(0, Math.min(10, Number(count) || 0))).forEach(pos => {
                     if (!pos || !Number.isFinite(Number(pos.x)) || !Number.isFinite(Number(pos.y))) return;
@@ -139,7 +205,28 @@
             this.wallPulse = Math.max(0, this.wallPulse - dt * 3.2);
             for (const obstacle of this.obstacles) obstacle.hitPulse = Math.max(0, (obstacle.hitPulse || 0) - dt * 3.8);
 
-            this.shrinkMoving = false;
+            if (this.mapStyle === 'vortex') {
+                this.spinAngle += dt * 0.5 * VORTEX.spinSign;
+                for (const obstacle of this.obstacles) {
+                    if (obstacle.rotateSpeed) {
+                        obstacle.baseAngle += obstacle.rotateSpeed * dt;
+                        obstacle.x = this.vortexCx + Math.cos(obstacle.baseAngle) * obstacle.orbitRadius;
+                        obstacle.y = this.vortexCy + Math.sin(obstacle.baseAngle) * obstacle.orbitRadius;
+                    }
+                }
+                for (let i = 0; i < this.suckParticles.length; i++) {
+                    const p = this.suckParticles[i];
+                    p.life += dt;
+                    p.radius -= p.speed * dt;
+                    p.angle += (1.2 + p.speed * 0.005) * VORTEX.spinSign * dt;
+                    if (p.radius <= 8 || p.life > p.maxLife) this.suckParticles[i] = this._newSuckParticle(i, false);
+                }
+                this.shrinkEnabled = false;
+                this.shrinkOffset = 0;
+                this.shrinkMoving = false;
+                this.shrinkWarning = 0;
+            } else {
+                this.shrinkMoving = false;
             this.shrinkWarning = 0;
             if (this.shrinkEnabled && this.elapsed > this.shrinkStart) {
                 const maxPx = Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
@@ -157,6 +244,7 @@
                 }
             }
 
+            }
             for (let i = this.hitFlashes.length - 1; i >= 0; i--) {
                 const f = this.hitFlashes[i];
                 f.life -= dt;
@@ -169,7 +257,7 @@
         }
 
         isInsideDangerZone(ball) {
-            if (!this.shrinkEnabled) return false;
+            if (this.mapStyle === 'vortex' || !this.shrinkEnabled) return false;
             const safeP = this.padding + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
             return ball.x < safeP || ball.x > this.canvas.width - safeP
                 || ball.y < safeP || ball.y > this.canvas.height - safeP;
@@ -179,7 +267,8 @@
             this.hitFlashes.push({ x, y, life, maxLife: life });
         }
 
-        resolveBall(ball) {
+        resolveBall(ball, dt = 1 / 60) {
+            if (this.mapStyle === 'vortex') return this._resolveVortexBall(ball, dt);
             const r = Math.max(0, Number(ball.radius) || 0);
             const left = this.x, right = this.x + this.w;
             const top = this.y, bottom = this.y + this.h;
@@ -319,7 +408,144 @@
             return hit;
         }
 
+
+        _resolveVortexBall(ball, dt) {
+            const r = Math.max(0, Number(ball.radius) || 0);
+            const dx = ball.x - this.vortexCx, dy = ball.y - this.vortexCy;
+            const dist = Math.hypot(dx, dy) || 1;
+            const nx = dx / dist, ny = dy / dist;
+            const limit = Math.max(1, this.vortexRadius - r);
+            let hit = null;
+
+            // Mur circulaire avec rebond amorti.
+            if (dist >= limit) {
+                ball.x = this.vortexCx + nx * limit;
+                ball.y = this.vortexCy + ny * limit;
+                const radial = ball.vx * nx + ball.vy * ny;
+                const tx = ball.vx - radial * nx, ty = ball.vy - radial * ny;
+                if (radial > 0) {
+                    ball.vx = tx - radial * VORTEX.wallBounce * nx;
+                    ball.vy = ty - radial * VORTEX.wallBounce * ny;
+                } else {
+                    ball.vx = tx + radial * nx;
+                    ball.vy = ty + radial * ny;
+                }
+                ball.vx -= nx * VORTEX.wallPushBack * dt;
+                ball.vy -= ny * VORTEX.wallPushBack * dt;
+                hit = { nx: -nx, ny: -ny, x: this.vortexCx + nx * this.vortexRadius, y: this.vortexCy + ny * this.vortexRadius };
+            }
+
+            // Les obstacles orbitaux restent propres à cette carte.
+            for (const o of this.obstacles) {
+                const ox = ball.x - o.x, oy = ball.y - o.y;
+                const od = Math.hypot(ox, oy) || 1, minD = o.r + r;
+                if (od >= minD) continue;
+                const onx = ox / od, ony = oy / od;
+                const overlap = minD - od;
+                ball.x += onx * overlap;
+                ball.y += ony * overlap;
+                const obstacleVx = -Math.sin(o.baseAngle || 0) * (o.rotateSpeed || 0) * (o.orbitRadius || 0);
+                const obstacleVy = Math.cos(o.baseAngle || 0) * (o.rotateSpeed || 0) * (o.orbitRadius || 0);
+                const relNormal = (ball.vx - obstacleVx) * onx + (ball.vy - obstacleVy) * ony;
+                if (relNormal < 0) {
+                    ball.vx -= 1.65 * relNormal * onx;
+                    ball.vy -= 1.65 * relNormal * ony;
+                }
+                o.hitPulse = 1;
+                hit = { nx: onx, ny: ony, x: o.x + onx * o.r, y: o.y + ony * o.r, obstacle: true };
+            }
+            if (hit) {
+                this.wallPulse = 1;
+                this.hitFlashes.push({ x: hit.x, y: hit.y, life: 0.35, maxLife: 0.35 });
+            }
+            return hit;
+        }
+
+        _renderVortex(ctx) {
+            const cx = this.vortexCx, cy = this.vortexCy, R = this.vortexRadius, t = this.time;
+            ctx.fillStyle = '#080611';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            const bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+            bg.addColorStop(0, '#2a0e4d'); bg.addColorStop(0.5, '#1a0832'); bg.addColorStop(1, '#0c0518');
+            ctx.fillStyle = bg;
+            ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.clip();
+            for (let arm = 0; arm < 6; arm++) {
+                const base = arm / 6 * Math.PI * 2 + this.spinAngle * 0.6;
+                ctx.beginPath();
+                for (let i = 0; i <= 40; i++) {
+                    const p = i / 40, rr = p * R * 0.98, a = base + p * Math.PI * 1.8 * VORTEX.spinSign;
+                    const x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = 'rgba(168, 85, 247, ' + (0.10 + 0.05 * Math.sin(t + arm)) + ')';
+                ctx.lineWidth = 8; ctx.stroke();
+            }
+            for (let ring = 1; ring <= 5; ring++) {
+                const rr = ring / 5 * R * 0.95;
+                ctx.save(); ctx.translate(cx, cy);
+                ctx.rotate(this.spinAngle * (ring % 2 === 0 ? 0.3 : -0.3));
+                ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(192, 132, 252, ' + (0.06 + 0.04 * ring / 5) + ')';
+                ctx.lineWidth = 1; ctx.setLineDash([6, 12]); ctx.stroke(); ctx.setLineDash([]);
+                ctx.restore();
+            }
+            const pulse = 0.85 + 0.15 * Math.sin(t * 2.4);
+            const core = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.35);
+            core.addColorStop(0, 'rgba(233, 213, 255, ' + (0.95 * pulse) + ')');
+            core.addColorStop(0.25, 'rgba(168, 85, 247, ' + (0.65 * pulse) + ')');
+            core.addColorStop(0.6, 'rgba(88, 28, 135, ' + (0.25 * pulse) + ')');
+            core.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = core; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            ctx.beginPath(); ctx.arc(cx, cy, 6 + 2 * Math.sin(t * 4), 0, Math.PI * 2);
+            ctx.fillStyle = '#f3e8ff'; ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 30; ctx.fill(); ctx.shadowBlur = 0;
+
+            for (const p of this.suckParticles) {
+                const fade = Math.min(p.life / 0.6, 1) * (1 - Math.min(p.life / p.maxLife, 1));
+                if (fade <= 0.05) continue;
+                ctx.save(); ctx.globalAlpha = fade; ctx.fillStyle = p.hue; ctx.shadowColor = p.hue; ctx.shadowBlur = 10;
+                ctx.beginPath(); ctx.arc(cx + Math.cos(p.angle) * p.radius, cy + Math.sin(p.angle) * p.radius, p.size, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            ctx.restore();
+
+            const borderPulse = 0.85 + 0.15 * Math.sin(t * 1.6);
+            ctx.save(); ctx.strokeStyle = 'rgba(192, 132, 252, ' + (0.6 * borderPulse) + ')'; ctx.lineWidth = 3;
+            ctx.shadowColor = '#a855f7'; ctx.shadowBlur = 26 * borderPulse;
+            ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
+            ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(255,255,255,0.55)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+
+            for (const o of this.obstacles) {
+                const pulse = o.hitPulse || 0, beat = 0.5 + 0.5 * Math.sin(t * 3 + (o.baseAngle || 0) * 3);
+                ctx.save(); ctx.globalAlpha = 0.55 + pulse * 0.45;
+                ctx.shadowColor = pulse > 0 ? '#f3e8ff' : '#a855f7'; ctx.shadowBlur = 18 + pulse * 22 + beat * 5;
+                ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 3 + pulse * 5 + beat * 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = pulse > 0 ? '#f3e8ff' : 'rgba(168,85,247,0.6)'; ctx.lineWidth = 2 + pulse * 2.5; ctx.stroke();
+                ctx.globalAlpha = 1;
+                const grad = ctx.createRadialGradient(o.x - o.r * 0.4, o.y - o.r * 0.4, 1, o.x, o.y, o.r);
+                grad.addColorStop(0, pulse > 0 ? '#f3e8ff' : '#4c1d95'); grad.addColorStop(0.7, '#2a0e4d'); grad.addColorStop(1, '#1a0832');
+                ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = pulse > 0 ? '#ffffff' : '#c084fc'; ctx.lineWidth = 1.8 + pulse * 2; ctx.stroke();
+                ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a855f7'; ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8 + pulse * 20 + beat * 3;
+                ctx.beginPath(); ctx.arc(o.x, o.y, 3 + beat * 1.5 + pulse * 4, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+            for (const f of this.hitFlashes) {
+                const fade = f.life / f.maxLife;
+                ctx.save(); ctx.globalAlpha = fade; ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 24;
+                ctx.beginPath(); ctx.arc(f.x, f.y, 6 + (1 - fade) * 14, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(233,213,255,0.85)'; ctx.fill(); ctx.restore();
+            }
+        }
+
         render(ctx) {
+            if (this.mapStyle === 'vortex') {
+                this._renderVortex(ctx);
+                return;
+            }
             const { x, y, w, h, cornerRadius } = this;
             const frameX = this.frameX ?? x;
             const frameY = this.frameY ?? y;
