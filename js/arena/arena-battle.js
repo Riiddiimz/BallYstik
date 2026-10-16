@@ -504,7 +504,7 @@
                     }
                 }
 
-                // La propulsion d'un obstacle est temporaire : après 0,55 s,
+                // La propulsion d'un obstacle est temporaire : après 0,75 s,
                 // la boule retrouve sa vitesse de déplacement habituelle.
                 if (ball._obstacleBoostTimer > 0) {
                     ball._obstacleBoostTimer = Math.max(0, ball._obstacleBoostTimer - dt);
