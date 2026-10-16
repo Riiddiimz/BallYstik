@@ -623,7 +623,7 @@
                 }
 
                 // Les effets de collision/capacité ne doivent pas faire dériver la vitesse de base.
-                if (!ball.status.isStunned()) this._keepBaseSpeed(ball);
+                if (!ball.status.isStunned() && !(ball._obstacleBoostTimer > 0)) this._keepBaseSpeed(ball);
 
                 // Health update
                 ball.health.update(dt);
@@ -903,6 +903,34 @@
 
         _renderBall(ctx, ball, world) {
             const alpha = ball.isClone ? (ball.alpha ?? 0.55) : 1;
+
+            // Traînées lumineuses directionnelles : rendent la propulsion visible.
+            if (!ball.isClone && ball._obstacleBoostTimer > 0) {
+                const speed = Math.hypot(ball.vx || 0, ball.vy || 0) || 1;
+                const dx = ball.vx / speed, dy = ball.vy / speed;
+                const strength = Math.min(1, ball._obstacleBoostTimer / 0.22);
+                ctx.save();
+                ctx.lineCap = 'round';
+                ctx.globalAlpha = 0.9;
+                ctx.strokeStyle = '#fff7ae';
+                ctx.shadowColor = '#ffb703';
+                ctx.shadowBlur = 18;
+                ctx.lineWidth = 5 + strength * 3;
+                ctx.beginPath();
+                ctx.moveTo(ball.x - dx * (ball.radius + 5), ball.y - dy * (ball.radius + 5));
+                ctx.lineTo(ball.x - dx * (ball.radius + 28), ball.y - dy * (ball.radius + 28));
+                ctx.stroke();
+                ctx.strokeStyle = '#ff8c42';
+                ctx.globalAlpha = 0.65;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(ball.x - dx * (ball.radius + 12) + dy * 5, ball.y - dy * (ball.radius + 12) - dx * 5);
+                ctx.lineTo(ball.x - dx * (ball.radius + 39) + dy * 8, ball.y - dy * (ball.radius + 39) - dx * 8);
+                ctx.moveTo(ball.x - dx * (ball.radius + 12) - dy * 5, ball.y - dy * (ball.radius + 12) + dx * 5);
+                ctx.lineTo(ball.x - dx * (ball.radius + 39) - dy * 8, ball.y - dy * (ball.radius + 39) + dx * 8);
+                ctx.stroke();
+                ctx.restore();
+            }
 
             // Signal d'état lisible : l'anneau rouge n'apparaît qu'en danger critique.
             const hpRatio = ball.health && ball.health.max > 0 ? ball.health.current / ball.health.max : 1;
