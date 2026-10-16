@@ -14,6 +14,7 @@
 ## Recently Changed
 - Added a right-side weapon test menu for all eight images in `assets/weapons`; each Spawn button drops the selected image into the arena. Timed sword spawns remain enabled.
 - Added animation-loop error reporting, prevented the regular RAF loop from double-stepping the game during MP4 capture, and added a rounded-rectangle rendering fallback.
+- Picked-up weapons now stay visible and orbit their carrier; they can hit the nearest opponent when the orbit enters melee range.
 
 ## In Progress / Next
 - Validate `mvp.html` in a real browser, especially collision feel, shrinking-zone damage, weapon pickups, ultimate triggering, and the 60-second capture/download flow.
