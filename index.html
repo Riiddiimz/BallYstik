@@ -242,6 +242,10 @@
             <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
                 <i class="fa-solid fa-rotate-right"></i> Réinitialiser
             </button>
+            <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="flex-1 py-2 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                <i id="recordIcon" class="fa-solid fa-circle text-white"></i>
+                <span id="recordText">Enregistrer MP4</span>
+            </button>
             <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
                 <i class="fa-solid fa-shuffle"></i> Nouvelle partie
             </button>
@@ -281,10 +285,6 @@
                 <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
                     <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
                     <span id="playPauseText" class="hidden sm:inline">Pause</span>
-                </button>
-                <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-red-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
-                    <i id="recordIcon" class="fa-solid fa-circle text-red-400"></i>
-                    <span id="recordText" class="hidden sm:inline">Enregistrer MP4</span>
                 </button>
                 <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
                     <i class="fa-solid fa-expand"></i>
