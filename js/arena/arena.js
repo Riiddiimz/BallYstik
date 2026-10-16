@@ -286,9 +286,16 @@
                     ball.y += ny * overlap;
                     const dot = ball.vx * nx + ball.vy * ny;
                     if (dot < 0) {
+                        // Rebond propulsé : boost temporaire, puis retour à la vitesse normale.
                         ball.vx -= 2 * dot * nx;
                         ball.vy -= 2 * dot * ny;
-                        hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r };
+                        const baseSpeed = Number(ball.baseMoveSpeed) || 180;
+                        const speed = Math.hypot(ball.vx, ball.vy) || 1;
+                        const launchSpeed = baseSpeed * 2.25;
+                        ball.vx = (ball.vx / speed) * launchSpeed;
+                        ball.vy = (ball.vy / speed) * launchSpeed;
+                        ball._obstacleBoostTimer = 0.55;
+                        hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r, obstacle: true };
                     }
                 }
             }
