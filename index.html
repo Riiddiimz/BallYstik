@@ -1,110 +1,202 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr" class="dark">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>BallYstik — Combat</title>
-<meta name="description" content="BallYstik : combat de quatre boules dans une arène verticale." />
-<style>
-:root{color-scheme:dark;--bg:#090b12;--panel:#111725;--panel2:#0d1320;--line:#263448;--cyan:#7ce7ff;--gold:#ffd38a;--muted:#9aa8bc;--red:#ff655e}
-*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(ellipse at 50% -10%,#182840 0,#0c1220 42%,var(--bg) 78%);color:#edf5ff}
-body{min-height:100vh}.app{max-width:1500px;margin:0 auto;padding:18px 22px 24px;min-height:100vh;display:flex;flex-direction:column;gap:16px}
-header{display:flex;align-items:center;justify-content:space-between;gap:16px;border:1px solid #243348;background:#0d1421d9;padding:14px 18px;border-radius:18px;box-shadow:0 12px 36px #0003}
-.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#7ce7ff,#3587c9);box-shadow:0 0 26px #7ce7ff25;display:grid;place-items:center;color:#08101b;font-weight:950;font-size:20px}.brand h1{font-size:18px;margin:0;letter-spacing:.2px}.brand p{margin:3px 0 0;color:var(--muted);font-size:12px}
-.timer-wrap{text-align:right;min-width:108px}.timer-label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}#timer{font-size:32px;font-weight:850;line-height:1.15;font-variant-numeric:tabular-nums;color:var(--cyan)}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px;align-items:stretch;flex:1;min-height:0}.stage{min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;border:1px solid #243348;border-radius:22px;padding:16px;background:linear-gradient(145deg,#111827d9,#080d17eF);box-shadow:0 18px 50px #0004;position:relative;overflow:hidden}
-.canvas-shell{height:min(72vh,960px);max-height:calc(100vh - 220px);aspect-ratio:9/16;width:auto;max-width:100%;position:relative;border-radius:20px;overflow:hidden;background:#080d17;box-shadow:0 0 0 1px #7ce7ff33,0 0 40px #1477a21a}
-canvas{display:block;width:100%;height:100%;object-fit:contain}.stage-footer{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;width:100%}
-button{font:inherit;cursor:pointer;border:1px solid #304258;border-radius:12px;padding:11px 16px;background:#121d2d;color:#edf5ff;font-weight:750;transition:transform .15s,border-color .15s,background .15s,box-shadow .15s}
-button:hover{border-color:var(--cyan);background:#17283a;box-shadow:0 0 18px #7ce7ff14}button:active{transform:scale(.98)}button.primary{background:linear-gradient(120deg,#79e6ff,#4798d4);border-color:transparent;color:#06111b}button.primary:hover{background:linear-gradient(120deg,#a0efff,#65b4ed)}button:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
-.settings{border:1px solid #243348;border-radius:22px;padding:18px;background:linear-gradient(160deg,#121b2aeb,#0c121eeb);display:flex;flex-direction:column;gap:18px;box-shadow:0 18px 50px #0003}.settings h2{font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);margin:0}.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#d8e4f3;font-size:13px}.setting small{display:block;color:var(--muted);font-size:11px;margin-top:4px}.switch{appearance:none;width:38px;height:22px;border-radius:99px;background:#344154;position:relative;cursor:pointer;flex:none;transition:background .15s}.switch:before{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:white;transition:transform .15s}.switch:checked{background:#279ac0}.switch:checked:before{transform:translateX(16px)}.fixed-info{border-top:1px solid #263448;padding-top:14px;color:var(--muted);font-size:12px;line-height:1.6}.legend{display:grid;grid-template-columns:1fr 1fr;gap:9px}.legend-item{display:flex;align-items:center;gap:7px;color:#cbd6e5;font-size:12px}.dot{width:9px;height:9px;border-radius:50%;box-shadow:0 0 12px currentColor}
-.status{font-size:11px;color:var(--muted);text-align:center;min-height:14px}
-.overlay{position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#050811eF;backdrop-filter:blur(8px);padding:22px;text-align:center;z-index:4}.overlay.show{display:flex}.result-card{width:100%;border:1px solid #33445a;background:#101a2aee;border-radius:20px;padding:22px 16px;box-shadow:0 0 45px #0008}.result-card .eyebrow{font-size:10px;letter-spacing:2px;color:var(--cyan);text-transform:uppercase}.result-card h2{font-size:clamp(22px,4vw,36px);margin:10px 0;color:var(--gold)}.result-card p{color:#bdcadd;font-size:12px;line-height:1.5}.scoreboard{display:grid;gap:7px;margin:14px 0;text-align:left}.score-row{display:flex;justify-content:space-between;align-items:center;font-size:12px;border-bottom:1px solid #28374a;padding:7px 0}.score-row strong{font-variant-numeric:tabular-nums}
-@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.settings{display:grid;grid-template-columns:1fr 1fr;gap:14px}.settings h2,.fixed-info,.legend{grid-column:1/-1}.canvas-shell{height:min(68vh,960px);max-height:calc(100vh - 250px)}}
-@media(max-width:560px){.app{padding:8px;gap:9px}header{padding:10px 12px;border-radius:14px}.logo{width:34px;height:34px}.brand h1{font-size:15px}.brand p{font-size:10px}#timer{font-size:27px}.layout{gap:9px}.stage{padding:8px;border-radius:16px;gap:9px}.canvas-shell{height:min(63vh,760px);max-height:calc(100vh - 205px);border-radius:14px}.settings{padding:12px;border-radius:16px}.setting{font-size:12px}button{padding:10px 12px;font-size:12px}.result-card{padding:16px 12px}}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BallYstik — Last Sphere Standing</title>
+    <meta name="description" content="Arena battle royale vertical : des boules s’affrontent, collectent des capacités et combattent jusqu’au dernier survivant.">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0b0b0d',
+                        panelBg: 'rgba(18, 20, 29, 0.88)',
+                        accentPink: '#ff2a85',
+                        accentCyan: '#00f2fe',
+                        accentPurple: '#7928ca'
+                    },
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome 6 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Modular Application Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
-<div class="app">
-<header>
- <div class="brand"><div class="logo">B</div><div><h1>BallYstik — Combat</h1><p>4 combattants · arène néon · 60 secondes</p></div></div>
- <div class="timer-wrap"><div class="timer-label">Temps restant</div><div id="timer">60.0</div></div>
-</header>
-<div class="layout">
- <main class="stage">
-  <div class="canvas-shell" id="canvasShell">
-   <canvas id="simCanvas" width="540" height="960" aria-label="Arène de combat BallYstik"></canvas>
-   <div class="overlay" id="resultOverlay"><div class="result-card"><div class="eyebrow">Fin du combat</div><h2 id="winnerTitle">Victoire !</h2><p id="winnerCriteria">Le gagnant est déterminé selon les dégâts infligés.</p><div class="scoreboard" id="scoreboard"></div><p id="replayHint">Nouvelle partie disponible dans 3 secondes…</p><button class="primary" id="replayBtn" disabled>Nouveau combat</button></div></div>
-  </div>
-  <div class="stage-footer"><button class="primary" id="newGameBtn">↻ Nouveau combat</button><button id="recordBtn">● Enregistrer MP4</button></div>
-  <div class="status" id="status" role="status">Combat prêt — le chrono démarre avec l'arène.</div>
- </main>
- <aside class="settings">
-  <h2>Réglages</h2>
-  <label class="setting"><span>Afficher les PV<small>Barres au-dessus des boules</small></span><input class="switch" id="showHp" type="checkbox" checked></label>
-  <label class="setting"><span>Sons<small>Effets sonores simples</small></span><input class="switch" id="soundToggle" type="checkbox"></label>
-  <div><h2 style="margin-bottom:12px">Combattants</h2><div class="legend">
-   <div class="legend-item"><span class="dot" style="color:#ff555d;background:#ff555d"></span>Rouge</div>
-   <div class="legend-item"><span class="dot" style="color:#53aaff;background:#53aaff"></span>Bleu</div>
-   <div class="legend-item"><span class="dot" style="color:#50e49a;background:#50e49a"></span>Vert</div>
-   <div class="legend-item"><span class="dot" style="color:#ffd45e;background:#ffd45e"></span>Jaune</div>
-  </div></div>
-  <div class="fixed-info">Une arme au centre à 15 s, puis 35 s et 50 s. L'arène commence à se refermer à 30 s. L'ultime se déclenche automatiquement quand une jauge atteint 100 %.</div>
-  <div class="fixed-info">Durée fixe : <strong style="color:#fff">60 secondes</strong><br>Victoire : plus gros total de dégâts infligés.</div>
- </aside>
-</div>
-</div>
+<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden select-none bg-[#0b0b0d] text-white">
+
+    <!-- ====================================================================
+         Mobile Top Navigation Bar
+         ==================================================================== -->
+    <header class="md:hidden flex items-center justify-between px-4 py-2.5 bg-zinc-950/90 border-b border-zinc-800 z-30 shrink-0">
+        <button id="toggleLeftSidebarBtn" aria-label="Menu Boule et Mode" class="px-2.5 py-1.5 text-xs bg-pink-500/20 border border-pink-500/50 text-pink-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-gamepad"></i> Mode & Balle
+        </button>
+        <span class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</span>
+        <button id="toggleRightSidebarBtn" aria-label="Menu des capacités" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
+            <i class="fa-solid fa-sliders"></i> Capacités
+        </button>
+    </header>
+
+    <!-- ====================================================================
+         LEFT SIDEBAR : Réglages Arena Brawl
+         ==================================================================== -->
+    <aside id="leftSidebar" class="fixed inset-y-0 left-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-r border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 -translate-x-full md:h-full h-full">
+        
+        <!-- Header -->
+        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-accentPink to-accentCyan flex items-center justify-center text-white shadow-lg shadow-pink-500/25">
+                    <i class="fa-solid fa-basketball text-sm"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</h1>
+                    <p class="text-[10px] text-zinc-400 font-medium">Combat · MVP</p>
+                </div>
+            </div>
+            <button id="closeLeftSidebarBtn" aria-label="Fermer le menu gauche" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+                <i class="fa-solid fa-xmark text-xs"></i>
+            </button>
+        </div>
+
+        <!-- Scrollable Settings : MVP -->
+<div id="leftSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm"><div class="rounded-2xl bg-zinc-900/60 border border-cyan-300/20 p-3"><div class="text-xs font-bold uppercase tracking-wider text-cyan-200 mb-2">Combat simple</div><p class="text-xs text-zinc-400 leading-relaxed">4 boules · 1 lame · 1 ultime automatique. L’arène se referme à partir de 30 secondes.</p></div><div class="rounded-2xl bg-zinc-900/60 border border-zinc-800 p-3"><div class="flex justify-between text-xs"><span class="text-zinc-400">Durée du combat</span><strong class="text-cyan-200">60 s</strong></div></div></div>
+
+<!-- Left Action Footer -->
+        <div class="p-3 border-t border-zinc-800/80 bg-zinc-950/90 flex gap-2 shrink-0">
+            <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+            </button>
+            <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                <i class="fa-solid fa-shuffle"></i> Nouvelle partie
+            </button>
+        </div>
+    </aside>
+
+    <!-- ====================================================================
+         CENTER : Simulation Viewport & 9:16 Portrait Hero Frame
+         ==================================================================== -->
+    <main class="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden h-full">
+        
+        <!-- Floating Top Toolbar -->
+        <div class="absolute top-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+            
+            <!-- Live Simulation Stats -->
+            <div class="flex flex-wrap gap-2 text-xs font-mono pointer-events-auto">
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
+                </div>
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
+                    <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
+                </div>
+                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-clock text-yellow-400 text-xs"></i>
+                    <span id="timerCounter" class="text-yellow-300 font-bold">0.0s</span>
+                </div>
+                <div class="hidden sm:flex px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 items-center gap-1.5 border border-zinc-800/80">
+                    <i class="fa-solid fa-fingerprint text-purple-400 text-xs"></i>
+                    <span id="activeSeedBadge" class="text-purple-300 font-bold">#104291</span>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center gap-2 pointer-events-auto">
+                <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
+                    <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
+                    <span id="playPauseText" class="hidden sm:inline">Pause</span>
+                </button>
+                <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Canvas Container (9:16 Portrait Phone Frame) -->
+        <div id="canvasContainer" class="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
+            <div id="frameWrapper" class="relative w-full h-full max-h-full aspect-[9/16] max-w-[520px] flex items-center justify-center rounded-2xl overflow-hidden phone-frame bg-[#080a10]">
+                
+                <!-- Victory Banner Overlay (Purely visual, no sound, no screen shake) -->
+                <div id="victoryOverlay" class="absolute inset-0 bg-black/75 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none p-4 text-center">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 flex items-center justify-center text-white text-3xl shadow-xl shadow-cyan-500/50 animate-bounce">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-cyan-300 to-purple-400">BALLYSTIK CHAMPION</h2>
+                    <p id="victoryDetails" class="text-xs text-zinc-300 font-mono">Dernière boule en vie.</p>
+                    <button id="replayBtn" class="mt-2 px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-xs font-bold shadow-lg shadow-pink-500/30 hover:opacity-95 active:scale-95 transition">
+                        Rejouer cette seed
+                    </button>
+                </div>
+
+                <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            </div>
+        </div>
+
+        <!-- Subtle Branding Watermark -->
+        <div class="absolute bottom-3 right-4 z-10 text-[10px] text-zinc-600 font-mono tracking-wider pointer-events-none select-none">
+            VEKTRALZ // BallYstik v1.0
+        </div>
+    </main>
+
+    <!-- ====================================================================
+         RIGHT SIDEBAR : Capacités & réglages audio
+         ==================================================================== -->
+    <aside id="rightSidebar" class="fixed inset-y-0 right-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-l border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 translate-x-full md:h-full h-full">
+        
+        <!-- Header -->
+        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
+                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">RÉGLAGES</h2>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
+                    <i class="fa-solid fa-volume-high"></i> Audio
+                </button>
+                <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
+                    <i class="fa-solid fa-xmark text-xs"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MVP settings, original sidebar retained -->
+<div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto space-y-3"><label class="flex items-center justify-between rounded-xl bg-zinc-900/60 border border-zinc-800 p-3 text-xs">Afficher les PV <input id="mvpShowHp" type="checkbox" checked class="accent-cyan-300"></label><button id="audioInitBtn" class="w-full px-3 py-2 text-xs bg-cyan-500/10 border border-cyan-300/30 text-cyan-100 rounded-lg">Sons : désactivés</button><p class="text-xs text-zinc-500">Une lame apparaît à 15, 35 et 50 secondes. Le gagnant est déterminé par les dégâts infligés.</p></div>
+    </aside>
+
+    <!-- ====================================================================
+         Modular Application Scripts (in execution order)
+         ==================================================================== -->
+
+<style>#frameWrapper{border-color:rgba(124,231,255,.55)!important;box-shadow:0 0 32px rgba(124,231,255,.12)}#mvpRecordBtn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:40}</style>
+<button id="mvpRecordBtn" class="px-5 py-3 rounded-xl bg-[#ffd38a] text-[#15100a] font-bold shadow-lg">Enregistrer MP4</button><div id="mvpRecordStatus" class="fixed bottom-1 left-0 right-0 text-center text-[11px] text-zinc-400 z-40"></div>
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
 <script>
-(function(){
-'use strict';
-const canvas=document.getElementById('simCanvas'),ctx=canvas.getContext('2d',{alpha:false});
-const W=540,H=960,BASE={x:30,y:30,w:480,h:900},COLORS=['#ff555d','#53aaff','#50e49a','#ffd45e'],NAMES=['Rouge','Bleu','Vert','Jaune'];
-const $=id=>document.getElementById(id);
-let balls=[],elapsed=0,last=0,raf=0,running=false,finished=false,finishAt=0,showHp=true,soundOn=false,weapon=null,weaponSpawns=[15,35,50],spawned=new Set(),effects=[],shake=0,recording=false,mp4Encoder=null,mp4Muxer=null,mp4Target=null,captureCanvas=null,captureCtx=null,recordFrame=0,finalizingRecording=false;
-let audioCtx=null;
-function rand(a,b){return a+Math.random()*(b-a)}
-function bounds(){const t=Math.max(0,elapsed-30);const k=Math.min(.19,t/30*.19);return{x:BASE.x+BASE.w*k,y:BASE.y+BASE.h*k,w:BASE.w*(1-2*k),h:BASE.h*(1-2*k)}}
-function newBalls(){balls=NAMES.map((name,i)=>{const a=-Math.PI/2+i*Math.PI/2;return{name,color:COLORS[i],x:270+Math.cos(a)*115,y:480+Math.sin(a)*210,vx:Math.cos(a+rand(-.6,.6))*rand(120,190),vy:Math.sin(a+rand(-.6,.6))*rand(120,190),r:19,hp:100,maxHp:100,damage:0,meter:0,weapon:false,alive:true,hitCooldown:{},ultCooldown:0}})}
-function startGame(){elapsed=0;finished=false;finishAt=0;weapon=null;spawned=new Set();effects=[];shake=0;newBalls();running=true;$('resultOverlay').classList.remove('show');$('replayBtn').disabled=true;$('replayHint').textContent='Nouvelle partie disponible dans 3 secondes…';$('timer').textContent='60.0';$('status').textContent=recording?'Enregistrement en cours…':'Combat en cours';last=performance.now();if(!raf)raf=requestAnimationFrame(loop)}
-function sound(freq=240,duration=.06,type='sine'){if(!soundOn)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type=type;o.frequency.value=freq;g.gain.value=.035;o.connect(g);g.connect(audioCtx.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.stop(audioCtx.currentTime+duration)}catch(e){}}
-function burst(x,y,color,count=18,speed=180){for(let i=0;i<count;i++){const a=rand(0,Math.PI*2),s=rand(speed*.3,speed);effects.push({type:'particle',x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rand(.25,.65),max:.65,color,r:rand(1.5,4)})}}
-function spawnWeapon(){const b=bounds();weapon={x:b.x+b.w/2,y:b.y+b.h/2,life:6,age:0,spin:0};effects.push({type:'spawn',x:weapon.x,y:weapon.y,life:.55,max:.55,color:'#ffd38a'});burst(weapon.x,weapon.y,'#ffd38a',38,250);sound(620,.14,'triangle')}
-function damage(target,attacker,amount){if(!target.alive||!attacker.alive||target===attacker)return;target.hp=Math.max(0,target.hp-amount);attacker.damage+=amount;attacker.meter=Math.min(100,attacker.meter+amount*1.25);burst(target.x,target.y,target.color,5,95);if(target.hp<=0){target.alive=false;burst(target.x,target.y,target.color,32,260)}sound(180,.035,'square')}
-function ultimate(b){b.meter=0;b.ultCooldown=1.2;effects.push({type:'ult',x:b.x,y:b.y,r:0,maxR:205,life:.55,max:.55,color:b.color});burst(b.x,b.y,b.color,28,260);shake=.25;sound(110,.22,'sawtooth');for(const other of balls){if(!other.alive||other===b)continue;const dx=other.x-b.x,dy=other.y-b.y,d=Math.hypot(dx,dy)||1;if(d<205){const power=1-d/205;other.vx+=dx/d*(250+180*power);other.vy+=dy/d*(250+180*power);damage(other,b,Math.round(9+14*power))}}}
-function update(dt){if(!running||finished)return;elapsed=Math.min(60,elapsed+dt);$('timer').textContent=Math.max(0,60-elapsed).toFixed(1);const ar=bounds();
-for(const t of weaponSpawns){if(elapsed>=t&&!spawned.has(t)){spawned.add(t);spawnWeapon()}}
-if(weapon){weapon.age+=dt;weapon.life-=dt;weapon.spin+=dt*4;if(weapon.life<=0)weapon=null;else for(const b of balls){if(b.alive&&!b.weapon&&Math.hypot(b.x-weapon.x,b.y-weapon.y)<b.r+25){b.weapon=true;b.r=25;b.damage+=0;weapon=null;burst(b.x,b.y,'#ffd38a',35,230);sound(880,.18,'triangle');break}}}
-for(const b of balls){if(!b.alive)continue;b.ultCooldown=Math.max(0,b.ultCooldown-dt);const sp=Math.hypot(b.vx,b.vy)||1;if(sp<105){b.vx*=1.06;b.vy*=1.06}if(sp>235){b.vx*=235/sp;b.vy*=235/sp}b.x+=b.vx*dt;b.y+=b.vy*dt;const r=b.r;if(b.x-r<ar.x){b.x=ar.x+r;b.vx=Math.abs(b.vx)}if(b.x+r>ar.x+ar.w){b.x=ar.x+ar.w-r;b.vx=-Math.abs(b.vx)}if(b.y-r<ar.y){b.y=ar.y+r;b.vy=Math.abs(b.vy)}if(b.y+r>ar.y+ar.h){b.y=ar.y+ar.h-r;b.vy=-Math.abs(b.vy)}
-if(elapsed>30){const outside=b.x<ar.x+r+2||b.x>ar.x+ar.w-r-2||b.y<ar.y+r+2||b.y>ar.y+ar.h-r-2;if(outside){b.hp=Math.max(0,b.hp-10*dt);if(b.hp<=0){b.alive=false;burst(b.x,b.y,b.color,28,240)}}}
-if(b.meter>=100&&b.ultCooldown<=0)ultimate(b)}
-for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){const a=balls[i],b=balls[j];if(!a.alive||!b.alive)continue;const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy)||.001,min=a.r+b.r;if(d<min){const nx=dx/d,ny=dy/d,overlap=min-d;a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rel<0){const impulse=-(a.weapon||b.weapon?2.35:1.65)*rel/2;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny}const key=b.name,rev=a.name;if(!a.hitCooldown[key]&&!b.hitCooldown[rev]){const damageFromA=a.weapon?9:5,damageFromB=b.weapon?9:5;damage(a,b,damageFromB);damage(b,a,damageFromA);a.hitCooldown[key]=.38;b.hitCooldown[rev]=.38} }}
-for(const b of balls)for(const k in b.hitCooldown){b.hitCooldown[k]=Math.max(0,b.hitCooldown[k]-dt);if(!b.hitCooldown[k])delete b.hitCooldown[k]}
-for(const e of effects){e.life-=dt;if(e.type==='particle'){e.x+=e.vx*dt;e.y+=e.vy*dt;e.vx*=.985;e.vy*=.985}else if(e.type==='ult'){e.r=e.maxR*(1-e.life/e.max)}}
-effects=effects.filter(e=>e.life>0);shake=Math.max(0,shake-dt);
-if(elapsed>=60)endGame()}
-function draw(){ctx.save();if(shake>0)ctx.translate(rand(-4,4)*shake*4,rand(-4,4)*shake*4);ctx.fillStyle='#080d17';ctx.fillRect(0,0,W,H);
-const grad=ctx.createRadialGradient(W/2,H*.42,20,W/2,H*.5,620);grad.addColorStop(0,'#13223a');grad.addColorStop(1,'#080d17');ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
-const ar=bounds();ctx.save();ctx.beginPath();ctx.roundRect(ar.x,ar.y,ar.w,ar.h,30);ctx.clip();ctx.fillStyle='#0b1423';ctx.fillRect(ar.x,ar.y,ar.w,ar.h);ctx.strokeStyle='rgba(124,231,255,.075)';ctx.lineWidth=1;for(let x=ar.x;x<ar.x+ar.w;x+=24){ctx.beginPath();ctx.moveTo(x,ar.y);ctx.lineTo(x,ar.y+ar.h);ctx.stroke()}for(let y=ar.y;y<ar.y+ar.h;y+=24){ctx.beginPath();ctx.moveTo(ar.x,y);ctx.lineTo(ar.x+ar.w,y);ctx.stroke()}ctx.restore();
-ctx.save();ctx.shadowBlur=20;ctx.shadowColor='#7ce7ff';ctx.strokeStyle='#7ce7ff';ctx.lineWidth=3;ctx.beginPath();ctx.roundRect(ar.x,ar.y,ar.w,ar.h,30);ctx.stroke();ctx.restore();
-if(elapsed>30){const danger=Math.min(1,(elapsed-30)/30);ctx.save();ctx.strokeStyle='#ff634f';ctx.lineWidth=3+danger*5;ctx.shadowColor='#ff493e';ctx.shadowBlur=18;ctx.globalAlpha=.5+danger*.5;ctx.beginPath();ctx.roundRect(ar.x+5,ar.y+5,ar.w-10,ar.h-10,26);ctx.stroke();ctx.restore();ctx.fillStyle='#ff735e';ctx.font='bold 12px system-ui';ctx.textAlign='center';ctx.fillText('ZONE DE DANGER',W/2,ar.y+22)}
-if(weapon){ctx.save();const pulse=.5+.5*Math.sin(weapon.age*20);ctx.globalAlpha=.55+pulse*.4;ctx.strokeStyle='#ffd38a';ctx.lineWidth=3;ctx.shadowColor='#ffd38a';ctx.shadowBlur=20;ctx.beginPath();ctx.arc(weapon.x,weapon.y,18+weapon.age*25,0,Math.PI*2);ctx.stroke();ctx.translate(weapon.x,weapon.y);ctx.rotate(weapon.spin);ctx.fillStyle='#fff0c8';ctx.shadowBlur=22;ctx.beginPath();ctx.moveTo(0,-29);ctx.lineTo(8,-4);ctx.lineTo(3,16);ctx.lineTo(-3,16);ctx.lineTo(-8,-4);ctx.closePath();ctx.fill();ctx.fillStyle='#c58b3e';ctx.fillRect(-13,9,26,4);ctx.fillRect(-3,13,6,17);ctx.restore()}
-for(const b of balls){if(!b.alive)continue;ctx.save();if(b.weapon){ctx.shadowColor='#ffd38a';ctx.shadowBlur=28;ctx.strokeStyle='#ffd38a';ctx.lineWidth=3;ctx.beginPath();ctx.arc(b.x,b.y,b.r+7,0,Math.PI*2);ctx.stroke()}const g=ctx.createRadialGradient(b.x-b.r*.35,b.y-b.r*.4,2,b.x,b.y,b.r*1.2);g.addColorStop(0,'#ffffff');g.addColorStop(.16,b.color);g.addColorStop(1,'#101725');ctx.fillStyle=g;ctx.shadowColor=b.color;ctx.shadowBlur=18;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=b.color;ctx.lineWidth=2;ctx.stroke();ctx.restore();
-ctx.textAlign='center';ctx.font='bold 13px system-ui';ctx.fillStyle='#f2f6ff';ctx.shadowColor='#000';ctx.shadowBlur=5;ctx.fillText(b.name,b.x,b.y-b.r-29);ctx.shadowBlur=0;
-if(showHp){const bw=56,bh=5,bx=b.x-bw/2,by=b.y-b.r-20;ctx.fillStyle='#283447';ctx.beginPath();ctx.roundRect(bx,by,bw,bh,3);ctx.fill();ctx.fillStyle=b.hp>40?b.color:'#ff5e5e';ctx.beginPath();ctx.roundRect(bx,by,bw*Math.max(0,b.hp/b.maxHp),bh,3);ctx.fill()}
-ctx.fillStyle='#ffd38a';ctx.fillRect(b.x-22,b.y+b.r+8,44,3);ctx.fillStyle=b.color;ctx.fillRect(b.x-22,b.y+b.r+8,44*b.meter/100,3)}
-for(const e of effects){ctx.save();const alpha=Math.max(0,e.life/(e.max||.5));if(e.type==='particle'){ctx.globalAlpha=alpha;ctx.fillStyle=e.color;ctx.shadowColor=e.color;ctx.shadowBlur=8;ctx.beginPath();ctx.arc(e.x,e.y,e.r*alpha,0,Math.PI*2);ctx.fill()}else if(e.type==='spawn'){ctx.globalAlpha=alpha;ctx.strokeStyle=e.color;ctx.lineWidth=5*alpha;ctx.shadowColor=e.color;ctx.shadowBlur=24;ctx.beginPath();ctx.arc(e.x,e.y,45*(1-alpha)+8,0,Math.PI*2);ctx.stroke();ctx.fillStyle='#fff';ctx.globalAlpha=alpha*.25;ctx.fillRect(0,0,W,H)}else if(e.type==='ult'){ctx.globalAlpha=alpha;ctx.strokeStyle=e.color;ctx.lineWidth=8*alpha+1;ctx.shadowColor=e.color;ctx.shadowBlur=24;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=alpha*.15;ctx.fillStyle=e.color;ctx.beginPath();ctx.arc(e.x,e.y,e.r,0,Math.PI*2);ctx.fill()}ctx.restore()}
-ctx.fillStyle='#e9f5ff';ctx.font='800 32px system-ui';ctx.textAlign='center';ctx.shadowColor='#000';ctx.shadowBlur=8;ctx.fillText(Math.max(0,60-elapsed).toFixed(1)+'s',W/2,BASE.y+46);ctx.shadowBlur=0;
-ctx.font='12px system-ui';ctx.fillStyle='#a8bed5';ctx.fillText('DÉGÂTS INFLIGÉS',W/2,H-22);ctx.restore()}
-function endGame(){if(finished)return;finished=true;running=false;finishAt=performance.now();const sorted=[...balls].sort((a,b)=>b.damage-a.damage);const winner=sorted[0];$('winnerTitle').textContent=winner.name+' gagne !';$('winnerTitle').style.color=winner.color;$('winnerCriteria').textContent='Victoire aux dégâts infligés · '+Math.round(winner.damage)+' dégâts';$('scoreboard').innerHTML=sorted.map(b=>'<div class="score-row"><span style="color:'+b.color+'">● '+b.name+(b.alive?'':' (K.O.)')+'</span><strong>'+Math.round(b.damage)+' dégâts</strong></div>').join('');$('resultOverlay').classList.add('show');$('replayHint').textContent='Le bouton se déverrouille dans 3 secondes…';setTimeout(()=>{if(finished){$('replayBtn').disabled=false;$('replayHint').textContent='Prêt à relancer le combat.'}},3000);$('status').textContent='Combat terminé — gagnant : '+winner.name}
-function captureDueFrames(){if(!recording||!mp4Encoder||!captureCanvas)return;const due=Math.min(1800,Math.floor(elapsed*30));while(recordFrame<due){captureCtx.drawImage(canvas,0,0,1080,1920);const timestamp=Math.round(recordFrame*1000000/30);const frame=new VideoFrame(captureCanvas,{timestamp,duration:33333});try{mp4Encoder.encode(frame,{keyFrame:recordFrame%60===0})}finally{frame.close()}recordFrame++}if(finished&&recordFrame>=1800&&!finalizingRecording)finishMp4Recording()}
-function loop(now){raf=0;const dt=Math.min(.04,Math.max(0,(now-last)/1000));last=now;if(running)update(dt);draw();try{captureDueFrames()}catch(e){failMp4Recording(e)}if(running||finished)raf=requestAnimationFrame(loop)}
-$('newGameBtn').addEventListener('click',()=>{if(recording)return;startGame()});$('replayBtn').addEventListener('click',()=>{if(!$('replayBtn').disabled)startGame()});$('showHp').addEventListener('change',e=>showHp=e.target.checked);$('soundToggle').addEventListener('change',e=>soundOn=e.target.checked);
-async function startMp4Recording(){if(recording)return;if(!('VideoEncoder'in window)||!('VideoFrame'in window)){ $('status').textContent='Ce navigateur ne fournit pas WebCodecs : export MP4 impossible ici.';return }recording=true;finalizingRecording=false;recordFrame=0;$('recordBtn').disabled=true;$('newGameBtn').disabled=true;$('recordBtn').textContent='Préparation MP4…';$('status').textContent='Préparation de l’encodeur H.264…';try{const lib=await import('https://esm.sh/mp4-muxer@5.2.1');const {Muxer,ArrayBufferTarget}=lib;mp4Target=new ArrayBufferTarget();mp4Muxer=new Muxer({target:mp4Target,video:{codec:'avc',width:1080,height:1920},fastStart:'in-memory'});captureCanvas=document.createElement('canvas');captureCanvas.width=1080;captureCanvas.height=1920;captureCtx=captureCanvas.getContext('2d',{alpha:false});const candidates=[{codec:'avc1.42001f',width:1080,height:1920,bitrate:5000000,framerate:30,latencyMode:'realtime',hardwareAcceleration:'prefer-hardware'},{codec:'avc1.640028',width:1080,height:1920,bitrate:5000000,framerate:30,latencyMode:'realtime'}];let config=null;for(const candidate of candidates){try{const support=await VideoEncoder.isConfigSupported(candidate);if(support.supported){config=support.config;break}}catch(e){}}if(!config)throw new Error('Aucun encodeur H.264 compatible 1080×1920 n’est disponible.');mp4Encoder=new VideoEncoder({output:(chunk,meta)=>mp4Muxer.addVideoChunk(chunk,meta),error:err=>failMp4Recording(err)});mp4Encoder.configure(config);$('recordBtn').textContent='Enregistrement…';$('status').textContent='Enregistrement MP4 en cours : 60 secondes, ne ferme pas cet onglet.';startGame()}catch(e){failMp4Recording(e)}}
-async function finishMp4Recording(){if(finalizingRecording||!mp4Encoder||!mp4Muxer)return;finalizingRecording=true;$('status').textContent='Finalisation du fichier MP4…';$('recordBtn').textContent='Finalisation…';try{await mp4Encoder.flush();mp4Encoder.close();mp4Muxer.finalize();const blob=new Blob([mp4Target.buffer],{type:'video/mp4'});if(!blob.size)throw new Error('Le fichier MP4 généré est vide.');const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ballystik-combat-1080x1920.mp4';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);$('status').textContent='MP4 prêt : '+(blob.size/1048576).toFixed(1)+' Mo · 1080×1920 · 60 secondes.'}catch(e){$('status').textContent='Échec de finalisation MP4 : '+(e&&e.message?e.message:String(e))}finally{recording=false;finalizingRecording=false;mp4Encoder=null;mp4Muxer=null;mp4Target=null;captureCanvas=null;captureCtx=null;$('recordBtn').disabled=false;$('newGameBtn').disabled=false;$('recordBtn').textContent='● Enregistrer MP4'}}
-function failMp4Recording(err){if(!recording)return;recording=false;finalizingRecording=false;try{if(mp4Encoder&&mp4Encoder.state!=='closed')mp4Encoder.close()}catch(e){}mp4Encoder=null;mp4Muxer=null;mp4Target=null;captureCanvas=null;captureCtx=null;$('recordBtn').disabled=false;$('newGameBtn').disabled=false;$('recordBtn').textContent='● Enregistrer MP4';$('status').textContent='Export MP4 impossible : '+(err&&err.message?err.message:String(err))}
-$('recordBtn').addEventListener('click',startMp4Recording);
-new ResizeObserver(()=>draw()).observe($('canvasShell'));startGame();
-})();
+(()=>{const $=id=>document.getElementById(id),canvas=$('simCanvas');if(!canvas)return;const ctx=canvas.getContext('2d',{alpha:false}),W=1080,H=1920;canvas.width=W;canvas.height=H;
+const names=['Rouge','Bleu','Vert','Jaune'],colors=['#ff5364','#49a8ff','#4de0a0','#ffd34f'],dark=['#8d1830','#164a9a','#16734f','#9a7012'],ar={x:74,y:118,w:932,h:1684,shrink:0},s={balls:[],t:0,last:0,raf:0,running:true,finished:false,weapon:null,spawned:new Set(),particles:[],waves:[],showHp:true,recording:false};
+const rand=(a,b)=>a+Math.random()*(b-a),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));function reset(){s.t=0;s.running=true;s.finished=false;s.weapon=null;s.spawned.clear();s.particles=[];s.waves=[];s.balls=names.map((name,i)=>({name,color:colors[i],dark:dark[i],id:i,x:ar.x+ar.w*[.25,.75,.25,.75][i],y:ar.y+ar.h*[.22,.22,.78,.78][i],vx:rand(-180,180),vy:rand(-220,220),r:34,hp:100,damage:0,meter:0,weapon:false,cool:0,ult:0,alive:true}));$('victoryOverlay')?.classList.add('hidden');s.last=performance.now();if(!s.raf)s.raf=requestAnimationFrame(frame)}
+function burst(x,y,color,n=18){for(let i=0;i<n;i++){let a=rand(0,6.283),v=rand(70,400);s.particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:rand(.2,.6),max:.6,color,r:rand(2,8)})}}function hit(t,d,a){if(!t.alive)return;d=Math.min(t.hp,d);t.hp-=d;if(a){a.damage+=d;a.meter=clamp(a.meter+d*.85,0,100)}if(t.hp<=0){t.alive=false;burst(t.x,t.y,t.color,30)}}
+function ult(b){b.meter=0;b.ult=1.2;s.waves.push({x:b.x,y:b.y,r:20,life:.6,max:.6});burst(b.x,b.y,'#fff1c1',30);for(const o of s.balls){if(!o.alive||o===b)continue;let dx=o.x-b.x,dy=o.y-b.y,d=Math.hypot(dx,dy);if(d<340){o.vx+=dx/(d||1)*650*(1-d/340);o.vy+=dy/(d||1)*650*(1-d/340);hit(o,15,b)}}}
+function end(){if(s.finished)return;s.finished=true;s.running=false;const sorted=[...s.balls].sort((a,b)=>b.damage-a.damage);$('victoryTitle').textContent=sorted[0].name;$('victoryDetails').innerHTML='Gagnant : dégâts infligés'+sorted.map(b=>'<div style="display:flex;justify-content:space-between;margin-top:8px"><span style="color:'+b.color+'">'+b.name+'</span><strong>'+Math.round(b.damage)+' dégâts</strong></div>').join('');$('victoryOverlay').classList.remove('hidden');const btn=$('replayBtn');if(btn){btn.classList.add('hidden');setTimeout(()=>{if(s.finished)btn.classList.remove('hidden')},3000)}if(s.recorder&&s.recorder.state!=='inactive')s.recorder.stop()}
+function update(dt){if(!s.running)return;s.t=Math.min(60,s.t+dt);ar.shrink=s.t<30?0:(s.t-30)/30*190;const q={l:ar.x+ar.shrink,r:ar.x+ar.w-ar.shrink,t:ar.y+ar.shrink,b:ar.y+ar.h-ar.shrink};for(const at of [15,35,50])if(s.t>=at&&!s.spawned.has(at)){s.spawned.add(at);s.weapon={life:0};burst(W/2,H/2,'#ffd38a',50)}if(s.weapon){s.weapon.life+=dt;if(s.weapon.life>.45)for(const b of s.balls)if(b.alive&&Math.hypot(b.x-W/2,b.y-H/2)<b.r+45){b.weapon=true;b.r=43;s.weapon=null;burst(b.x,b.y,'#ffd38a',25);break}}
+for(const b of s.balls){if(!b.alive)continue;b.cool=Math.max(0,b.cool-dt);b.ult=Math.max(0,b.ult-dt);b.x+=b.vx*dt;b.y+=b.vy*dt;let r=b.r;if(b.x<q.l+r){b.x=q.l+r;b.vx=Math.abs(b.vx)}if(b.x>q.r-r){b.x=q.r-r;b.vx=-Math.abs(b.vx)}if(b.y<q.t+r){b.y=q.t+r;b.vy=Math.abs(b.vy)}if(b.y>q.b-r){b.y=q.b-r;b.vy=-Math.abs(b.vy)}let v=Math.hypot(b.vx,b.vy);if(v<120){b.vx+=rand(-100,100);b.vy+=rand(-100,100)}if(v>430){b.vx=b.vx/v*430;b.vy=b.vy/v*430}if(b.meter>=100&&b.ult<=0)ult(b)}
+for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){let a=s.balls[i],b=s.balls[j];if(!a.alive||!b.alive)continue;let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),m=a.r+b.r;if(d>=m)continue;if(d<.01){dx=1;d=1}let nx=dx/d,ny=dy/d,ov=m-d;a.x-=nx*ov/2;a.y-=ny*ov/2;b.x+=nx*ov/2;b.y+=ny*ov/2;let rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rel<0){let im=-(a.weapon||b.weapon?2.3:1.6)*rel/2;a.vx-=im*nx;a.vy-=im*ny;b.vx+=im*nx;b.vy+=im*ny}if(a.cool<=0&&b.cool<=0){hit(b,b.weapon?9:6,a);hit(a,a.weapon?9:6,b);a.vx-=nx*100*(a.weapon?1.6:1);a.vy-=ny*100*(a.weapon?1.6:1);b.vx+=nx*100*(b.weapon?1.6:1);b.vy+=ny*100*(b.weapon?1.6:1);a.cool=b.cool=.22}}
+s.particles=s.particles.filter(p=>(p.life-=dt)>0);for(const p of s.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.985;p.vy*=.985}for(const w of s.waves){w.life-=dt;w.r=340*(1-w.life/w.max)}s.waves=s.waves.filter(w=>w.life>0);if(s.t>=60)end()}
+function rr(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}function draw(){let g=ctx.createRadialGradient(W/2,H/2,10,W/2,H/2,H);g.addColorStop(0,'#111a2b');g.addColorStop(1,'#090b12');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);ctx.save();rr(ar.x,ar.y,ar.w,ar.h,58);ctx.clip();ctx.fillStyle='#090d18';ctx.fillRect(ar.x,ar.y,ar.w,ar.h);ctx.strokeStyle='rgba(124,231,255,.09)';ctx.lineWidth=2;for(let x=ar.x;x<ar.x+ar.w;x+=44){ctx.beginPath();ctx.moveTo(x,ar.y);ctx.lineTo(x,ar.y+ar.h);ctx.stroke()}for(let y=ar.y;y<ar.y+ar.h;y+=44){ctx.beginPath();ctx.moveTo(ar.x,y);ctx.lineTo(ar.x+ar.w,y);ctx.stroke()}ctx.restore();ctx.shadowColor='#7ce7ff';ctx.shadowBlur=25;ctx.strokeStyle='#7ce7ff';ctx.lineWidth=8;rr(ar.x,ar.y,ar.w,ar.h,58);ctx.stroke();ctx.shadowBlur=0;if(s.t>=30){ctx.strokeStyle='#ff624f';ctx.lineWidth=10;rr(ar.x+ar.shrink,ar.y+ar.shrink,ar.w-2*ar.shrink,ar.h-2*ar.shrink,38);ctx.stroke()}if(s.weapon){ctx.save();ctx.shadowColor='#ffd38a';ctx.shadowBlur=40;ctx.strokeStyle='#ffd38a';ctx.lineWidth=10;ctx.beginPath();ctx.arc(W/2,H/2,62+Math.sin(s.weapon.life*25)*12,0,6.283);ctx.stroke();ctx.translate(W/2,H/2);ctx.rotate(-Math.PI/4);ctx.fillStyle='#fff0bf';ctx.beginPath();ctx.moveTo(0,-70);ctx.lineTo(18,12);ctx.lineTo(0,30);ctx.lineTo(-18,12);ctx.closePath();ctx.fill();ctx.fillStyle='#7b4e20';ctx.fillRect(-6,28,12,70);ctx.restore()}for(const w of s.waves){ctx.strokeStyle='#fff1c1';ctx.lineWidth=12;ctx.beginPath();ctx.arc(w.x,w.y,w.r,0,6.283);ctx.stroke()}for(const p of s.particles){ctx.globalAlpha=p.life/p.max;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,6.283);ctx.fill()}ctx.globalAlpha=1;for(const b of s.balls){ctx.save();if(b.weapon){ctx.shadowColor='#ffd38a';ctx.shadowBlur=35}let gr=ctx.createRadialGradient(b.x-b.r*.3,b.y-b.r*.4,2,b.x,b.y,b.r);gr.addColorStop(0,'#fff');gr.addColorStop(.2,b.color);gr.addColorStop(1,b.dark);ctx.fillStyle=gr;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,6.283);ctx.fill();ctx.strokeStyle=b.weapon?'#ffd38a':b.color;ctx.lineWidth=5;ctx.stroke();ctx.shadowBlur=0;ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='bold 26px Inter,system-ui';ctx.fillText(b.name,b.x,b.y-b.r-28);if(s.showHp){ctx.fillStyle='#222';rr(b.x-48,b.y-b.r-18,96,9,4);ctx.fill();ctx.fillStyle=b.hp>50?'#4de0a0':b.hp>25?'#ffd34f':'#ff5364';rr(b.x-48,b.y-b.r-18,96*clamp(b.hp/100,0,1),9,4);ctx.fill()}ctx.strokeStyle='#ffd38a';ctx.lineWidth=6;ctx.beginPath();ctx.arc(b.x,b.y,b.r+10,-Math.PI/2,-Math.PI/2+6.283*b.meter/100);ctx.stroke();ctx.restore()}ctx.textAlign='center';ctx.font='800 72px Inter,system-ui';ctx.fillStyle='#fff';ctx.fillText(String(Math.ceil(60-s.t)).padStart(2,'0'),W/2,88)}
+function frame(now){s.raf=0;let dt=Math.min(.035,Math.max(0,(now-s.last)/1000));s.last=now;update(dt);draw();$('timerCounter').textContent=Math.ceil(60-s.t)+' s';$('ballCounter').textContent=s.balls.filter(b=>b.alive).length;if(s.running||s.recording)s.raf=requestAnimationFrame(frame)}function startGame(){reset()}
+$('newGameBtn')?.addEventListener('click',startGame);$('resetBtn')?.addEventListener('click',startGame);$('replayBtn')?.addEventListener('click',startGame);$('mvpShowHp')?.addEventListener('change',e=>s.showHp=e.target.checked);$('audioInitBtn')?.addEventListener('click',()=>{$('audioInitBtn').textContent='Sons : désactivés (MVP)'});
+async function startMp4Recording(){const status=$('mvpRecordStatus');if(s.recording)return;if(!window.VideoEncoder||!window.Mp4Muxer){status.textContent='Export MP4 indisponible : navigateur incompatible avec WebCodecs/H.264.';return}startGame();s.recording=true;status.textContent='Enregistrement MP4…';try{const muxer=new Mp4Muxer.Muxer({target:new Mp4Muxer.ArrayBufferTarget(),video:{codec:'avc',width:1080,height:1920},fastStart:'in-memory'}),encoder=new VideoEncoder({output:(chunk,meta)=>muxer.addVideoChunk(chunk,meta),error:e=>{throw e}});encoder.configure({codec:'avc1.42001f',width:1080,height:1920,bitrate:12000000,framerate:30});let n=0;const capture=()=>{if(!s.recording)return;const vf=new VideoFrame(canvas,{timestamp:Math.round(n*1e6/30)});encoder.encode(vf);vf.close();n++;if(n<1800){update(1/30);draw();requestAnimationFrame(capture)}else encoder.flush().then(()=>{muxer.finalize();let blob=new Blob([muxer.target.buffer],{type:'video/mp4'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ballystik-combat.mp4';a.click();URL.revokeObjectURL(url);status.textContent='MP4 téléchargé';s.recording=false}).catch(()=>{status.textContent='Échec de finalisation MP4';s.recording=false})};capture()}catch(e){s.recording=false;status.textContent='Échec de démarrage MP4. Vérifie WebCodecs/H.264.'}}$('mvpRecordBtn').addEventListener('click',startMp4Recording);new ResizeObserver(()=>draw()).observe($('frameWrapper'));reset()})();
 </script>
 </body>
 </html>
