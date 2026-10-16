@@ -27,6 +27,10 @@
         lastTime: 0,
         fpsFrames: 0,
         fpsAt: 0,
+        mediaRecorder: null,
+        recordingChunks: [],
+        ffmpeg: null,
+        recording: false,
 
         init() {
             this.canvas = document.getElementById('simCanvas');
@@ -54,8 +58,6 @@
                 });
                 const mode = document.getElementById('abMatchMode');
                 if (mode && saved.matchMode) mode.value = saved.matchMode;
-                const arenaMap = document.getElementById('abArenaMap');
-                if (arenaMap && saved.arenaMap) arenaMap.value = saved.arenaMap;
                 const shrink = document.getElementById('abShrinkToggle');
                 if (shrink && saved.shrinkEnabled != null) shrink.checked = !!saved.shrinkEnabled;
             } catch (_) {}
@@ -75,8 +77,7 @@
             const mode = document.getElementById('abMatchMode');
             const shrink = document.getElementById('abShrinkToggle');
             options.matchMode = mode ? mode.value : 'lastStanding';
-            const arenaMap = document.getElementById('abArenaMap');
-            options.arenaMap = arenaMap ? arenaMap.value : 'neon';
+            options.arenaMap = 'neon';
             options.shrinkEnabled = !!(shrink && shrink.checked);
             return options;
         },
@@ -114,18 +115,13 @@
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
-            ['abMatchMode', 'abShrinkToggle', 'abArenaMap'].forEach(id => {
+            ['abMatchMode', 'abShrinkToggle'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('change', () => {
                     this.saveOptions();
                     this.syncMatchTime();
                     this.syncShrinkOptions();
-                    if (id === 'abArenaMap') {
-                        // Changer de carte relance proprement la manche pour éviter les boules coincées dans les nouveaux obstacles.
-                        this.start();
-                    } else if (window.ArenaBattle) {
-                        window.ArenaBattle.applyOptions(this.getOptions());
-                    }
+                    if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
             const seed = document.getElementById('manualSeedInput');
@@ -162,6 +158,8 @@
             });
             const play = document.getElementById('playPauseBtn');
             if (play) play.addEventListener('click', () => this.togglePause());
+            const record = document.getElementById('recordBtn');
+            if (record) record.addEventListener('click', () => this.recording ? this.stopRecording() : this.startRecording());
         },
 
         getSeed() {
@@ -214,6 +212,113 @@
             const playIcon = document.getElementById('playPauseIcon');
             if (playText) playText.textContent = 'Pause';
             if (playIcon) playIcon.className = 'fa-solid fa-pause text-cyan-400';
+        },
+
+        async startRecording() {
+            if (!this.canvas || !this.canvas.captureStream || !window.MediaRecorder) {
+                this.setRecordStatus('Enregistrement non supporté par ce navigateur.', true);
+                return;
+            }
+            try {
+                const stream = this.canvas.captureStream(60);
+                const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                    ? 'video/webm;codecs=vp9'
+                    : (MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm');
+                this.recordingChunks = [];
+                this.mediaRecorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 8_000_000 });
+                this.mediaRecorder.ondataavailable = event => {
+                    if (event.data && event.data.size) this.recordingChunks.push(event.data);
+                };
+                this.mediaRecorder.onerror = event => {
+                    console.error('[BallYstik] Erreur MediaRecorder :', event.error || event);
+                    this.setRecordStatus('Erreur pendant l’enregistrement.', true);
+                };
+                this.mediaRecorder.onstop = () => {
+                    stream.getTracks().forEach(track => track.stop());
+                    this.convertRecordingToMp4(mimeType);
+                };
+                this.mediaRecorder.start(250);
+                this.recording = true;
+                const text = document.getElementById('recordText');
+                const icon = document.getElementById('recordIcon');
+                const button = document.getElementById('recordBtn');
+                if (text) text.textContent = 'Arrêter & exporter';
+                if (icon) icon.className = 'fa-solid fa-stop text-red-400';
+                if (button) button.classList.add('border-red-500');
+                this.setRecordStatus('Enregistrement en cours…');
+            } catch (error) {
+                console.error('[BallYstik] Impossible de démarrer l’enregistrement :', error);
+                this.setRecordStatus('Impossible de démarrer l’enregistrement.', true);
+            }
+        },
+
+        stopRecording() {
+            if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') return;
+            this.recording = false;
+            const text = document.getElementById('recordText');
+            const icon = document.getElementById('recordIcon');
+            if (text) text.textContent = 'Conversion MP4…';
+            if (icon) icon.className = 'fa-solid fa-spinner fa-spin text-amber-300';
+            const button = document.getElementById('recordBtn');
+            if (button) button.disabled = true;
+            this.setRecordStatus('Conversion en MP4 en cours… gardez cette page ouverte.');
+            this.mediaRecorder.stop();
+        },
+
+        setRecordStatus(message, isError = false) {
+            const status = document.getElementById('recordStatus');
+            if (status) {
+                status.textContent = message;
+                status.className = 'absolute top-14 left-1/2 -translate-x-1/2 z-30 px-3 py-2 rounded-lg text-xs font-semibold shadow-lg ' +
+                    (isError ? 'bg-red-950/95 text-red-200 border border-red-500/40' : 'bg-zinc-950/90 text-zinc-200 border border-zinc-700/60');
+                status.classList.remove('hidden');
+            }
+        },
+
+        async convertRecordingToMp4(mimeType) {
+            try {
+                const sourceBlob = new Blob(this.recordingChunks, { type: mimeType });
+                if (!sourceBlob.size) throw new Error('Le fichier vidéo enregistré est vide.');
+                if (!window.FFmpeg || !window.FFmpeg.createFFmpeg) {
+                    throw new Error('Le convertisseur MP4 ne s’est pas chargé. Vérifiez votre connexion puis rechargez la page.');
+                }
+                if (!this.ffmpeg) {
+                    this.ffmpeg = window.FFmpeg.createFFmpeg({
+                        log: false,
+                        corePath: 'https://unpkg.com/@ffmpeg/core@0.11.0/dist/ffmpeg-core.js'
+                    });
+                }
+                if (!this.ffmpeg.isLoaded()) await this.ffmpeg.load();
+                const inputName = 'ballystik-recording.webm';
+                const outputName = 'ballystik-recording.mp4';
+                this.ffmpeg.FS('writeFile', inputName, new Uint8Array(await sourceBlob.arrayBuffer()));
+                await this.ffmpeg.run('-i', inputName, '-an', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outputName);
+                const output = this.ffmpeg.FS('readFile', outputName);
+                const mp4Blob = new Blob([output.buffer], { type: 'video/mp4' });
+                const url = URL.createObjectURL(mp4Blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'ballystik-' + new Date().toISOString().replace(/[:.]/g, '-') + '.mp4';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 60000);
+                this.setRecordStatus('MP4 téléchargé.');
+            } catch (error) {
+                console.error('[BallYstik] Conversion MP4 échouée :', error);
+                this.setRecordStatus('Échec de l’export MP4 : ' + (error.message || 'erreur inconnue'), true);
+            } finally {
+                this.recording = false;
+                this.recordingChunks = [];
+                this.mediaRecorder = null;
+                const text = document.getElementById('recordText');
+                const icon = document.getElementById('recordIcon');
+                const button = document.getElementById('recordBtn');
+                if (text) text.textContent = 'Enregistrer MP4';
+                if (icon) icon.className = 'fa-solid fa-circle text-red-400';
+                if (button) button.disabled = false;
+                if (button) button.classList.remove('border-red-500');
+            }
         },
 
         togglePause() {
