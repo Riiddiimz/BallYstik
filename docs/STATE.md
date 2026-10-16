@@ -24,3 +24,11 @@
 ## Open Issues
 - Real browser execution and a full 60-second recording have not yet been tested from this environment.
 - If the tab is backgrounded or the browser throttles animation frames, real-time recording duration may vary; keep the tab visible during capture.
+
+
+## Arme portée et visée (2026-10-16)
+- Après ramassage, l’arme reste attachée à la boule dans une pose portée, sans orbite permanente.
+- Lorsqu’un adversaire entre dans un rayon de 190 px, l’arme pivote vers l’adversaire vivant le plus proche.
+- Une attaque est déclenchée à courte portée, inflige 5 dégâts et applique un cooldown de 0,48 s.
+- Retour à une pose de garde fixe lorsque personne n’est à portée de détection.
+- Modifié dans le commit `c3e972b72d01a972f523d3456cdf440e3063d06a`.
