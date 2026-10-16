@@ -53,12 +53,16 @@
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
                 const mapChanged = arena.mapStyle !== nextMap;
-                arena.shrinkEnabled = !!this.options.shrinkEnabled;
+                arena.shrinkEnabled = nextMap === 'vortex' ? false : !!this.options.shrinkEnabled;
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
                 arena.mapStyle = nextMap;
+                if (mapChanged) arena._recompute();
                 if (mapChanged || opts?.obstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
+                if (nextMap === 'vortex' && !arena.suckParticles.length) {
+                    for (let i = 0; i < 40; i++) arena.suckParticles.push(arena._newSuckParticle(i, true));
+                }
             }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
@@ -105,15 +109,18 @@
                     shrinkMax: this.options.shrinkMax
                 });
             } else {
-                world.arena.shrinkEnabled = this.options.shrinkEnabled;
+                world.arena.mapStyle = this.options.arenaMap || 'neon';
+                world.arena.shrinkEnabled = world.arena.mapStyle === 'vortex' ? false : this.options.shrinkEnabled;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
-                world.arena.mapStyle = this.options.arenaMap || 'neon';
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
-                world.arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
                 world.arena._recompute();
+                world.arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
+                if (world.arena.mapStyle === 'vortex' && !world.arena.suckParticles.length) {
+                    for (let i = 0; i < 40; i++) world.arena.suckParticles.push(world.arena._newSuckParticle(i, true));
+                }
             }
 
             // Systèmes
@@ -463,6 +470,19 @@
             }
         }
 
+        _clampVortexSpeed(ball) {
+            const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
+            if (speed < 0.001) {
+                const angle = ((ball.id || 1) * 2.399963229728653) % (Math.PI * 2);
+                ball.vx = Math.cos(angle) * 180;
+                ball.vy = Math.sin(angle) * 180;
+                return;
+            }
+            const target = Math.max(90, Math.min(460, speed));
+            ball.vx = ball.vx / speed * target;
+            ball.vy = ball.vy / speed * target;
+        }
+
         _keepBaseSpeed(ball) {
             const target = ball.baseMoveSpeed || 180;
             const speed = Math.hypot(ball.vx || 0, ball.vy || 0);
@@ -512,8 +532,20 @@
             world.arena.update(dt);
             this._updateMapMechanics(dt, world);
 
-            // Pickups
+            // Pickups : conserve leur système, mais évite qu'un spawn reste hors du cercle Vortex.
             this.pickupSystem.update(dt, world);
+            if (world.arena.mapStyle === 'vortex') {
+                for (const pickup of this.pickupSystem.items) {
+                    const dx = pickup.x - world.arena.vortexCx, dy = pickup.y - world.arena.vortexCy;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const limit = world.arena.vortexRadius - (pickup.radius || 16);
+                    if (dist > limit) {
+                        pickup.x = world.arena.vortexCx + dx / dist * limit;
+                        pickup.y = world.arena.vortexCy + dy / dist * limit;
+                        pickup.baseY = pickup.y;
+                    }
+                }
+            }
 
             // Boules
             for (const ball of world.balls) {
@@ -549,17 +581,29 @@
                 const statusMult = ball.status.getSpeedMultiplier();
                 const speedMult = (ball.speedMultiplier ?? 1) * statusMult;
 
+                // Physique Vortex uniquement : attraction centrale et dérive tangentielle horaire.
+                if (world.arena.mapStyle === 'vortex' && !ball.status.isStunned()) {
+                    const arena = world.arena;
+                    const dx = ball.x - arena.vortexCx, dy = ball.y - arena.vortexCy;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const nx = dx / dist, ny = dy / dist;
+                    let pull = 220;
+                    if (dist < 60) pull *= dist / 60;
+                    ball.vx -= nx * pull * dt;
+                    ball.vy -= ny * pull * dt;
+                    ball.vx -= ny * 30 * dt;
+                    ball.vy += nx * 30 * dt;
+                    this._clampVortexSpeed(ball);
+                }
+
                 // Update physique (intégration basique, la sim principale peut override)
                 if (!ball.status.isStunned()) {
                     ball.x += ball.vx * dt * speedMult;
                     ball.y += ball.vy * dt * speedMult;
                 }
 
-                // Gravité (très légère, contrairement au mode classic)
-                // Mouvement libre en 2D : aucune gravité, les boules se déplacent dans tout le terrain.
-
-                // Collisions murs
-                const hit = world.arena.resolveBall(ball);
+                // Collision avec les limites propres à la carte active.
+                const hit = world.arena.resolveBall(ball, dt);
                 if (hit) {
                     // Capacités réactives
                     for (const slot of ball.abilitySlots) {
@@ -594,8 +638,13 @@
                         ball.vy -= relV * ny;
                         other.vx += relV * nx;
                         other.vy += relV * ny;
-                        this._keepBaseSpeed(ball);
-                        this._keepBaseSpeed(other);
+                        if (world.arena.mapStyle === 'vortex') {
+                            this._clampVortexSpeed(ball);
+                            this._clampVortexSpeed(other);
+                        } else {
+                            this._keepBaseSpeed(ball);
+                            this._keepBaseSpeed(other);
+                        }
 
                         // Contact damage
                         if (ball.team !== other.team) {
@@ -647,7 +696,10 @@
                 }
 
                 // Les effets de collision/capacité ne doivent pas faire dériver la vitesse de base.
-                if (!ball.status.isStunned() && !(ball._obstacleBoostTimer > 0)) this._keepBaseSpeed(ball);
+                if (!ball.status.isStunned() && !(ball._obstacleBoostTimer > 0)) {
+                    if (world.arena.mapStyle === 'vortex') this._clampVortexSpeed(ball);
+                    else this._keepBaseSpeed(ball);
+                }
 
                 // Health update
                 ball.health.update(dt);
@@ -672,24 +724,43 @@
                 // Collisions murs
                 const beforeX = p.x, beforeY = p.y;
                 const bounds = world.arena.getBounds();
-                if (p.x < bounds.left + p.radius || p.x > bounds.right - p.radius) {
-                    if (p.bounces > 0) {
-                        p.vx = -p.vx;
-                        p.bounces--;
-                        p.x = beforeX;
-                    } else {
-                        this.projectiles.splice(i, 1);
-                        continue;
+                if (world.arena.mapStyle === 'vortex') {
+                    const dx = p.x - world.arena.vortexCx, dy = p.y - world.arena.vortexCy;
+                    const dist = Math.hypot(dx, dy) || 1;
+                    const limit = world.arena.vortexRadius - (p.radius || 0);
+                    if (dist > limit) {
+                        if (p.bounces > 0) {
+                            const nx = dx / dist, ny = dy / dist;
+                            const dot = p.vx * nx + p.vy * ny;
+                            if (dot > 0) { p.vx -= 2 * dot * nx; p.vy -= 2 * dot * ny; }
+                            p.x = world.arena.vortexCx + nx * limit;
+                            p.y = world.arena.vortexCy + ny * limit;
+                            p.bounces--;
+                        } else {
+                            this.projectiles.splice(i, 1);
+                            continue;
+                        }
                     }
-                }
-                if (p.y < bounds.top + p.radius || p.y > bounds.bottom - p.radius) {
-                    if (p.bounces > 0) {
-                        p.vy = -p.vy;
-                        p.bounces--;
-                        p.y = beforeY;
-                    } else {
-                        this.projectiles.splice(i, 1);
-                        continue;
+                } else {
+                    if (p.x < bounds.left + p.radius || p.x > bounds.right - p.radius) {
+                        if (p.bounces > 0) {
+                            p.vx = -p.vx;
+                            p.bounces--;
+                            p.x = beforeX;
+                        } else {
+                            this.projectiles.splice(i, 1);
+                            continue;
+                        }
+                    }
+                    if (p.y < bounds.top + p.radius || p.y > bounds.bottom - p.radius) {
+                        if (p.bounces > 0) {
+                            p.vy = -p.vy;
+                            p.bounces--;
+                            p.y = beforeY;
+                        } else {
+                            this.projectiles.splice(i, 1);
+                            continue;
+                        }
                     }
                 }
 
@@ -721,7 +792,8 @@
                                 const len = distance || 1;
                                 victim.vx += (dx / len) * push;
                                 victim.vy += (dy / len) * push;
-                                this._keepBaseSpeed(victim);
+                                if (world.arena.mapStyle === 'vortex') this._clampVortexSpeed(victim);
+                                else this._keepBaseSpeed(victim);
                             }
                         }
                     } else {
