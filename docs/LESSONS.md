@@ -17,3 +17,8 @@
 
 ## Règle d’animation des armes (2026-10-16)
 Ne pas faire orbiter l’arme autour de la boule en continu. Elle doit être dessinée près de la boule comme un objet porté, puis pivoter vers l’adversaire le plus proche uniquement quand il s’approche. Conserver un délai entre les coups pour éviter les dégâts à chaque frame.
+
+
+## Armes et vitesse de test
+- Pour rendre une attaque lisible, animer le balayage de l’arme au moment du coup au lieu de simplement changer sa direction.
+- Garder un réglage de vitesse accessible dans le panneau gauche pour accélérer les tests de combat.
