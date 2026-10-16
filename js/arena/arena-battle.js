@@ -504,6 +504,20 @@
                     }
                 }
 
+                // La propulsion d'un obstacle est temporaire : après 0,55 s,
+                // la boule retrouve sa vitesse de déplacement habituelle.
+                if (ball._obstacleBoostTimer > 0) {
+                    ball._obstacleBoostTimer = Math.max(0, ball._obstacleBoostTimer - dt);
+                    if (ball._obstacleBoostTimer === 0) {
+                        const targetSpeed = Number(ball.baseMoveSpeed) || 180;
+                        const currentSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
+                        if (currentSpeed > 0.001) {
+                            ball.vx = ball.vx / currentSpeed * targetSpeed;
+                            ball.vy = ball.vy / currentSpeed * targetSpeed;
+                        }
+                    }
+                }
+
                 // Statuts
                 ball.status.update(dt, world);
 
