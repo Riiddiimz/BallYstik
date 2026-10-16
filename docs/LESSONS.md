@@ -13,3 +13,7 @@
 - [perf] Seed search freezing UI during thousands of simulations -> Fixed batch size (60 seeds) took >50ms per frame -> Enforced 8ms performance.now() budget per rAF to guarantee constant 60 FPS without UI freezes.
 - [modes] Calling activeMode.handleCollision crashed animation loop when mode lacked default collision method -> Guarded call with optional check (this.activeMode.handleCollision).
 - [vfx] Les événements visuels consommaient le PRNG du combat et pouvaient changer les pickups/trajectoires d'une seed -> Utiliser un générateur local réservé aux animations.
+
+
+## Règle d’animation des armes (2026-10-16)
+Ne pas faire orbiter l’arme autour de la boule en continu. Elle doit être dessinée près de la boule comme un objet porté, puis pivoter vers l’adversaire le plus proche uniquement quand il s’approche. Conserver un délai entre les coups pour éviter les dégâts à chaque frame.
