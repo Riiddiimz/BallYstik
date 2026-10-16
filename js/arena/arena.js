@@ -287,15 +287,21 @@
                     ball.y += ny * overlap;
                     const dot = ball.vx * nx + ball.vy * ny;
                     if (dot < 0) {
-                        // Rebond propulsé : boost temporaire, puis retour à la vitesse normale.
-                        ball.vx -= 2 * dot * nx;
-                        ball.vy -= 2 * dot * ny;
+                        // Effet bumper de flipper : renvoi franc vers l'extérieur, avec une
+                        // légère conservation de la trajectoire pour rendre chaque rebond vivant.
+                        const incomingX = ball.vx;
+                        const incomingY = ball.vy;
+                        const reflectedX = incomingX - 2 * dot * nx;
+                        const reflectedY = incomingY - 2 * dot * ny;
+                        const reflectedSpeed = Math.hypot(reflectedX, reflectedY) || 1;
+                        const dirX = nx * 0.72 + (reflectedX / reflectedSpeed) * 0.28;
+                        const dirY = ny * 0.72 + (reflectedY / reflectedSpeed) * 0.28;
+                        const dirLength = Math.hypot(dirX, dirY) || 1;
                         const baseSpeed = Number(ball.baseMoveSpeed) || 180;
-                        const speed = Math.hypot(ball.vx, ball.vy) || 1;
-                        const launchSpeed = baseSpeed * 2.25;
-                        ball.vx = (ball.vx / speed) * launchSpeed;
-                        ball.vy = (ball.vy / speed) * launchSpeed;
-                        ball._obstacleBoostTimer = 0.55;
+                        const launchSpeed = baseSpeed * 3.2;
+                        ball.vx = (dirX / dirLength) * launchSpeed;
+                        ball.vy = (dirY / dirLength) * launchSpeed;
+                        ball._obstacleBoostTimer = 0.75;
                         o.hitPulse = 1;
                         hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r, obstacle: true };
                     }
