@@ -148,7 +148,7 @@
             ctx.restore();
 
             // Pour l'épée, le pickup EST l'image de l'arme : aucun orbe ni icône générique.
-            if (meta.id === 'blade' || meta.id === 'blade2') {
+            if (meta.category === 'weapons') {
                 const weaponImage = window.BallYstikWeaponImages && window.BallYstikWeaponImages[meta.id];
                 ctx.save();
                 ctx.translate(this.x, this.y);
@@ -158,7 +158,7 @@
                 ctx.scale(weaponScale, weaponScale);
                 ctx.globalAlpha = appear;
                 ctx.rotate(-Math.PI / 4);
-                ctx.shadowColor = '#93c5fd';
+                ctx.shadowColor = meta.glow || '#fde68a';
                 ctx.shadowBlur = 22;
                 if (weaponImage && weaponImage.complete && weaponImage.naturalWidth > 0) {
                     // Plus grande que l'ancienne icône, pour que l'épée soit clairement identifiable au sol.
@@ -166,11 +166,11 @@
                     ctx.drawImage(weaponImage, -size / 2, -size / 2, size, size);
                 } else {
                     // Fallback si l'image de cette arme ne se charge pas.
-                    ctx.fillStyle = '#dbeafe';
+                    ctx.fillStyle = meta.color || '#fde68a';
                     ctx.font = 'bold 34px sans-serif';
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText('⚔', 0, 0);
+                    ctx.fillText(meta.icon || '⚔', 0, 0);
                 }
                 ctx.restore();
                 // Conserver l'anneau de rareté éventuel, sans dessiner le corps d'un orbe.
@@ -311,13 +311,13 @@
             if (!best) return false;
             const pickup = new Pickup(best.x, best.y, meta, this.prng);
             pickup.spawnTimer = 1.0;
-            pickup.radius = (meta.id === 'blade' || meta.id === 'blade2') ? 19 : 16;
+            pickup.radius = meta.category === 'weapons' ? 19 : 16;
             this.items.push(pickup);
             world.spawnParticle(best.x, best.y, { color: '#ffffff', count: 18, speed: 260, life: 0.9, spread: Math.PI * 2, size: 3.2 });
             world.spawnParticle(best.x, best.y, { color: meta.glow || meta.color || '#67e8f9', count: 42, speed: 220, life: 1.15, spread: Math.PI * 2, size: 3.5 });
             world.addShockwave(best.x, best.y, { radius: 110, color: '#ffffff', life: 0.7 });
             world.addShockwave(best.x, best.y, { radius: 76, color: meta.glow || meta.color || '#67e8f9', life: 0.95 });
-            world.playSound('pickup-spawn', { pitch: (meta.id === 'blade' || meta.id === 'blade2') ? 1.15 : 0.9 });
+            world.playSound('pickup-spawn', { pitch: meta.category === 'weapons' ? 1.15 : 0.9 });
             return true;
         }
 
