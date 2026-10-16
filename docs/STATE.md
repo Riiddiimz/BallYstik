@@ -2,7 +2,7 @@
 
 ## Current Phase
 - Baseline engine: Modular Canvas 2D + deterministic seed system + Classic Escape mode operational.
-- MVP combat prototype is being built independently on `feature/mvp-combat`; it does not replace `index.html` or modify `main`.
+- MVP combat work is isolated on `feature/mvp-combat`; `main` remains untouched. The current test build is wired into the existing `index.html` shell.
 
 ## Done
 - Existing engine and UI retained unchanged for this MVP branch.
@@ -10,6 +10,10 @@
 - Canvas is rendered at 1080×1920 backing resolution; recording uses `captureStream(30)` and `MediaRecorder`, with browser-supported format selection.
 - Corrected backing-store scaling, added animated ultimate shockwave rings, and ensured final recorder chunks are collected before download.
 - No third-party game engine or new dependency added.
+
+## Recently Changed
+- Added a right-side weapon test menu for all eight images in `assets/weapons`; each Spawn button drops the selected image into the arena. Timed sword spawns remain enabled.
+- Added animation-loop error reporting, prevented the regular RAF loop from double-stepping the game during MP4 capture, and added a rounded-rectangle rendering fallback.
 
 ## In Progress / Next
 - Validate `mvp.html` in a real browser, especially collision feel, shrinking-zone damage, weapon pickups, ultimate triggering, and the 60-second capture/download flow.
