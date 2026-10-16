@@ -17,15 +17,15 @@
         ballCount: 4,
         maxHp: 100,
         contactDamageMult: 1,
-        pickupInterval: 5,
-        maxSlots: 3,
-        matchMode: 'lastStanding', // lastStanding | timed | kills
+        pickupInterval: 999999,
+        maxSlots: 0,
+        matchMode: 'timed', // fixed for the simplified MVP
         matchTime: 60,
         shrinkEnabled: false,
         shrinkStart: 30,
         shrinkRate: 6,
         shrinkMax: 0.16,
-        obstacles: 1,
+        obstacles: 0,
         arenaMap: 'neon'
     };
 
@@ -50,6 +50,8 @@
 
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
+            // MVP simplifié : aucun pickup/capacité, arène fixe sans obstacle et manche de 60 s.
+            Object.assign(this.options, { pickupInterval: 999999, maxSlots: 0, matchMode: 'timed', matchTime: 60, shrinkEnabled: false, obstacles: 0, arenaMap: 'neon' });
             if (this._world && this._world.arena) {
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
@@ -71,6 +73,7 @@
         spawnPickup(id) {
             const world = this._world;
             if (!world || !this.pickupSystem || !window.AbilityRegistry) return false;
+            return false; // Les apparitions d'armes/capacités sont désactivées dans le MVP.
             const meta = window.AbilityRegistry.get(id);
             if (!meta) return false;
             return this.pickupSystem.spawnAbility(meta, world);
@@ -499,7 +502,7 @@
             this._updateMapMechanics(dt, world);
 
             // Pickups
-            this.pickupSystem.update(dt, world);
+            // Les pickups sont désactivés dans le MVP simplifié.
 
             // Boules
             for (const ball of world.balls) {
@@ -780,7 +783,7 @@
             world.arena.render(ctx);
 
             // Pickups (sous les balles)
-            this.pickupSystem.render(ctx);
+            // Aucun pickup à dessiner dans le MVP simplifié.
 
             // Boules
             for (const ball of world.balls) {
