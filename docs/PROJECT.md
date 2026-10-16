@@ -7,7 +7,7 @@
 - Export: MediaRecorder API (1080x1920 fixed internal resolution, 9:16 portrait).
 - Hosting: Vercel (client-side only, zero backend, zero DB).
 
-## Folder Tree
+## Standalone MVP Combat Prototype\n- Entry page: `mvp.html` (kept separate from the existing `index.html` application).\n- Vanilla HTML/CSS/JS and Canvas 2D; no PixiJS or other new dependency.\n- Logical simulation dimensions 540×960 rendered on a 1080×1920 canvas backing store; recording via `canvas.captureStream(30)` and `MediaRecorder`.\n- Four autonomous balls with contact damage, HP bars, pickup blade at 15/35/50 seconds, charge-based shockwave ultimates, arena shrink from 30 seconds, and damage-based winner overlay.\n- Export format is selected from formats supported by the current browser; WebM is expected in Chrome/Edge, while MP4 is not guaranteed.\n- Status: implementation committed on `feature/mvp-combat`; browser validation and full-duration recording still pending.\n\n## Folder Tree
 - `index.html`: Entry point with dual-sidebar layout and 9:16 portrait hero canvas.
 - `config.js`: Root configuration with comments (min, max, bounds) editable by user.
 - `css/style.css`: Core design system, neon glow, custom scrollbars, strict accordion hiding.
