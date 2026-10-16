@@ -37,3 +37,9 @@
 ## Visibilité des armes portées (2026-10-16)
 - Augmentation du dessin de l’arme portée de 30×58 px à 56×100 px pour qu’elle soit visible en jeu.
 - Commit : `417eafb71231ebf26459f0509938ab7407288f19`.
+
+
+## Animation de frappe et vitesse de combat (2026-10-16)
+- Une frappe d’arme déclenche une animation de balayage de 0,24 s après le contact.
+- Le panneau gauche propose un curseur de vitesse de 1× à 3×; le multiplicateur agit sur le temps de simulation et le compte à rebours.
+- Commit : `543472ce4caf56ef3d2a888c38b3a0fd5fea2e1b`.
