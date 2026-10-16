@@ -11,3 +11,5 @@
 - [perf] Seed search freezing UI during thousands of simulations -> Fixed batch size (60 seeds) took >50ms per frame -> Enforced 8ms performance.now() budget per rAF to guarantee constant 60 FPS without UI freezes.
 - [modes] Calling activeMode.handleCollision crashed animation loop when mode lacked default collision method -> Guarded call with optional check (this.activeMode.handleCollision).
 - [vfx] Les événements visuels consommaient le PRNG du combat et pouvaient changer les pickups/trajectoires d'une seed -> Utiliser un générateur local réservé aux animations.
+
+- [video] MediaRecorder exporte généralement en WebM sur Chromium -> capturer le canvas puis convertir en MP4 avec FFmpeg WASM avant le téléchargement.
