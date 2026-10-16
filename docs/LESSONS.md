@@ -7,6 +7,7 @@
 - [audio] Browser autoplay audio warning on page load -> AudioContext created unconditionally in constructor -> Initialized AudioContext lazily on first user pointerdown/keydown gesture.
 - [ui] Sidebar jumped to top when clicking checkboxes -> Tailwind sr-only used position:absolute without relative parent, causing scroll-into-view -> Wrapped toggles in relative inline-flex and added lockScroll helper.
 - [ui] Accordions showed clipped text when closed -> Tailwind pt/pb classes and margins overflowed max-height:0 -> Added .accordion-content:not(.open) { display: none !important; }.
+- [combat] Picked-up weapon was only a static carrier aura -> Store an orbit angle on the carrier, render the weapon at that moving offset, and apply melee hits when it passes close to the nearest opponent.
 - [render] Animation loop can appear frozen when a canvas API throws -> Guard the frame loop, surface the runtime error in the status area, and keep a `roundRect` fallback for browser compatibility.
 - [render] Blurry canvas rendering on high-DPI / Retina displays -> Canvas resolution matched CSS pixels instead of physical pixels -> Scaled width/height by Math.min(window.devicePixelRatio, 2) and ctx.scale.
 - [perf] Seed search freezing UI during thousands of simulations -> Fixed batch size (60 seeds) took >50ms per frame -> Enforced 8ms performance.now() budget per rAF to guarantee constant 60 FPS without UI freezes.
