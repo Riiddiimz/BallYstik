@@ -53,7 +53,11 @@
                 const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                 Object.entries(SLIDERS).forEach(([id, cfg]) => {
                     const el = document.getElementById(id);
-                    if (el && saved[cfg[0]] != null) {\n                        let storedValue = saved[cfg[0]];\n                        if (id === 'abSpeed') storedValue = saved.speedLevel != null ? saved.speedLevel : Math.round((Number(storedValue) - 1.5) / 0.25);\n                        el.value = cfg[1] === 'percent' ? Math.round(storedValue * 100) : storedValue;\n                    }
+                    if (el && saved[cfg[0]] != null) {
+                        let storedValue = saved[cfg[0]];
+                        if (id === 'abSpeed') storedValue = saved.speedLevel != null ? saved.speedLevel : Math.round((Number(storedValue) - 1.5) / 0.25);
+                        el.value = cfg[1] === 'percent' ? Math.round(storedValue * 100) : storedValue;
+                    }
                 });
                 const shrink = document.getElementById('abShrinkToggle');
                 if (shrink && saved.shrinkEnabled != null) shrink.checked = !!saved.shrinkEnabled;
@@ -71,7 +75,9 @@
                 options[cfg[0]] = cfg[1] === 'int' || cfg[1] === 'percent' ? (cfg[1] === 'percent' ? value / 100 : Math.round(value)) : value;
             });
             const shrink = document.getElementById('abShrinkToggle');
-            if (document.getElementById('abSpeed')) options.gameSpeed = 1.5 + Number(document.getElementById('abSpeed').value) * 0.25;\n            options.speedLevel = Number(document.getElementById('abSpeed')?.value || 0);\n            options.matchMode = 'lastStanding';
+            if (document.getElementById('abSpeed')) options.gameSpeed = 1.5 + Number(document.getElementById('abSpeed').value) * 0.25;
+            options.speedLevel = Number(document.getElementById('abSpeed')?.value || 0);
+            options.matchMode = 'lastStanding';
             const mapSelect = document.getElementById('arenaMapSelect');
             options.arenaMap = mapSelect ? mapSelect.value : 'neon';
             try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
