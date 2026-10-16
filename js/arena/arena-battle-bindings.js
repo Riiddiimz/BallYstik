@@ -8,7 +8,6 @@
         abContactDmg: ['contactDamageMult', 'float', v => v.toFixed(1) + 'x'],
         abPickupInterval: ['pickupInterval', 'float', v => v + 's'],
         abMaxSlots: ['maxSlots', 'int', v => String(v)],
-        abMatchTime: ['matchTime', 'int', v => v + 's'],
         abShrinkStart: ['shrinkStart', 'int', v => v + 's'],
         abShrinkRate: ['shrinkRate', 'int', v => v + ' px/s'],
         abShrinkMax: ['shrinkMax', 'percent', v => v + '%'],
@@ -56,13 +55,10 @@
                     const el = document.getElementById(id);
                     if (el && saved[cfg[0]] != null) el.value = cfg[1] === 'percent' ? Math.round(saved[cfg[0]] * 100) : saved[cfg[0]];
                 });
-                const mode = document.getElementById('abMatchMode');
-                if (mode && saved.matchMode) mode.value = saved.matchMode;
                 const shrink = document.getElementById('abShrinkToggle');
                 if (shrink && saved.shrinkEnabled != null) shrink.checked = !!saved.shrinkEnabled;
             } catch (_) {}
             this.updateLabels();
-            this.syncMatchTime();
             this.syncShrinkOptions();
         },
 
@@ -74,10 +70,11 @@
                 const value = Number(el.value);
                 options[cfg[0]] = cfg[1] === 'int' || cfg[1] === 'percent' ? (cfg[1] === 'percent' ? value / 100 : Math.round(value)) : value;
             });
-            const mode = document.getElementById('abMatchMode');
             const shrink = document.getElementById('abShrinkToggle');
-            options.matchMode = mode ? mode.value : 'lastStanding';
-            options.arenaMap = 'neon';
+            options.matchMode = 'lastStanding';
+            const mapSelect = document.getElementById('arenaMapSelect');
+            options.arenaMap = mapSelect ? mapSelect.value : 'neon';
+            try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
             options.shrinkEnabled = !!(shrink && shrink.checked);
             return options;
         },
@@ -94,12 +91,6 @@
             });
         },
 
-        syncMatchTime() {
-            const mode = document.getElementById('abMatchMode');
-            const group = document.getElementById('abMatchTimeGroup');
-            if (mode && group) group.style.display = mode.value === 'timed' ? '' : 'none';
-        },
-
         syncShrinkOptions() {
             const toggle = document.getElementById('abShrinkToggle');
             const options = document.getElementById('abShrinkOptions');
@@ -110,17 +101,17 @@
             Object.keys(SLIDERS).forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('input', () => {
+                    if (id === 'abObstacles') { try { localStorage.removeItem('ballystik.arena.obstaclePositions.v1'); } catch (_) {} }
                     this.updateLabels();
                     this.saveOptions();
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
-            ['abMatchMode', 'abShrinkToggle'].forEach(id => {
+            ['abShrinkToggle'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.addEventListener('change', () => {
                     this.saveOptions();
-                    this.syncMatchTime();
-                    this.syncShrinkOptions();
+                            this.syncShrinkOptions();
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
@@ -144,7 +135,7 @@
                     if (seed) { seed.select(); document.execCommand('copy'); }
                 }
             });
-            ['resetBtn', 'replayBtn'].forEach(id => {
+            ['resetBtn'].forEach(id => {
                 const btn = document.getElementById(id);
                 if (btn) btn.addEventListener('click', () => this.start());
             });
@@ -158,6 +149,34 @@
             });
             const play = document.getElementById('playPauseBtn');
             if (play) play.addEventListener('click', () => this.togglePause());
+
+            const mapSelect = document.getElementById('arenaMapSelect');
+            if (mapSelect) mapSelect.addEventListener('change', () => {
+                this.saveOptions();
+                const mapSettings = document.getElementById('defaultMapSettings');
+                if (mapSettings) mapSettings.hidden = mapSelect.value !== 'neon';
+                try { localStorage.removeItem('ballystik.arena.obstaclePositions.v1'); } catch (_) {}
+                if (window.ArenaBattle) window.ArenaBattle.applyOptions({ ...this.getOptions(), obstaclePositions: null });
+                this.start();
+            });
+            const randomizeObstacles = document.getElementById('randomizeObstaclesBtn');
+            if (randomizeObstacles) randomizeObstacles.addEventListener('click', () => {
+                const countEl = document.getElementById('abObstacles');
+                const count = Math.max(0, Math.min(10, Number(countEl && countEl.value) || 0));
+                const positions = [];
+                const minDistance = 0.105;
+                let attempts = 0;
+                while (positions.length < count && attempts < count * 160) {
+                    attempts++;
+                    const candidate = { x: 0.22 + Math.random() * 0.56, y: 0.16 + Math.random() * 0.68 };
+                    if (positions.every(p => Math.hypot((p.x-candidate.x)*0.65, p.y-candidate.y) > minDistance)) positions.push(candidate);
+                }
+                try { localStorage.setItem('ballystik.arena.obstaclePositions.v1', JSON.stringify(positions)); } catch (_) {}
+                this.saveOptions();
+                if (window.ArenaBattle) window.ArenaBattle.applyOptions({ ...this.getOptions(), obstacles: positions.length, obstaclePositions: positions });
+                this.start();
+            });
+
             const record = document.getElementById('recordBtn');
             if (record) record.addEventListener('click', () => this.recording ? this.stopRecording() : this.startRecording());
         },
@@ -198,8 +217,6 @@
             };
             window.ArenaBattle.applyOptions(this.getOptions());
             window.ArenaBattle.reset(this.world);
-            const overlay = document.getElementById('victoryOverlay');
-            if (overlay) overlay.classList.add('opacity-0', 'pointer-events-none');
             this.running = true;
             this.lastTime = performance.now();
             this.fpsAt = this.lastTime;
@@ -359,8 +376,6 @@
             const alive = this.world.balls.filter(ball => ball.alive).length;
             const balls = document.getElementById('ballCounter');
             if (balls) balls.textContent = String(alive);
-            const timer = document.getElementById('timerCounter');
-            if (timer) timer.textContent = Math.max(0, window.ArenaBattle.matchTime - window.ArenaBattle.elapsedTime).toFixed(1) + 's';
             this.fpsFrames++;
             if (now - this.fpsAt >= 1000) {
                 const fps = document.getElementById('fpsCounter');
