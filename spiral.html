@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>BallYstik — Vortex Spirale</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: #0b0b0d;
+        font-family: 'Outfit', system-ui, sans-serif;
+        color: #ffffff;
+        touch-action: manipulation;
+        user-select: none;
+    }
+
+    body {
+        display: flex; align-items: center; justify-content: center;
+        background: radial-gradient(ellipse at 50% 30%, #1a0b2e 0%, #0b0b0d 60%);
+    }
+
+    #stage {
+        position: relative;
+        height: 96vh;
+        aspect-ratio: 9 / 16;
+        max-width: 96vw;
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow:
+            0 0 40px -8px rgba(160, 80, 255, 0.25),
+            0 0 80px -20px rgba(120, 40, 200, 0.20),
+            0 0 0 1px rgba(255, 255, 255, 0.08);
+        background: #080611;
+    }
+
+    #simCanvas {
+        display: block;
+        width: 100%; height: 100%;
+    }
+
+    #topBar {
+        position: absolute; top: 0; left: 0; right: 0;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    .badge {
+        padding: 6px 10px;
+        border-radius: 10px;
+        background: rgba(18, 20, 29, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        color: #a1a1aa;
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .badge .dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: #c084fc;
+        box-shadow: 0 0 8px #c084fc;
+        animation: pulse 1.6s ease-in-out infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.35; }
+    }
+    .badge.violet { color: #c084fc; border-color: rgba(192, 132, 252, 0.4); }
+    .badge.pink { color: #ff2a85; border-color: rgba(255, 42, 133, 0.4); }
+
+    #bottomBar {
+        position: absolute; bottom: 0; left: 0; right: 0;
+        padding: 14px 16px 18px;
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+    }
+
+    button {
+        font: inherit;
+        cursor: pointer;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(24, 24, 27, 0.85);
+        color: #e7eefb;
+        border-radius: 11px;
+        padding: 11px 14px;
+        font-size: 12px;
+        font-weight: 800;
+        transition: all 0.15s;
+        backdrop-filter: blur(8px);
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    button:hover { background: rgba(40, 40, 50, 0.95); border-color: rgba(255, 255, 255, 0.20); }
+    button.primary {
+        background: linear-gradient(100deg, #3b1a6b, #5a2a9e);
+        border-color: rgba(160, 100, 240, 0.55);
+        color: #f3e8ff;
+    }
+    button.primary:hover { background: linear-gradient(100deg, #4d2389, #7038c2); }
+    button.accent {
+        background: linear-gradient(100deg, #b91c5c, #e11d74);
+        border-color: rgba(255, 100, 150, 0.55);
+        color: #fff;
+    }
+    button.accent:hover { background: linear-gradient(100deg, #d1206a, #f12684); }
+
+    #winner {
+        position: absolute; inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(8, 3, 18, 0.85);
+        backdrop-filter: blur(6px);
+        z-index: 10;
+        flex-direction: column;
+        gap: 18px;
+        padding: 30px;
+        text-align: center;
+    }
+    #winner.active { display: flex; }
+
+    #winnerLabel {
+        font-size: 44px;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        background: linear-gradient(100deg, #e9d5ff, #a855f7);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-shadow: 0 0 40px rgba(168, 85, 247, 0.5);
+        animation: winnerPulse 1.6s ease-in-out infinite;
+    }
+    @keyframes winnerPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+
+    #winnerBall {
+        width: 90px; height: 90px;
+        border-radius: 50%;
+        box-shadow: 0 0 60px currentColor, inset -8px -8px 20px rgba(0,0,0,0.5);
+        animation: floatY 2.4s ease-in-out infinite;
+    }
+    @keyframes floatY {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    #winnerDetail {
+        font-size: 14px;
+        color: #94a3b8;
+        max-width: 320px;
+        line-height: 1.5;
+    }
+    #winnerDetail strong {
+        color: #c084fc;
+        font-family: 'JetBrains Mono', monospace;
+    }
+</style>
+</head>
+<body>
+
+<div id="stage">
+    <canvas id="simCanvas"></canvas>
+
+    <div id="topBar">
+        <div class="badge"><span class="dot"></span><span id="fps">60 FPS</span></div>
+        <div class="badge violet"><span id="timer">1:00</span></div>
+        <div class="badge pink"><span id="alive">4 boules</span></div>
+    </div>
+
+    <div id="bottomBar">
+        <button id="restartBtn" class="accent">
+            <span>↺</span> Rejouer
+        </button>
+        <button id="newBtn" class="primary">
+            <span>🎲</span> Nouvelle partie
+        </button>
+    </div>
+
+    <div id="winner">
+        <div id="winnerLabel">WINNER</div>
+        <div id="winnerBall"></div>
+        <div id="winnerDetail"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONFIG
+    // ═══════════════════════════════════════════════════════════════
+    const CONFIG = {
+        ballCount: 4,
+        maxHp: 100,
+        ballRadius: 14,
+        baseMoveSpeed: 180,
+        contactDamage: 3,
+        contactCooldown: 0.5,
+        matchTime: 60,
+        arenaMap: 'vortex',
+
+        // ─── Physique du vortex ───
+        attraction: 220,
+        maxSpeed: 460,
+        minSpeed: 90,
+        tangentialBias: 30,
+        centerSoftRadius: 60,
+
+        // ─── Obstacles ───
+        obstacleRadius: 22,
+
+        // ─── Arena ───
+        arenaRadiusFactor: 0.46,
+
+        // ─── Anti-bug ───
+        maxDt: 0.033,
+        wallBounce: 0.7,
+        wallPushBack: 30,
+
+        // ─── Sens de rotation ───
+        spinDirection: 'cw'
+    };
+
+    const COLORS = ['#ff2a85', '#00f2fe', '#fbbf24', '#a855f7', '#34d399', '#f97316'];
+
+    // ═══════════════════════════════════════════════════════════════
+    // UTILS
+    // ═══════════════════════════════════════════════════════════════
+    function mulberry32(seed) {
+        let s = seed >>> 0;
+        return function () {
+            s = (s + 0x6D2B79F5) >>> 0;
+            let t = s;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+    function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+    const SPIN_SIGN = CONFIG.spinDirection === 'cw' ? 1 : -1;
+
+    // ═══════════════════════════════════════════════════════════════
+    // WORLD
+    // ═══════════════════════════════════════════════════════════════
+    const canvas = document.getElementById('simCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let world = null;
+    let running = false;
+    let rafId = null;
+    let lastTime = 0;
+    let fpsFrames = 0;
+    let fpsAt = 0;
+
+    function resizeCanvas() {
+        const rect = canvas.getBoundingClientRect();
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.max(1, Math.round(rect.width * ratio));
+        canvas.height = Math.max(1, Math.round(rect.height * ratio));
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // ARENA
+    // ═══════════════════════════════════════════════════════════════
+    class VortexArena {
+        constructor(canvas, options = {}) {
+            this.canvas = canvas;
+            this.mapStyle = 'vortex';
+            this.time = 0;
+            this.elapsed = 0;
+
+            this.cx = canvas.width / 2;
+            this.cy = canvas.height / 2;
+            this.radius = Math.min(canvas.width, canvas.height) * options.arenaRadiusFactor;
+
+            this._buildObstacles();
+
+            this.suckParticles = [];
+            for (let i = 0; i < 40; i++) {
+                this.suckParticles.push(this._newSuckParticle(true));
+            }
+            this.spinAngle = 0;
+        }
+
+        _newSuckParticle(initial) {
+            const a = Math.random() * Math.PI * 2;
+            const r = this.radius * (0.6 + Math.random() * 0.45);
+            return {
+                angle: a,
+                radius: r,
+                speed: 40 + Math.random() * 80,
+                life: initial ? Math.random() * 2 : 0,
+                maxLife: 2.5 + Math.random() * 2,
+                size: 1 + Math.random() * 1.8,
+                hue: Math.random() < 0.5 ? '#a855f7' : '#e9d5ff'
+            };
+        }
+
+        _buildObstacles() {
+            this.obstacles = [];
+            const r = CONFIG.obstacleRadius;
+            const rings = [
+                { radius: 0.42, count: 3, phase: 0.3 },
+                { radius: 0.68, count: 3, phase: 1.7 }
+            ];
+            for (const ring of rings) {
+                for (let i = 0; i < ring.count; i++) {
+                    const a = ring.phase + (i / ring.count) * Math.PI * 2;
+                    this.obstacles.push({
+                        x: this.cx + Math.cos(a) * this.radius * ring.radius,
+                        y: this.cy + Math.sin(a) * this.radius * ring.radius,
+                        r,
+                        hitPulse: 0,
+                        baseAngle: a,
+                        orbitRadius: this.radius * ring.radius,
+                        rotateSpeed: 0.12 * SPIN_SIGN
+                    });
+                }
+            }
+            this.obstacles.push({
+                x: this.cx, y: this.cy,
+                r: r * 0.85, hitPulse: 0,
+                baseAngle: 0, orbitRadius: 0, rotateSpeed: 0
+            });
+        }
+
+        update(dt) {
+            this.time += dt;
+            this.elapsed += dt;
+            this.spinAngle += dt * 0.5 * SPIN_SIGN;
+
+            for (const o of this.obstacles) {
+                if (o.rotateSpeed !== 0) {
+                    o.baseAngle += o.rotateSpeed * dt;
+                    o.x = this.cx + Math.cos(o.baseAngle) * o.orbitRadius;
+                    o.y = this.cy + Math.sin(o.baseAngle) * o.orbitRadius;
+                }
+                if (o.hitPulse > 0) o.hitPulse = Math.max(0, o.hitPulse - dt * 3.5);
+            }
+
+            for (let i = this.suckParticles.length - 1; i >= 0; i--) {
+                const p = this.suckParticles[i];
+                p.life += dt;
+                p.radius -= p.speed * dt;
+                p.angle += (1.2 + p.speed * 0.005) * SPIN_SIGN * dt;
+                if (p.radius <= 8 || p.life > p.maxLife) {
+                    this.suckParticles[i] = this._newSuckParticle(false);
+                }
+            }
+        }
+
+        resolveBall(ball) {
+            const dx = ball.x - this.cx;
+            const dy = ball.y - this.cy;
+            const dist = Math.hypot(dx, dy) || 1;
+            const nx = dx / dist;
+            const ny = dy / dist;
+
+            // ─── Gravité vers le centre ───
+            let pull = CONFIG.attraction;
+            if (dist < CONFIG.centerSoftRadius) {
+                pull *= dist / CONFIG.centerSoftRadius;
+            }
+            ball.vx -= nx * pull * ball._dt;
+            ball.vy -= ny * pull * ball._dt;
+
+            // ─── Biais tangentiel ───
+            const tx = -ny * SPIN_SIGN;
+            const ty = nx * SPIN_SIGN;
+            ball.vx += tx * CONFIG.tangentialBias * ball._dt;
+            ball.vy += ty * CONFIG.tangentialBias * ball._dt;
+
+            // ─── Mur circulaire ───
+            const limit = this.radius - ball.radius;
+            if (dist >= limit) {
+                ball.x = this.cx + nx * limit;
+                ball.y = this.cy + ny * limit;
+
+                const vRadial = ball.vx * nx + ball.vy * ny;
+                const vTangentialX = ball.vx - vRadial * nx;
+                const vTangentialY = ball.vy - vRadial * ny;
+
+                if (vRadial > 0) {
+                    ball.vx = vTangentialX - vRadial * nx * CONFIG.wallBounce;
+                    ball.vy = vTangentialY - vRadial * ny * CONFIG.wallBounce;
+                } else {
+                    ball.vx = vTangentialX;
+                    ball.vy = vTangentialY;
+                }
+
+                ball.vx -= nx * CONFIG.wallPushBack;
+                ball.vy -= ny * CONFIG.wallPushBack;
+            }
+
+            // ─── Cap de vitesse ───
+            const speed = Math.hypot(ball.vx, ball.vy);
+            if (speed > CONFIG.maxSpeed) {
+                const s = CONFIG.maxSpeed / speed;
+                ball.vx *= s;
+                ball.vy *= s;
+            } else if (speed < CONFIG.minSpeed && speed > 0.1) {
+                const s = CONFIG.minSpeed / speed;
+                ball.vx *= s;
+                ball.vy *= s;
+            }
+
+            // ─── Obstacles : blocage simple, AUCUN rebond ───
+            // On pousse la boule hors de l'obstacle et on annule
+            // la composante de vitesse qui la fait pénétrer.
+            // La tangente reste intacte → la boule "glisse" le long.
+            for (const o of this.obstacles) {
+                const odx = ball.x - o.x;
+                const ody = ball.y - o.y;
+                const od = Math.hypot(odx, ody) || 1;
+                const minD = o.r + ball.radius;
+                if (od < minD) {
+                    const onx = odx / od;
+                    const ony = ody / od;
+
+                    // 1) Repousse la boule juste à l'extérieur de l'obstacle
+                    const overlap = minD - od;
+                    ball.x += onx * overlap;
+                    ball.y += ony * overlap;
+
+                    // 2) Annule la composante de vitesse qui rentre DANS l'obstacle
+                    //    (mais garde la composante tangentielle intacte → glissement)
+                    const vn = ball.vx * onx + ball.vy * ony;
+                    if (vn < 0) {
+                        ball.vx -= vn * onx;
+                        ball.vy -= vn * ony;
+                    }
+
+                    // Pulse visuel uniquement
+                    o.hitPulse = 1;
+                }
+            }
+        }
+
+        render(ctx) {
+            const cx = this.cx;
+            const cy = this.cy;
+            const R = this.radius;
+            const t = this.time;
+
+            ctx.fillStyle = '#080611';
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            const bgGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+            bgGrad.addColorStop(0, '#2a0e4d');
+            bgGrad.addColorStop(0.5, '#1a0832');
+            bgGrad.addColorStop(1, '#0c0518');
+            ctx.fillStyle = bgGrad;
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.clip();
+
+            // Bras spiraux
+            const arms = 6;
+            const armRotation = this.spinAngle * 0.6;
+            for (let arm = 0; arm < arms; arm++) {
+                const baseAngle = (arm / arms) * Math.PI * 2 + armRotation;
+                ctx.beginPath();
+                const segments = 40;
+                for (let i = 0; i <= segments; i++) {
+                    const prog = i / segments;
+                    const r = prog * R * 0.98;
+                    const a = baseAngle + prog * Math.PI * 1.8 * SPIN_SIGN;
+                    const x = cx + Math.cos(a) * r;
+                    const y = cy + Math.sin(a) * r;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = `rgba(168, 85, 247, ${0.10 + 0.05 * Math.sin(t + arm)})`;
+                ctx.lineWidth = 8;
+                ctx.stroke();
+            }
+
+            // Anneaux
+            for (let ring = 1; ring <= 5; ring++) {
+                const rr = (ring / 5) * R * 0.95;
+                const ringRotation = this.spinAngle * (ring % 2 === 0 ? 0.3 : -0.3);
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(ringRotation);
+                ctx.beginPath();
+                ctx.arc(0, 0, rr, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(192, 132, 252, ${0.06 + 0.04 * ring / 5})`;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([6, 12]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.restore();
+            }
+
+            // Halo central
+            const corePulse = 0.85 + 0.15 * Math.sin(t * 2.4);
+            const coreGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 0.35);
+            coreGrad.addColorStop(0, `rgba(233, 213, 255, ${0.95 * corePulse})`);
+            coreGrad.addColorStop(0.25, `rgba(168, 85, 247, ${0.65 * corePulse})`);
+            coreGrad.addColorStop(0.6, `rgba(88, 28, 135, ${0.25 * corePulse})`);
+            coreGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = coreGrad;
+            ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+            // Noyau
+            ctx.beginPath();
+            ctx.arc(cx, cy, 6 + 2 * Math.sin(t * 4), 0, Math.PI * 2);
+            ctx.fillStyle = '#f3e8ff';
+            ctx.shadowColor = '#c084fc';
+            ctx.shadowBlur = 30;
+            ctx.fill();
+            ctx.shadowBlur = 0;
+
+            // Particules aspirées
+            for (const p of this.suckParticles) {
+                const fade = Math.min(p.life / 0.6, 1) * (1 - Math.min(p.life / p.maxLife, 1));
+                if (fade <= 0.05) continue;
+                const x = cx + Math.cos(p.angle) * p.radius;
+                const y = cy + Math.sin(p.angle) * p.radius;
+                ctx.save();
+                ctx.globalAlpha = fade;
+                ctx.fillStyle = p.hue;
+                ctx.shadowColor = p.hue;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.arc(x, y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+
+            ctx.restore();
+
+            // Bordure
+            const borderPulse = 0.85 + 0.15 * Math.sin(t * 1.6);
+            ctx.save();
+            ctx.strokeStyle = `rgba(192, 132, 252, ${0.6 * borderPulse})`;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#a855f7';
+            ctx.shadowBlur = 26 * borderPulse;
+            ctx.beginPath();
+            ctx.arc(cx, cy, R, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(cx, cy, R - 1, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Obstacles
+            for (const o of this.obstacles) {
+                const pulse = o.hitPulse || 0;
+                const beat = 0.5 + 0.5 * Math.sin(t * 3 + o.baseAngle * 3);
+
+                ctx.save();
+                ctx.globalAlpha = 0.55 + pulse * 0.45;
+                ctx.shadowColor = pulse > 0 ? '#f3e8ff' : '#a855f7';
+                ctx.shadowBlur = 18 + pulse * 22 + beat * 5;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, o.r + 3 + pulse * 5 + beat * 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = pulse > 0 ? '#f3e8ff' : 'rgba(168, 85, 247, 0.6)';
+                ctx.lineWidth = 2 + pulse * 2.5;
+                ctx.stroke();
+
+                ctx.globalAlpha = 1;
+                const grad = ctx.createRadialGradient(
+                    o.x - o.r * 0.4, o.y - o.r * 0.4, 1,
+                    o.x, o.y, o.r
+                );
+                grad.addColorStop(0, pulse > 0 ? '#f3e8ff' : '#4c1d95');
+                grad.addColorStop(0.7, '#2a0e4d');
+                grad.addColorStop(1, '#1a0832');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.strokeStyle = pulse > 0 ? '#ffffff' : '#c084fc';
+                ctx.lineWidth = 1.8 + pulse * 2;
+                ctx.stroke();
+
+                ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a855f7';
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 8 + pulse * 20 + beat * 3;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, 3 + beat * 1.5 + pulse * 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // BALL
+    // ═══════════════════════════════════════════════════════════════
+    class Ball {
+        constructor(id, x, y, color, maxHp) {
+            this.id = id;
+            this.x = x;
+            this.y = y;
+            this.vx = 0;
+            this.vy = 0;
+            this.radius = CONFIG.ballRadius;
+            this.color = color;
+            this.alive = true;
+            this.maxHp = maxHp;
+            this.hp = maxHp;
+            this.chipHp = maxHp;
+            this.chipDelay = 0;
+            this.trail = [];
+            this.hitFlash = 0;
+            this._lastContactTimers = {};
+            this._dt = 0;
+        }
+
+        damage(amount) {
+            if (!this.alive) return 0;
+            const dmg = Math.min(this.hp, amount);
+            this.hp -= dmg;
+            this.chipDelay = 0.35;
+            this.hitFlash = 1;
+            if (this.hp <= 0) { this.hp = 0; this.alive = false; }
+            return dmg;
+        }
+
+        update(dt) {
+            if (this.chipDelay > 0) this.chipDelay -= dt;
+            else if (this.chipHp > this.hp) this.chipHp = Math.max(this.hp, this.chipHp - this.maxHp * 1.8 * dt);
+            if (this.hitFlash > 0) this.hitFlash = Math.max(0, this.hitFlash - dt * 4);
+        }
+
+        render(ctx) {
+            if (this.trail.length > 0) {
+                for (let i = 0; i < this.trail.length; i++) {
+                    const t = this.trail[i];
+                    const a = i / this.trail.length;
+                    ctx.save();
+                    ctx.globalAlpha = a * 0.35;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(t.x, t.y, this.radius * a * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+
+            const hpRatio = this.hp / this.maxHp;
+            if (hpRatio <= 0.3) {
+                const pulse = 0.35 + 0.45 * (0.5 + 0.5 * Math.sin(world.time * 13 + this.id));
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.strokeStyle = '#ff334f';
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = '#ff1f46';
+                ctx.shadowBlur = 13;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            ctx.save();
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 22;
+            const grd = ctx.createRadialGradient(
+                this.x - this.radius * 0.3, this.y - this.radius * 0.3, 0,
+                this.x, this.y, this.radius
+            );
+            grd.addColorStop(0, '#ffffff');
+            grd.addColorStop(0.3, this.color);
+            grd.addColorStop(1, this.color);
+            ctx.fillStyle = grd;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 0.88;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.ellipse(
+                this.x - this.radius * 0.31,
+                this.y - this.radius * 0.38,
+                Math.max(2, this.radius * 0.24),
+                Math.max(1.5, this.radius * 0.13),
+                -0.58, 0, Math.PI * 2
+            );
+            ctx.fill();
+            ctx.restore();
+
+            const barW = this.radius * 3;
+            const barH = 5;
+            const barX = this.x - barW / 2;
+            const barY = this.y - this.radius - 12;
+            const chipW = barW * (this.chipHp / this.maxHp);
+            const fillW = barW * hpRatio;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(0,0,0,0.7)';
+            this._rounded(ctx, barX - 2, barY - 2, barW + 4, barH + 4, barH);
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(255,255,255,0.85)';
+            this._rounded(ctx, barX, barY, chipW, barH, barH / 2);
+            ctx.fill();
+
+            let fillColor = this.color;
+            if (hpRatio < 0.3) fillColor = '#ff2a85';
+            else if (hpRatio < 0.6) fillColor = '#fbbf24';
+            ctx.fillStyle = fillColor;
+            this._rounded(ctx, barX, barY, fillW, barH, barH / 2);
+            ctx.fill();
+
+            if (this.hitFlash > 0) {
+                ctx.globalAlpha = this.hitFlash * 0.9;
+                ctx.fillStyle = '#ffffff';
+                this._rounded(ctx, barX, barY, barW, barH, barH / 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        _rounded(ctx, x, y, w, h, r) {
+            if (w <= 0) return;
+            r = Math.min(r, w / 2, h / 2);
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WORLD SETUP
+    // ═══════════════════════════════════════════════════════════════
+    function createWorld(seed) {
+        const prng = mulberry32(seed);
+        const arena = new VortexArena(canvas, {
+            arenaRadiusFactor: CONFIG.arenaRadiusFactor
+        });
+
+        const balls = [];
+        const startRing = arena.radius * 0.68;
+
+        for (let i = 0; i < CONFIG.ballCount; i++) {
+            const a = (i / CONFIG.ballCount) * Math.PI * 2;
+            const x = arena.cx + Math.cos(a) * startRing;
+            const y = arena.cy + Math.sin(a) * startRing;
+            const ball = new Ball(i + 1, x, y, COLORS[i % COLORS.length], CONFIG.maxHp);
+            const tx = -Math.sin(a) * SPIN_SIGN;
+            const ty = Math.cos(a) * SPIN_SIGN;
+            ball.vx = tx * CONFIG.baseMoveSpeed;
+            ball.vy = ty * CONFIG.baseMoveSpeed;
+            balls.push(ball);
+        }
+
+        return {
+            arena,
+            balls,
+            prng,
+            time: 0,
+            elapsedTime: 0,
+            matchTime: CONFIG.matchTime,
+            finished: false,
+            winner: null,
+            particles: [],
+            shockwaves: [],
+            damageNumbers: []
+        };
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WORLD METHODS
+    // ═══════════════════════════════════════════════════════════════
+    function worldDamage(target, attacker, amount, source) {
+        if (!target || !target.alive) return 0;
+        const dealt = target.damage(amount);
+        if (dealt <= 0) return 0;
+
+        if (source !== 'firetrail') {
+            world.damageNumbers.push({
+                x: target.x,
+                y: target.y - target.radius - 10,
+                text: String(Math.round(dealt)),
+                color: '#ffffff',
+                life: 0.9, maxLife: 0.9,
+                vy: -110,
+                vx: (Math.random() - 0.5) * 60,
+                scale: 0.4, size: 16
+            });
+        }
+
+        if (!target.alive) killBall(target);
+        return dealt;
+    }
+
+    function worldSpawnParticle(x, y, opts) {
+        const count = opts.count ?? 6;
+        const speed = opts.speed ?? 200;
+        const life = opts.life ?? 0.6;
+        const spread = opts.spread ?? Math.PI / 3;
+        const color = opts.color || '#ffffff';
+        for (let i = 0; i < count; i++) {
+            const a = (Math.random() - 0.5) * spread * 2;
+            const s = speed * (0.4 + Math.random() * 0.6);
+            world.particles.push({
+                x, y,
+                vx: Math.cos(a) * s,
+                vy: Math.sin(a) * s,
+                life, maxLife: life, color,
+                size: opts.size ?? 2.5
+            });
+        }
+    }
+
+    function worldAddShockwave(x, y, opts) {
+        world.shockwaves.push({
+            x, y,
+            radius: 0,
+            maxRadius: opts.radius ?? 80,
+            color: opts.color ?? '#ffffff',
+            life: opts.life ?? 0.4,
+            maxLife: opts.life ?? 0.4
+        });
+    }
+
+    function killBall(ball) {
+        if (!ball.alive) return;
+        ball.alive = false;
+        worldSpawnParticle(ball.x, ball.y, {
+            color: ball.color, count: 42, speed: 420, life: 1.05, spread: Math.PI * 2, size: 3.2
+        });
+        worldSpawnParticle(ball.x, ball.y, {
+            color: '#ffffff', count: 18, speed: 230, life: 0.42, spread: Math.PI * 2, size: 2.1
+        });
+        worldAddShockwave(ball.x, ball.y, { radius: ball.radius * 8, color: ball.color, life: 0.62 });
+        worldAddShockwave(ball.x, ball.y, { radius: ball.radius * 4.5, color: '#ffffff', life: 0.24 });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // UPDATE
+    // ═══════════════════════════════════════════════════════════════
+    function update(dt) {
+        if (world.finished) return;
+
+        dt = Math.min(dt, CONFIG.maxDt);
+
+        world.elapsedTime += dt;
+        world.time += dt;
+
+        if (world.elapsedTime >= world.matchTime) {
+            world.elapsedTime = world.matchTime;
+            const alive = world.balls.filter(b => b.alive).sort((a, b) => b.hp - a.hp);
+            world.winner = alive[0] || null;
+            world.finished = true;
+            showWinner(world.winner);
+            return;
+        }
+
+        world.arena.update(dt);
+
+        for (const ball of world.balls) {
+            if (!ball.alive) continue;
+            ball._dt = dt;
+
+            const subSteps = 2;
+            const subDt = dt / subSteps;
+            for (let s = 0; s < subSteps; s++) {
+                ball.x += ball.vx * subDt;
+                ball.y += ball.vy * subDt;
+                const dx = ball.x - world.arena.cx;
+                const dy = ball.y - world.arena.cy;
+                const dist = Math.hypot(dx, dy);
+                const limit = world.arena.radius - ball.radius;
+                if (dist > limit) {
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+                    ball.x = world.arena.cx + nx * limit;
+                    ball.y = world.arena.cy + ny * limit;
+                }
+            }
+
+            ball.update(dt);
+            world.arena.resolveBall(ball);
+
+            ball.trail.push({ x: ball.x, y: ball.y });
+            if (ball.trail.length > 8) ball.trail.shift();
+        }
+
+        for (let i = 0; i < world.balls.length; i++) {
+            const a = world.balls[i];
+            if (!a.alive) continue;
+            for (let j = i + 1; j < world.balls.length; j++) {
+                const b = world.balls[j];
+                if (!b.alive) continue;
+                collideBalls(a, b, dt);
+            }
+        }
+
+        for (const ball of world.balls) {
+            if (ball._lastContactTimers) {
+                for (const k in ball._lastContactTimers) {
+                    ball._lastContactTimers[k] -= dt;
+                }
+            }
+        }
+
+        for (let i = world.particles.length - 1; i >= 0; i--) {
+            const p = world.particles[i];
+            p.life -= dt;
+            if (p.life <= 0) { world.particles.splice(i, 1); continue; }
+            p.x += p.vx * dt;
+            p.y += p.vy * dt;
+            p.vx *= 0.94;
+            p.vy *= 0.94;
+        }
+
+        for (let i = world.shockwaves.length - 1; i >= 0; i--) {
+            const s = world.shockwaves[i];
+            s.life -= dt;
+            if (s.life <= 0) { world.shockwaves.splice(i, 1); continue; }
+            const t = 1 - s.life / s.maxLife;
+            s.radius = s.maxRadius * t;
+        }
+
+        for (let i = world.damageNumbers.length - 1; i >= 0; i--) {
+            const dn = world.damageNumbers[i];
+            dn.life -= dt;
+            if (dn.life <= 0) { world.damageNumbers.splice(i, 1); continue; }
+            dn.x += dn.vx * dt;
+            dn.y += dn.vy * dt;
+            dn.vy += 180 * dt;
+            dn.vx *= 0.94;
+            dn.scale = Math.min(1, dn.scale + dt * 8);
+        }
+
+        const alive = world.balls.filter(b => b.alive);
+        if (alive.length <= 1 && !world.finished) {
+            world.winner = alive[0] || null;
+            world.finished = true;
+            showWinner(world.winner);
+        }
+    }
+
+    function collideBalls(a, b, dt) {
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const minD = a.radius + b.radius;
+        const d2 = dx * dx + dy * dy;
+        if (d2 >= minD * minD || d2 <= 0) return;
+
+        const d = Math.sqrt(d2);
+        const nx = dx / d;
+        const ny = dy / d;
+        const overlap = minD - d;
+
+        a.x -= nx * overlap * 0.5;
+        a.y -= ny * overlap * 0.5;
+        b.x += nx * overlap * 0.5;
+        b.y += ny * overlap * 0.5;
+
+        const relV = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+        if (relV <= 0) return;
+
+        a.vx -= relV * nx * 0.9;
+        a.vy -= relV * ny * 0.9;
+        b.vx += relV * nx * 0.9;
+        b.vy += relV * ny * 0.9;
+
+        for (const ball of [a, b]) {
+            const sp = Math.hypot(ball.vx, ball.vy);
+            if (sp > CONFIG.maxSpeed) {
+                const s = CONFIG.maxSpeed / sp;
+                ball.vx *= s;
+                ball.vy *= s;
+            }
+        }
+
+        if ((a._lastContactTimers[b.id] || 0) <= 0) {
+            worldDamage(b, a, CONFIG.contactDamage, 'contact');
+            a._lastContactTimers[b.id] = CONFIG.contactCooldown;
+            b._lastContactTimers[a.id] = CONFIG.contactCooldown;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // RENDER
+    // ═══════════════════════════════════════════════════════════════
+    function render() {
+        world.arena.render(ctx);
+
+        for (const ball of world.balls) {
+            if (ball.alive) ball.render(ctx);
+        }
+
+        for (const p of world.particles) {
+            const t = p.life / p.maxLife;
+            ctx.save();
+            ctx.globalAlpha = t;
+            ctx.fillStyle = p.color;
+            ctx.shadowColor = p.color;
+            ctx.shadowBlur = 8;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size * t, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        for (const s of world.shockwaves) {
+            const t = s.life / s.maxLife;
+            ctx.save();
+            ctx.globalAlpha = t;
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 3 * t;
+            ctx.shadowColor = s.color;
+            ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        for (const dn of world.damageNumbers) {
+            const t = dn.life / dn.maxLife;
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, t * 2);
+            const sz = dn.size * dn.scale;
+            ctx.font = `900 ${sz}px Outfit, system-ui, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.lineWidth = Math.max(2, sz * 0.18);
+            ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+            ctx.strokeText(dn.text, dn.x, dn.y);
+            ctx.fillStyle = dn.color;
+            ctx.fillText(dn.text, dn.x, dn.y);
+            ctx.restore();
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LOOP
+    // ═══════════════════════════════════════════════════════════════
+    function tick(now) {
+        if (!running) return;
+        const rawDt = Math.max(0, (now - lastTime) / 1000);
+        const dt = Math.min(rawDt, CONFIG.maxDt);
+        lastTime = now;
+
+        try {
+            update(dt);
+            render();
+            syncHUD(now);
+        } catch (e) {
+            console.error('[BallYstik]', e);
+        }
+
+        rafId = requestAnimationFrame(tick);
+    }
+
+    function syncHUD(now) {
+        const t = Math.max(0, world.matchTime - world.elapsedTime);
+        const m = Math.floor(t / 60);
+        const s = Math.floor(t % 60);
+        document.getElementById('timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        const alive = world.balls.filter(b => b.alive).length;
+        document.getElementById('alive').textContent = `${alive} boule${alive > 1 ? 's' : ''}`;
+
+        fpsFrames++;
+        if (now - fpsAt >= 1000) {
+            document.getElementById('fps').textContent = `${fpsFrames} FPS`;
+            fpsFrames = 0;
+            fpsAt = now;
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // WINNER
+    // ═══════════════════════════════════════════════════════════════
+    function showWinner(winner) {
+        const el = document.getElementById('winner');
+        const ballEl = document.getElementById('winnerBall');
+        const detailEl = document.getElementById('winnerDetail');
+
+        if (winner) {
+            ballEl.style.background = `radial-gradient(circle at 30% 30%, #ffffff, ${winner.color})`;
+            ballEl.style.color = winner.color;
+            detailEl.innerHTML = `Boule <strong>#${winner.id}</strong> — ${Math.round(winner.hp)} PV restants<br>Vortex · 60 secondes`;
+        } else {
+            ballEl.style.background = 'radial-gradient(circle at 30% 30%, #666, #333)';
+            ballEl.style.color = '#666';
+            detailEl.textContent = 'Aucun survivant.';
+        }
+        el.classList.add('active');
+    }
+
+    function hideWinner() {
+        document.getElementById('winner').classList.remove('active');
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // CONTROLS
+    // ═══════════════════════════════════════════════════════════════
+    function start(seed) {
+        hideWinner();
+        if (rafId) cancelAnimationFrame(rafId);
+        resizeCanvas();
+        world = createWorld(seed || (Math.floor(Math.random() * 0xFFFFFFFF) + 1));
+        running = true;
+        lastTime = performance.now();
+        fpsAt = lastTime;
+        fpsFrames = 0;
+        rafId = requestAnimationFrame(tick);
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', () => start());
+    document.getElementById('newBtn').addEventListener('click', () => start());
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        if (world) {
+            world.arena.canvas = canvas;
+            world.arena.cx = canvas.width / 2;
+            world.arena.cy = canvas.height / 2;
+            world.arena.radius = Math.min(canvas.width, canvas.height) * CONFIG.arenaRadiusFactor;
+            world.arena._buildObstacles();
+        }
+    });
+
+    resizeCanvas();
+    start();
+})();
+</script>
+</body>
+</html>
