@@ -872,7 +872,11 @@
                     const push = weaponId === 'hammer' ? 250 : weaponId === 'spear' ? 210 : 180;
                     target.vx += (dx / len) * push;
                     target.vy += (dy / len) * push;
-                    if (world.ArenaBattle && world.ArenaBattle._keepBaseSpeed) world.ArenaBattle._keepBaseSpeed(target);
+                    // Le recul change la direction, pas la vitesse permanente de la boule.
+                    const targetSpeed = Math.hypot(target.vx, target.vy) || 1;
+                    const baseSpeed = target.baseMoveSpeed || 180;
+                    target.vx = target.vx / targetSpeed * baseSpeed;
+                    target.vy = target.vy / targetSpeed * baseSpeed;
                     d.hitCooldowns[target.id] = cooldown;
                     d.swingCooldown = weaponId === 'hammer' ? 0.42 : 0.32;
                     d.swing = 0.24;
