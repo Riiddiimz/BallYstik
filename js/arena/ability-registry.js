@@ -56,19 +56,40 @@
             duration: 5, weight: 3, maxStacks: 1
         },
 
-        blade: {
-            id: 'blade', name: 'Lame orbitale',
-            desc: 'Une épée tenue par la boule frappe les adversaires qui s’approchent, avec un coup visible et un recul.',
-            category: 'offensive', rarity: 'rare',
-            color: '#dbeafe', glow: '#93c5fd', icon: '⚔',
+        axe: {
+            id: 'axe', name: 'Hache',
+            desc: 'Une hache tenue par la boule frappe automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#fbbf24', glow: '#fde68a', icon: '⚒',
             duration: -1, weight: 0, maxStacks: 1
         },
-
-        blade2: {
-            id: 'blade2', name: 'Lame noire',
-            desc: 'Une seconde arme tenue par la boule frappe les adversaires proches.',
-            category: 'weapons', rarity: 'rare',
-            color: '#c4b5fd', glow: '#a78bfa', icon: '⚔',
+        bow: {
+            id: 'bow', name: 'Arc',
+            desc: 'Un arc porté par la boule attaque automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#a3e635', glow: '#d9f99d', icon: '➶',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+        hammer: {
+            id: 'hammer', name: 'Marteau',
+            desc: 'Un marteau tenu par la boule frappe automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#fb923c', glow: '#fed7aa', icon: '🔨',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+        scepter: {
+            id: 'scepter', name: 'Sceptre',
+            desc: 'Un sceptre porté par la boule frappe automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#c084fc', glow: '#e9d5ff', icon: '♜',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+        spear: {
+            id: 'spear', name: 'Lance',
+            desc: 'Une lance tenue par la boule frappe automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#38bdf8', glow: '#bae6fd', icon: '➤',
+            duration: -1, weight: 0, maxStacks: 1
+        },
+        sword: {
+            id: 'sword', name: 'Épée',
+            desc: 'Une épée tenue par la boule frappe automatiquement les adversaires proches.',
+            category: 'weapons', rarity: 'rare', color: '#e2e8f0', glow: '#f8fafc', icon: '⚔',
             duration: -1, weight: 0, maxStacks: 1
         },
 
