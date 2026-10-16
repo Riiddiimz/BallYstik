@@ -1,376 +1,73 @@
-<!DOCTYPE html>
-<html lang="fr" class="dark">
+<!doctype html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BallYstik — Last Sphere Standing</title>
-    <meta name="description" content="Arena battle royale vertical : des boules s’affrontent, collectent des capacités et combattent jusqu’au dernier survivant.">
-    
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        darkBg: '#0b0b0d',
-                        panelBg: 'rgba(18, 20, 29, 0.88)',
-                        accentPink: '#ff2a85',
-                        accentCyan: '#00f2fe',
-                        accentPurple: '#7928ca'
-                    },
-                    fontFamily: {
-                        sans: ['Outfit', 'sans-serif']
-                    }
-                }
-            }
-        }
-    </script>
-
-    <!-- FontAwesome 6 CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Modular Application Stylesheet -->
-    <link rel="stylesheet" href="css/style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BallYstik — Combat</title>
+<style>
+:root{color-scheme:dark;--bg:#090b12;--panel:#101522;--cyan:#7ce7ff;--gold:#ffd38a;--muted:#8995aa;--line:#263247}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 50% 0,#17253b 0,var(--bg) 55%);color:#f4f7ff;font:14px Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+button,input{font:inherit}button{cursor:pointer;border:1px solid #35465e;background:#172236;color:#f4f7ff;border-radius:11px;padding:10px 14px;font-weight:700;transition:transform .15s,border-color .15s,background .15s}button:hover{border-color:var(--cyan);background:#1c2b42}button:active{transform:scale(.98)}button:disabled{opacity:.5;cursor:not-allowed}
+.top{max-width:1440px;margin:auto;padding:22px 24px 14px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:20px;font-weight:850;letter-spacing:-.04em}.brand span{color:var(--cyan)}.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-top:4px}.live{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}.dot{width:7px;height:7px;border-radius:50%;background:#52e5a0;box-shadow:0 0 12px #52e5a0}
+.layout{max-width:1440px;margin:auto;padding:10px 24px 28px;display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:22px;align-items:start}.stage{min-width:0}.stage-head{display:flex;align-items:center;justify-content:space-between;margin:0 auto 12px;max-width:720px}.stage-head h1{font-size:16px;margin:0;font-weight:750}.timer{font-variant-numeric:tabular-nums;font-size:28px;line-height:1;font-weight:850;letter-spacing:-.05em;color:var(--cyan);text-shadow:0 0 22px #7ce7ff40}.timer small{font-size:12px;color:var(--muted);letter-spacing:0;font-weight:600}
+.arena-shell{position:relative;margin:auto;width:min(100%,405px);aspect-ratio:9/16;padding:5px;border:1px solid #7ce7ff65;border-radius:25px;background:#7ce7ff0a;box-shadow:0 0 28px #7ce7ff14,0 0 70px #182e4b30;overflow:hidden}.arena-shell:before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:24px;box-shadow:inset 0 0 25px #7ce7ff0b}.arena-shell canvas{display:block;width:100%;height:100%;border-radius:20px;background:#090d17}
+.controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:14px auto 0}.primary{background:linear-gradient(115deg,#147a94,#2466a8);border-color:#7ce7ff7a;box-shadow:0 7px 25px #167c9b20}.record{background:linear-gradient(115deg,#9b6927,#b88640);border-color:#ffd38a90;color:#fff8e9}.record.recording{background:#6b2837;border-color:#ff7c91}.hint{text-align:center;color:var(--muted);font-size:11px;line-height:1.5;margin:10px auto;max-width:470px}
+.panel{border:1px solid var(--line);background:linear-gradient(145deg,#121a29ed,#0d121deb);border-radius:18px;padding:17px;box-shadow:0 15px 45px #0002}.panel h2{font-size:13px;margin:0 0 16px;letter-spacing:.02em}.setting{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid #263247}.setting:first-of-type{border-top:0;padding-top:0}.setting label{color:#dce4f2;font-size:12px}.setting p{margin:4px 0 0;font-size:10px;color:var(--muted);line-height:1.4}.switch{appearance:none;width:36px;height:21px;border-radius:20px;background:#303b4d;position:relative;flex:none;cursor:pointer;transition:.15s}.switch:after{content:"";position:absolute;width:15px;height:15px;left:3px;top:3px;border-radius:50%;background:#d8e1ed;transition:.15s}.switch:checked{background:#167f9a}.switch:checked:after{left:18px;background:white}.fixed{font-size:12px;color:var(--cyan);font-weight:750}.legend{display:grid;gap:10px;margin-top:17px;padding-top:15px;border-top:1px solid var(--line)}.legend-row{display:flex;align-items:center;gap:9px;font-size:11px;color:#c6d0df}.swatch{width:9px;height:9px;border-radius:50%;box-shadow:0 0 12px currentColor}.status{font-size:11px;color:var(--muted);min-height:30px;line-height:1.5;margin-top:14px}.results{position:fixed;inset:0;display:none;place-items:center;padding:20px;background:#03060bd9;backdrop-filter:blur(10px);z-index:5}.results.show{display:grid}.result-card{width:min(100%,440px);max-height:90vh;overflow:auto;border:1px solid #7ce7ff55;border-radius:22px;padding:25px;background:linear-gradient(145deg,#172238,#0b101a);box-shadow:0 0 70px #7ce7ff12}.result-card h2{font-size:23px;margin:0 0 6px}.result-card p{color:var(--muted);font-size:12px;margin:0 0 18px}.score-row{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:10px;padding:10px 0;border-top:1px solid #28344a;font-size:12px}.score-row strong{font-variant-numeric:tabular-nums}.result-actions{display:flex;gap:9px;margin-top:20px}.result-actions button{flex:1}.foot{max-width:1440px;margin:auto;padding:0 24px 22px;color:#647087;font-size:10px;text-align:center}
+@media(min-width:1000px){.arena-shell{width:min(100%,430px)}.layout{grid-template-columns:minmax(0,1fr) 280px}}
+@media(max-width:720px){.top{padding:16px 14px 10px}.layout{display:flex;flex-direction:column;padding:8px 14px 20px;gap:18px}.stage,.panel{width:100%}.stage-head{max-width:405px}.arena-shell{width:min(100%,350px)}.panel{max-width:450px;margin:auto}.live{display:none}.timer{font-size:25px}.foot{padding:0 14px 18px}}
+</style>
 </head>
-<body class="h-screen w-screen flex flex-col md:flex-row overflow-hidden select-none bg-[#0b0b0d] text-white">
-
-    <!-- ====================================================================
-         Mobile Top Navigation Bar
-         ==================================================================== -->
-    <header class="md:hidden flex items-center justify-between px-4 py-2.5 bg-zinc-950/90 border-b border-zinc-800 z-30 shrink-0">
-        <button id="toggleLeftSidebarBtn" aria-label="Menu Boule et Mode" class="px-2.5 py-1.5 text-xs bg-pink-500/20 border border-pink-500/50 text-pink-400 rounded-lg flex items-center gap-1.5 font-semibold">
-            <i class="fa-solid fa-gamepad"></i> Mode & Balle
-        </button>
-        <span class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</span>
-        <button id="toggleRightSidebarBtn" aria-label="Menu des capacités" class="px-2.5 py-1.5 text-xs bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg flex items-center gap-1.5 font-semibold">
-            <i class="fa-solid fa-sliders"></i> Capacités
-        </button>
-    </header>
-
-    <!-- ====================================================================
-         LEFT SIDEBAR : Réglages Arena Brawl
-         ==================================================================== -->
-    <aside id="leftSidebar" class="fixed inset-y-0 left-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-r border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 -translate-x-full md:h-full h-full">
-        
-        <!-- Header -->
-        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
-            <div class="flex items-center space-x-2.5">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-accentPink to-accentCyan flex items-center justify-center text-white shadow-lg shadow-pink-500/25">
-                    <i class="fa-solid fa-basketball text-sm"></i>
-                </div>
-                <div>
-                    <h1 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-500 bg-clip-text text-transparent">BallYstik</h1>
-                    <p class="text-[10px] text-zinc-400 font-medium">Arena Battle Royale</p>
-                </div>
-            </div>
-            <button id="closeLeftSidebarBtn" aria-label="Fermer le menu gauche" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
-                <i class="fa-solid fa-xmark text-xs"></i>
-            </button>
-        </div>
-
-        <!-- Scrollable Settings -->
-        <div id="leftSettingsContainer" class="p-3.5 overflow-y-auto space-y-3 flex-1 text-sm">
-
-            <!-- ================================================================
-                 ARENA BRAWL — Réglages du mode Battle Royale
-                 ================================================================ -->
-            <div id="arenaBattleSettingsBox" class="rounded-2xl bg-zinc-900/60 border border-amber-500/40 overflow-hidden">
-                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="arenaBattleSettings">
-                    <span class="flex items-center gap-2 text-amber-400">
-                        <i class="fa-solid fa-shield-halved"></i> Réglages Arena Brawl
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
-                </button>
-                <div id="arenaBattleSettings" class="accordion-content open px-3 pb-3 space-y-2.5 pt-1">
-
-                    <!-- Nombre de boules -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abBallCount">Nombre de boules</label>
-                            <span id="abBallCountVal" class="text-amber-400 font-mono font-semibold">4</span>
-                        </div>
-                        <input id="abBallCount" type="range" min="2" max="8" step="1" value="4" class="w-full">
-                    </div>
-
-                    <!-- HP max -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abMaxHp">PV max par boule</label>
-                            <span id="abMaxHpVal" class="text-amber-400 font-mono font-semibold">100</span>
-                        </div>
-                        <input id="abMaxHp" type="range" min="50" max="300" step="10" value="100" class="w-full">
-                    </div>
-
-                    <!-- Dégâts de contact -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abContactDmg">Multiplicateur dégâts de contact</label>
-                            <span id="abContactDmgVal" class="text-amber-400 font-mono font-semibold">1.0x</span>
-                        </div>
-                        <input id="abContactDmg" type="range" min="0.5" max="3" step="0.1" value="1" class="w-full">
-                    </div>
-
-                    <!-- Fréquence pickups -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abPickupInterval">Fréquence des orbes (armes & capacités)</label>
-                            <span id="abPickupIntervalVal" class="text-amber-400 font-mono font-semibold">5s</span>
-                        </div>
-                        <input id="abPickupInterval" type="range" min="2" max="10" step="0.5" value="5" class="w-full">
-                    </div>
-
-                    <!-- Slots de capacité -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abMaxSlots">Slots de capacité</label>
-                            <span id="abMaxSlotsVal" class="text-amber-400 font-mono font-semibold">3</span>
-                        </div>
-                        <input id="abMaxSlots" type="range" min="1" max="4" step="1" value="3" class="w-full">
-                    </div>
-
-                    <!-- Mode de victoire -->
-                    <div>
-                        <label for="abMatchMode" class="text-[11px] text-zinc-400 block mb-1">Mode de victoire</label>
-                        <select id="abMatchMode" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-amber-500">
-                            <option value="lastStanding">Dernier survivant</option>
-                            <option value="timed">Manche chronométrée</option>
-                            <option value="kills">Premier à 10 kills</option>
-                        </select>
-                    </div>
-
-                    <!-- Durée de la manche chronométrée -->
-                    <div id="abMatchTimeGroup">
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abMatchTime">Temps de la manche</label>
-                            <span id="abMatchTimeVal" class="text-amber-400 font-mono font-semibold">60s</span>
-                        </div>
-                        <input id="abMatchTime" type="range" min="10" max="300" step="10" value="60" class="w-full">
-                    </div>
-
-                    <!-- Arène rétrécissante : même interrupteur que les capacités -->
-                    <div class="flex items-center justify-between py-1 px-1 rounded-lg hover:bg-zinc-800/30 transition">
-                        <span class="text-xs text-zinc-300">Arène qui rétrécit</span>
-                        <label class="ability-switch-wrap" title="Activer/désactiver l'arène qui rétrécit">
-                            <input type="checkbox" id="abShrinkToggle">
-                            <span class="ability-switch"></span>
-                        </label>
-                    </div>
-
-                    <!-- Réglages visibles uniquement si l'option est activée -->
-                    <div id="abShrinkOptions" hidden class="space-y-2 border-l-2 border-amber-500/30 pl-2.5">
-                        <div>
-                            <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                                <label for="abShrinkStart">Début du rétrécissement</label>
-                                <span id="abShrinkStartVal" class="text-amber-400 font-mono font-semibold">30s</span>
-                            </div>
-                            <input id="abShrinkStart" type="range" min="5" max="120" step="5" value="30" class="w-full">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                                <label for="abShrinkRate">Vitesse du rétrécissement</label>
-                                <span id="abShrinkRateVal" class="text-amber-400 font-mono font-semibold">6 px/s</span>
-                            </div>
-                            <input id="abShrinkRate" type="range" min="1" max="20" step="1" value="6" class="w-full">
-                        </div>
-                        <div>
-                            <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                                <label for="abShrinkMax">Réduction maximale</label>
-                                <span id="abShrinkMaxVal" class="text-amber-400 font-mono font-semibold">16%</span>
-                            </div>
-                            <input id="abShrinkMax" type="range" min="5" max="30" step="1" value="16" class="w-full">
-                        </div>
-                    </div>
-
-                    <!-- Carte et mécanique de combat -->
-                    <div>
-                        <label for="abArenaMap" class="text-[11px] text-zinc-400 block mb-1">Carte de combat</label>
-                        <select id="abArenaMap" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <option value="neon">Néon — arène classique</option>
-                            <option value="reactor">Réacteur — onde d'énergie périodique</option>
-                            <option value="crossfire">Crossfire — ligne de tir télégraphiée</option>
-                            <option value="void">Néant — puits gravitationnels</option>
-                        </select>
-                        <p class="text-[10px] text-zinc-500 mt-1">Chaque carte change les règles du combat, pas seulement le décor.</p>
-                    </div>
-
-                    <!-- Obstacles centraux -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abObstacles">Obstacles centraux</label>
-                            <span id="abObstaclesVal" class="text-amber-400 font-mono font-semibold">1</span>
-                        </div>
-                        <input id="abObstacles" type="range" min="0" max="3" step="1" value="1" class="w-full">
-                    </div>
-
-                    <!-- Vitesse du jeu -->
-                    <div>
-                        <div class="flex justify-between text-xs text-zinc-400 mb-1">
-                            <label for="abSpeed">Vitesse du jeu</label>
-                            <span id="abSpeedVal" class="text-amber-400 font-mono font-semibold">1.0x</span>
-                        </div>
-                        <input id="abSpeed" type="range" min="0.5" max="2" step="0.1" value="1" class="w-full">
-                    </div>
-
-                    <!-- Info déterministe -->
-                    <p class="text-[10px] text-zinc-500 leading-snug pt-1 border-t border-zinc-800/70">
-                        <i class="fa-solid fa-fingerprint text-amber-500/60 mr-1"></i>
-                        Le mode utilise la seed active pour le spawn des capacités et les positions de départ — rejouable à l'identique.
-                    </p>
-                </div>
-            </div>
-
-            <!-- Deterministic Seed & Target Duration Searcher Accordion -->
-            <div class="rounded-2xl bg-zinc-900/60 border border-cyan-500/40 overflow-hidden">
-                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="seedSearchSettings">
-                    <span class="flex items-center gap-2 text-cyan-400">
-                        <i class="fa-solid fa-fingerprint"></i> Seed déterministe
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
-                </button>
-                <div id="seedSearchSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
-                    
-                    <!-- Active Seed Manual Input -->
-                    <div class="pt-1 border-t border-zinc-800/80">
-                        <label for="manualSeedInput" class="text-[11px] text-zinc-400 block mb-1">Seed active (Reproductible) :</label>
-                        <div class="flex gap-1.5">
-                            <input id="manualSeedInput" type="number" value="104291" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <button id="applySeedBtn" title="Appliquer cette seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-lg border border-zinc-700 text-xs font-semibold">
-                                <i class="fa-solid fa-play"></i>
-                            </button>
-                            <button id="copySeedBtn" title="Copier le code de la seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 text-xs">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-        <!-- Left Action Footer -->
-        <div class="p-3 border-t border-zinc-800/80 bg-zinc-950/90 flex gap-2 shrink-0">
-            <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                <i class="fa-solid fa-rotate-right"></i> Réinitialiser
-            </button>
-            <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                <i class="fa-solid fa-shuffle"></i> Nouvelle partie
-            </button>
-        </div>
-    </aside>
-
-    <!-- ====================================================================
-         CENTER : Simulation Viewport & 9:16 Portrait Hero Frame
-         ==================================================================== -->
-    <main class="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden h-full">
-        
-        <!-- Floating Top Toolbar -->
-        <div class="absolute top-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
-            
-            <!-- Live Simulation Stats -->
-            <div class="flex flex-wrap gap-2 text-xs font-mono pointer-events-auto">
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
-                </div>
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
-                    <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
-                </div>
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-clock text-yellow-400 text-xs"></i>
-                    <span id="timerCounter" class="text-yellow-300 font-bold">0.0s</span>
-                </div>
-                <div class="hidden sm:flex px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-fingerprint text-purple-400 text-xs"></i>
-                    <span id="activeSeedBadge" class="text-purple-300 font-bold">#104291</span>
-                </div>
-            </div>
-
-            <!-- Quick Action Buttons -->
-            <div class="flex items-center gap-2 pointer-events-auto">
-                <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
-                    <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
-                    <span id="playPauseText" class="hidden sm:inline">Pause</span>
-                </button>
-                <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
-                    <i class="fa-solid fa-expand"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Canvas Container (9:16 Portrait Phone Frame) -->
-        <div id="canvasContainer" class="relative w-full h-full flex items-center justify-center p-2 sm:p-4">
-            <div id="frameWrapper" class="relative w-full h-full max-h-full aspect-[9/16] max-w-[520px] flex items-center justify-center rounded-2xl overflow-hidden phone-frame bg-[#080a10]">
-                
-                <!-- Victory Banner Overlay (Purely visual, no sound, no screen shake) -->
-                <div id="victoryOverlay" class="absolute inset-0 bg-black/75 backdrop-blur-sm z-30 flex flex-col items-center justify-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none p-4 text-center">
-                    <div class="w-16 h-16 rounded-full bg-gradient-to-tr from-pink-500 to-cyan-400 flex items-center justify-center text-white text-3xl shadow-xl shadow-cyan-500/50 animate-bounce">
-                        <i class="fa-solid fa-trophy"></i>
-                    </div>
-                    <h2 class="text-2xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-cyan-300 to-purple-400">BALLYSTIK CHAMPION</h2>
-                    <p id="victoryDetails" class="text-xs text-zinc-300 font-mono">Dernière boule en vie.</p>
-                    <button id="replayBtn" class="mt-2 px-5 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-cyan-500 text-white text-xs font-bold shadow-lg shadow-pink-500/30 hover:opacity-95 active:scale-95 transition">
-                        Rejouer cette seed
-                    </button>
-                </div>
-
-                <canvas id="simCanvas" class="w-full h-full block cursor-crosshair"></canvas>
-            </div>
-        </div>
-
-        <!-- Subtle Branding Watermark -->
-        <div class="absolute bottom-3 right-4 z-10 text-[10px] text-zinc-600 font-mono tracking-wider pointer-events-none select-none">
-            VEKTRALZ // BallYstik v1.0
-        </div>
-    </main>
-
-    <!-- ====================================================================
-         RIGHT SIDEBAR : Capacités & réglages audio
-         ==================================================================== -->
-    <aside id="rightSidebar" class="fixed inset-y-0 right-0 z-40 w-full sm:w-80 lg:w-96 md:static glass-panel flex flex-col border-l border-zinc-800 shrink-0 transition-transform duration-300 md:translate-x-0 translate-x-full md:h-full h-full">
-        
-        <!-- Header -->
-        <div class="p-3.5 border-b border-zinc-800/80 flex items-center justify-between shrink-0">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-sliders text-cyan-400 text-base"></i>
-                <h2 class="font-extrabold text-sm tracking-wider bg-gradient-to-r from-cyan-400 to-pink-500 bg-clip-text text-transparent">ARMES &amp; CAPACITÉS</h2>
-            </div>
-            <div class="flex items-center gap-2">
-                <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
-                    <i class="fa-solid fa-volume-high"></i> Audio
-                </button>
-                <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
-                    <i class="fa-solid fa-xmark text-xs"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- Scrollable Settings -->
-        <div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto"><p class="text-xs text-zinc-400 leading-relaxed">Chargement des capacités…</p></div>
-    </aside>
-
-    <!-- ====================================================================
-         Modular Application Scripts (in execution order)
-         ==================================================================== -->
-    <!-- Audio UI -->
-    <script src="js/audio.js"></script>
-
-    <!-- Arena Brawl — modules autonomes -->
-    <script src="js/arena/arena.js"></script>
-    <script src="js/arena/health.js"></script>
-    <script src="js/arena/damage-numbers.js"></script>
-    <script src="js/arena/status-effects.js"></script>
-    <script src="js/arena/ability-registry.js"></script>
-    <script src="js/arena/ability-offensive.js"></script>
-    <script src="js/arena/ability-defensive.js"></script>
-    <script src="js/arena/ability-utility.js"></script>
-    <script src="js/arena/ability-settings.js"></script>
-    <script src="js/arena/pickups.js"></script>
-    <script src="js/arena/arena-hud.js"></script>
-    <script src="js/arena/arena-battle.js"></script>
-    <script src="js/arena/arena-battle-bindings.js"></script>
-    <script src="js/app.js"></script>
+<body>
+<header class="top"><div><div class="brand">Ball<span>Ystik</span> <span style="color:#f3f6ff">— Combat</span></div><div class="eyebrow">Combat simple · format vertical</div></div><div class="live"><span class="dot"></span><span id="liveLabel">Combat prêt</span></div></header>
+<main class="layout">
+<section class="stage">
+<div class="stage-head"><h1>Arène de combat</h1><div class="timer"><span id="timer">60</span><small> / 60 s</small></div></div>
+<div class="arena-shell"><canvas id="arena" width="1080" height="1920" aria-label="Combat de quatre boules dans une arène verticale"></canvas></div>
+<div class="controls"><button id="newBtn" class="primary">↻ Nouveau combat</button><button id="recordBtn" class="record">● Enregistrer · 60 s</button></div>
+<div class="hint">L’enregistrement repart de zéro et capture uniquement le combat en 1080 × 1920.<br>Le format disponible dépend de votre navigateur (WebM est généralement proposé).</div>
+</section>
+<aside class="panel"><h2>Paramètres du combat</h2>
+<div class="setting"><div><label>Durée</label><p>Durée fixe du combat</p></div><span class="fixed">60 secondes</span></div>
+<div class="setting"><div><label for="hpToggle">Afficher les PV</label><p>Barres de vie et valeurs au-dessus des boules</p></div><input id="hpToggle" class="switch" type="checkbox" checked></div>
+<div class="setting"><div><label for="soundToggle">Sons</label><p>Impacts entre les boules</p></div><input id="soundToggle" class="switch" type="checkbox"></div>
+<div class="legend">
+<div class="legend-row"><span class="swatch" style="color:#ff5964;background:#ff5964"></span>Rouge</div>
+<div class="legend-row"><span class="swatch" style="color:#52a8ff;background:#52a8ff"></span>Bleu</div>
+<div class="legend-row"><span class="swatch" style="color:#5be29a;background:#5be29a"></span>Vert</div>
+<div class="legend-row"><span class="swatch" style="color:#ffd45d;background:#ffd45d"></span>Jaune</div>
+</div><div id="status" class="status">Combat prêt. Lancez une partie ou enregistrez directement.</div>
+</aside>
+</main>
+<footer class="foot">BallYstik MVP · simulation locale dans le navigateur · aucune partie n’est envoyée à un serveur.</footer>
+<div id="results" class="results" role="dialog" aria-modal="true" aria-labelledby="resultTitle"><div class="result-card"><h2 id="resultTitle">Fin du combat</h2><p id="resultSummary">Classement selon les dégâts infligés pendant les 60 secondes.</p><div id="scores"></div><div class="result-actions"><button id="closeResults">Fermer</button><button id="againBtn" class="primary">Nouveau combat</button></div></div></div>
+<script>
+(() => {
+'use strict';
+const canvas=document.getElementById('arena'),ctx=canvas.getContext('2d',{alpha:false}),$=id=>document.getElementById(id);
+const W=540,H=960,DURATION=60;ctx.scale(2,2);
+const colors=['#ff5964','#52a8ff','#5be29a','#ffd45d'],names=['Rouge','Bleu','Vert','Jaune'];
+let balls=[],particles=[],elapsed=0,last=0,raf=0,finished=false,recording=false,recorder=null,recordChunks=[],audioCtx=null,shake=0,flash=0;
+const random=(a,b)=>a+Math.random()*(b-a);
+function initBall(i){const a=-Math.PI/2+i*Math.PI/2;return{id:i,x:W/2+Math.cos(a)*105,y:H/2+Math.sin(a)*180,vx:random(-105,105),vy:random(-110,110),r:19,hp:100,maxHp:100,damage:0,alive:true,hitCooldown:0,trail:[]}}
+function roundedRect(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r)}
+function reset(){if(recorder&&recorder.state!=='inactive'){try{recorder.stop()}catch(e){}}recorder=null;recording=false;cancelAnimationFrame(raf);elapsed=0;last=0;finished=false;shake=0;flash=0;balls=colors.map((_,i)=>initBall(i));particles=[];$('timer').textContent='60';$('results').classList.remove('show');$('liveLabel').textContent='Combat en cours';$('status').textContent='Combat en cours. Quatre boules, sans armes ni capacités.';$('recordBtn').classList.remove('recording');$('recordBtn').textContent='● Enregistrer · 60 s';draw(0);raf=requestAnimationFrame(loop)}
+function drawGrid(){ctx.fillStyle='#090d17';ctx.fillRect(0,0,W,H);ctx.save();ctx.strokeStyle='#7ce7ff0b';ctx.lineWidth=1;for(let x=0;x<W;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke()}for(let y=0;y<H;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke()}ctx.restore()}
+function drawArena(){ctx.save();ctx.shadowBlur=25;ctx.shadowColor='#7ce7ff50';ctx.strokeStyle='#7ce7ff';ctx.lineWidth=3;roundedRect(30,30,W-60,H-60,25);ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle='#7ce7ff25';ctx.lineWidth=1;roundedRect(38,38,W-76,H-76,19);ctx.stroke();ctx.restore()}
+function drawBalls(){for(const b of balls){if(!b.alive)continue;ctx.save();for(let i=0;i<b.trail.length;i++){const p=b.trail[i];ctx.globalAlpha=(i/b.trail.length)*.2;ctx.fillStyle=colors[b.id];ctx.beginPath();ctx.arc(p.x,p.y,b.r*(i/b.trail.length)*.65,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;ctx.shadowColor=colors[b.id];ctx.shadowBlur=18;const g=ctx.createRadialGradient(b.x-b.r*.35,b.y-b.r*.4,2,b.x,b.y,b.r*1.3);g.addColorStop(0,'#fff');g.addColorStop(.17,colors[b.id]);g.addColorStop(1,'#111b2a');ctx.fillStyle=g;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.strokeStyle=colors[b.id];ctx.lineWidth=1.5;ctx.stroke();if($('hpToggle').checked){const bw=64,bh=5,x=b.x-bw/2,y=b.y-b.r-22;ctx.fillStyle='#202b3c';ctx.fillRect(x,y,bw,bh);ctx.fillStyle=b.hp>50?colors[b.id]:b.hp>25?'#ffb454':'#ff5964';ctx.fillRect(x,y,bw*Math.max(0,b.hp/b.maxHp),bh);ctx.font='700 11px system-ui';ctx.textAlign='center';ctx.fillStyle='#f4f7ff';ctx.fillText(names[b.id]+' '+Math.ceil(b.hp),b.x,y-5)}else{ctx.font='700 12px system-ui';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.fillText(names[b.id],b.x,b.y-b.r-8)}ctx.restore()}}
+function emit(x,y,color,count=8){for(let i=0;i<count;i++){const a=random(0,Math.PI*2),v=random(45,200);particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:random(2,5),life:.45,maxLife:.45,color})}}
+function drawParticles(dt){for(const p of particles){p.life-=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.98;p.vy*=.98;ctx.globalAlpha=Math.max(0,p.life/p.maxLife);ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;particles=particles.filter(p=>p.life>0)}
+function sound(freq=210,duration=.04){if(!$('soundToggle').checked)return;try{audioCtx=audioCtx||new(window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.025,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+duration);o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+duration)}catch(e){}}
+function collideBalls(){for(let i=0;i<balls.length;i++){const a=balls[i];if(!a.alive)continue;for(let j=i+1;j<balls.length;j++){const b=balls[j];if(!b.alive)continue;let dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy),min=a.r+b.r;if(d>=min)continue;if(!d){dx=1;dy=0;d=1}const nx=dx/d,ny=dy/d,overlap=min-d;a.x-=nx*overlap*.5;a.y-=ny*overlap*.5;b.x+=nx*overlap*.5;b.y+=ny*overlap*.5;const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;if(rel<0){const impulse=-1.02*rel/2;a.vx-=impulse*nx;a.vy-=impulse*ny;b.vx+=impulse*nx;b.vy+=impulse*ny}if(a.hitCooldown<=0&&b.hitCooldown<=0){const damage=5.5;b.hp-=damage;a.damage+=damage;a.hitCooldown=.34;a.hp-=damage;b.damage+=damage;b.hitCooldown=.34;emit((a.x+b.x)/2,(a.y+b.y)/2,'#eaf7ff',5);sound();for(const z of [a,b])if(z.hp<=0){z.hp=0;z.alive=false;emit(z.x,z.y,colors[z.id],22)}}}}}
+function update(dt){elapsed=Math.min(DURATION,elapsed+dt);$('timer').textContent=Math.ceil(DURATION-elapsed);const bounds={left:30,right:W-30,top:30,bottom:H-30};for(const b of balls){if(!b.alive)continue;b.hitCooldown=Math.max(0,b.hitCooldown-dt);b.trail.push({x:b.x,y:b.y});if(b.trail.length>7)b.trail.shift();b.vx*=Math.pow(.999,dt*60);b.vy*=Math.pow(.999,dt*60);b.x+=b.vx*dt;b.y+=b.vy*dt;const edge=b.r+3;if(b.x<bounds.left+edge){b.x=bounds.left+edge;b.vx=Math.abs(b.vx)*.94}if(b.x>bounds.right-edge){b.x=bounds.right-edge;b.vx=-Math.abs(b.vx)*.94}if(b.y<bounds.top+edge){b.y=bounds.top+edge;b.vy=Math.abs(b.vy)*.94}if(b.y>bounds.bottom-edge){b.y=bounds.bottom-edge;b.vy=-Math.abs(b.vy)*.94}const speed=Math.hypot(b.vx,b.vy);if(speed>210){b.vx=b.vx/speed*210;b.vy=b.vy/speed*210}}collideBalls();if(elapsed>=DURATION)finish()}
+function draw(dt=0){ctx.save();if(shake>0){ctx.translate(random(-shake,shake),random(-shake,shake));shake=Math.max(0,shake-dt*22)}drawGrid();drawArena();drawBalls();drawParticles(dt);if(flash>0){ctx.fillStyle='#fff';ctx.globalAlpha=flash*.18;ctx.fillRect(0,0,W,H);ctx.globalAlpha=1;flash=Math.max(0,flash-dt*2.4)}ctx.restore()}
+function loop(now){if(finished)return;if(!last)last=now;const dt=Math.min(.04,(now-last)/1000);last=now;update(dt);draw(dt);raf=requestAnimationFrame(loop)}
+function finish(){if(finished)return;finished=true;elapsed=DURATION;$('timer').textContent='0';$('liveLabel').textContent='Combat terminé';$('status').textContent='Combat terminé. Classement basé sur les dégâts infligés.';if(recording)stopRecorder(true);showResults();cancelAnimationFrame(raf)}
+function showResults(){const ranked=[...balls].sort((a,b)=>b.damage-a.damage);const winner=ranked[0];$('resultTitle').textContent='Victoire '+names[winner.id];$('resultSummary').textContent='Classement basé sur les dégâts infligés sur 60 secondes.';$('scores').innerHTML=ranked.map((b,i)=>'<div class="score-row"><span class="swatch" style="background:'+colors[b.id]+';color:'+colors[b.id]+'"></span><span>'+(i===0?'🏆 ':'')+names[b.id]+'</span><strong>'+Math.round(b.damage)+' dégâts</strong></div>').join('');$('results').classList.add('show')}
+function saveRecording(chunks,mime){if(!chunks.length){$('status').textContent='Aucune vidéo reçue du navigateur. Réessayez.';return}const blob=new Blob(chunks,{type:mime||'video/webm'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='ballystik-combat-60s.'+(blob.type.includes('mp4')?'mp4':'webm');a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);$('status').textContent='Vidéo prête : '+(blob.type.includes('mp4')?'MP4':'WebM')+' · 1080 × 1920 · '+Math.round(blob.size/1024/1024*10)/10+' Mo.'}
+function stopRecorder(download){const current=recorder;if(current&&current.state!=='inactive'){current.addEventListener('stop',()=>{if(download)saveRecording(recordChunks,current.mimeType);if(current.stream)current.stream.getTracks().forEach(t=>t.stop())},{once:true});try{current.stop()}catch(e){}}else if(download)saveRecording(recordChunks,current?current.mimeType:'video/webm');recording=false;recorder=null;$('recordBtn').classList.remove('recording');$('recordBtn').textContent='● Enregistrer · 60 s'}
+function beginRecording(){if(!canvas.captureStream||!window.MediaRecorder){$('status').textContent='Ce navigateur ne permet pas l’enregistrement Canvas/MediaRecorder. Essayez Chrome ou Edge récent.';return}reset();recordChunks=[];const stream=canvas.captureStream(30),types=['video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm','video/mp4'],mime=types.find(t=>MediaRecorder.isTypeSupported(t));try{recorder=new MediaRecorder(stream,mime?{mimeType:mime,videoBitsPerSecond:8000000}:undefined)}catch(e){$('status').textContent='Impossible de démarrer l’enregistrement : '+e.message;stream.getTracks().forEach(t=>t.stop());return}recorder.stream=stream;recorder.ondataavailable=e=>{if(e.data&&e.data.size)recordChunks.push(e.data)};recorder.onerror=()=>{$('status').textContent='Le navigateur a interrompu l’enregistrement.'};recording=true;$('recordBtn').classList.add('recording');$('recordBtn').textContent='● Enregistrement…';$('status').textContent='Enregistrement en cours. Gardez cet onglet au premier plan pendant 60 secondes.';recorder.start(1000)}
+$('newBtn').addEventListener('click',reset);$('recordBtn').addEventListener('click',beginRecording);$('closeResults').addEventListener('click',()=>$('results').classList.remove('show'));$('againBtn').addEventListener('click',reset);document.addEventListener('visibilitychange',()=>{if(recording&&document.hidden)$('status').textContent='Attention : gardez l’onglet visible pour éviter une vidéo ralentie.'});reset();
+})();
+</script>
 </body>
 </html>
