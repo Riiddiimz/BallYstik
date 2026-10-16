@@ -32,3 +32,8 @@
 - Une attaque est déclenchée à courte portée, inflige 5 dégâts et applique un cooldown de 0,48 s.
 - Retour à une pose de garde fixe lorsque personne n’est à portée de détection.
 - Modifié dans le commit `c3e972b72d01a972f523d3456cdf440e3063d06a`.
+
+
+## Visibilité des armes portées (2026-10-16)
+- Augmentation du dessin de l’arme portée de 30×58 px à 56×100 px pour qu’elle soit visible en jeu.
+- Commit : `417eafb71231ebf26459f0509938ab7407288f19`.
