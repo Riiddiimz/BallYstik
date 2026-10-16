@@ -137,6 +137,7 @@
             this.time    += dt;
             this.elapsed += dt;
             this.wallPulse = Math.max(0, this.wallPulse - dt * 3.2);
+            for (const obstacle of this.obstacles) obstacle.hitPulse = Math.max(0, (obstacle.hitPulse || 0) - dt * 3.8);
 
             this.shrinkMoving = false;
             this.shrinkWarning = 0;
@@ -295,6 +296,7 @@
                         ball.vx = (ball.vx / speed) * launchSpeed;
                         ball.vy = (ball.vy / speed) * launchSpeed;
                         ball._obstacleBoostTimer = 0.55;
+                        o.hitPulse = 1;
                         hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r, obstacle: true };
                     }
                 }
@@ -397,16 +399,47 @@
             ctx.restore();
 
             for (const o of this.obstacles) {
+                const pulse = o.hitPulse || 0;
+                const beat = 0.5 + 0.5 * Math.sin(this.time * 5 + o.x * 0.03);
                 ctx.save();
-                ctx.shadowColor = 'rgba(140,90,255,0.7)';
-                ctx.shadowBlur = 20;
+                // Halo qui s'intensifie nettement lors d'une collision.
+                ctx.globalAlpha = 0.55 + pulse * 0.45;
+                ctx.shadowColor = pulse > 0 ? '#fff176' : 'rgba(140,90,255,0.9)';
+                ctx.shadowBlur = 16 + pulse * 30 + beat * 5;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, o.r + 3 + pulse * 7 + beat * 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = pulse > 0 ? '#fff176' : 'rgba(160,120,255,0.55)';
+                ctx.lineWidth = 2 + pulse * 3;
+                ctx.stroke();
+                ctx.globalAlpha = 1;
                 ctx.beginPath();
                 ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
                 ctx.fillStyle = PALETTE.obstacle;
                 ctx.fill();
-                ctx.strokeStyle = PALETTE.obstacleEdge;
-                ctx.lineWidth = 1.6;
+                ctx.strokeStyle = pulse > 0 ? '#ffffff' : PALETTE.obstacleEdge;
+                ctx.lineWidth = 1.8 + pulse * 2.2;
                 ctx.stroke();
+                // Noyau animé façon ressort/propulseur.
+                ctx.rotate(this.time * (pulse > 0 ? 8 : 1.8));
+                ctx.strokeStyle = pulse > 0 ? '#fff7ae' : '#c4b5fd';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, o.r * (0.42 + beat * 0.06), this.time, this.time + Math.PI * (1.25 + pulse));
+                ctx.stroke();
+                ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a78bfa';
+                ctx.shadowColor = ctx.fillStyle;
+                ctx.shadowBlur = 8 + pulse * 22;
+                ctx.beginPath();
+                ctx.arc(o.x, o.y, 5 + beat * 2 + pulse * 5, 0, Math.PI * 2);
+                ctx.fill();
+                if (pulse > 0) {
+                    ctx.globalAlpha = pulse;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.arc(o.x, o.y, o.r + (1 - pulse) * 28, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
                 ctx.restore();
             }
 
