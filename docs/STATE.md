@@ -1,24 +1,21 @@
 # Project State
 
 ## Current Phase
-- Bootstrap completed: memory system, task triage rules, and specialized subagents active.
 - Baseline engine: Modular Canvas 2D + deterministic seed system + Classic Escape mode operational.
+- MVP combat prototype is being built independently on `feature/mvp-combat`; it does not replace `index.html` or modify `main`.
 
 ## Done
-- Audited and fixed initial HTML file (anti-tunneling sub-steps, safe ball spawn, spike angle normalization).
-- Modularized codebase into `css/style.css`, `js/audio.js`, `js/effects.js`, `js/ball.js`, `js/modes/classic.js`, `js/simulation.js`, `js/app.js`.
-- Implemented dual-sidebar ergonomics (Left: Mode & Physics, Right: Audio & VFX).
-- Added Mulberry32 deterministic PRNG (`js/prng.js`) and fast duration Seed Searcher (`js/seedSearcher.js`).
-- Created root `config.js` with documented bounds (min, max, descriptions) editable by user.
-- Fixed accordion text leakage with `display: none !important;` when collapsed.
-- Removed in-app mode defaults menu per user request.
-- Integrated Spiral Vault mode (UI, presets, physics substeps, sound, headless seed searcher, auto-loop and slowmo).
+- Existing engine and UI retained unchanged for this MVP branch.
+- Added standalone `mvp.html` with a 9:16 Canvas combat view, four colored fighters, health display toggle, sound toggle, weapon pickup events, shrinking danger zone, automatic charge-based ultimates, end-of-match damage ranking, and client-side video recording.
+- Canvas is rendered at 1080×1920 backing resolution; recording uses `captureStream(30)` and `MediaRecorder`, with browser-supported format selection.
+- Corrected backing-store scaling, added animated ultimate shockwave rings, and ensured final recorder chunks are collected before download.
+- No third-party game engine or new dependency added.
 
 ## In Progress / Next
-- Branche `feature/arena-spectacle-v2` : deux armes récupérables, Canon à plasma (charge visible, obus explosifs et dégâts de zone) et Bobine Tesla (charge, foudre et arc secondaire).
-- Quatre cartes sélectionnables avec règles distinctes : Néon, Réacteur (onde radiale), Crossfire (faisceau télégraphié), Néant (puits gravitationnels).
-- Les avertissements visuels sont synchronisés avec les fenêtres de danger. Les effets d'événements aléatoires sans cause ont été retirés.
-- Vérification navigateur réelle encore nécessaire avant fusion.
+- Validate `mvp.html` in a real browser, especially collision feel, shrinking-zone damage, weapon pickups, ultimate triggering, and the 60-second capture/download flow.
+- Verify whether the target browser exports WebM or MP4; MP4 support is browser-dependent.
+- Keep all MVP work on `feature/mvp-combat` until user-approved validation and review.
 
 ## Open Issues
-- La syntaxe JavaScript et les comportements de base ont été testés directement. Les performances et le ressenti en navigateur restent à confirmer.
+- Real browser execution and a full 60-second recording have not yet been tested from this environment.
+- If the tab is backgrounded or the browser throttles animation frames, real-time recording duration may vary; keep the tab visible during capture.
