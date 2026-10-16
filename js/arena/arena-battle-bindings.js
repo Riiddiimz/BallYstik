@@ -282,6 +282,9 @@
                 if (!window.FFmpeg || !window.FFmpeg.createFFmpeg) {
                     throw new Error('Le convertisseur MP4 ne s’est pas chargé. Vérifiez votre connexion puis rechargez la page.');
                 }
+                if (typeof SharedArrayBuffer === 'undefined' || !window.crossOriginIsolated) {
+                    throw new Error('Le serveur doit activer COOP/COEP pour autoriser SharedArrayBuffer. Redéployez la version v2 avec les en-têtes de sécurité inclus.');
+                }
                 if (!this.ffmpeg) {
                     this.ffmpeg = window.FFmpeg.createFFmpeg({
                         log: false,
