@@ -41,7 +41,7 @@
             this.shrinkWarningLength = 1.6;
 
             this.obstacles = [];
-            this._buildObstacles(options.obstacles ?? 1);
+            this._buildObstacles(options.obstacles ?? 1, options.obstaclePositions);
 
             this._recompute();
         }
@@ -55,8 +55,15 @@
             this.h = Math.max(60, c.height - p * 2);
         }
 
-        _buildObstacles(count) {
+        _buildObstacles(count, customPositions = null) {
             this.obstacles = [];
+            if (Array.isArray(customPositions)) {
+                customPositions.slice(0, Math.max(0, Math.min(10, Number(count) || 0))).forEach(pos => {
+                    if (!pos || !Number.isFinite(Number(pos.x)) || !Number.isFinite(Number(pos.y))) return;
+                    this.obstacles.push({ x: Number(pos.x) <= 1 ? Number(pos.x) * this.canvas.width : Number(pos.x), y: Number(pos.y) <= 1 ? Number(pos.y) * this.canvas.height : Number(pos.y), r: 24 });
+                });
+                return;
+            }
             if (count <= 0) return;
             const cx = this.canvas.width / 2;
             const cy = this.canvas.height / 2;
@@ -107,6 +114,15 @@
                     this.obstacles.push({ x: cx, y: cy, r: r + 4 });
                     this.obstacles.push({ x: cx, y: cy + gap, r });
                 }
+            }
+            while (this.obstacles.length < Math.min(10, count)) {
+                const candidate = {
+                    x: this.padding + 34 + Math.random() * Math.max(1, this.canvas.width - 2 * (this.padding + 34)),
+                    y: this.padding + 34 + Math.random() * Math.max(1, this.canvas.height - 2 * (this.padding + 34)),
+                    r
+                };
+                if (this.obstacles.every(o => Math.hypot(o.x - candidate.x, o.y - candidate.y) > 66)) this.obstacles.push(candidate);
+                else if (this.obstacles.length >= 3 && this.obstacles.length < 10 && Math.random() < 0.04) this.obstacles.push(candidate);
             }
         }
 
