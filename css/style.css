@@ -206,3 +206,6 @@ input[type=range]::-moz-range-thumb {
 /* MP4 recording status */
 #recordBtn:disabled{opacity:.7;cursor:wait}
 #recordStatus{max-width:min(90%,520px);text-align:center;pointer-events:none}
+
+#recordBtn:disabled{opacity:.7;cursor:wait}
+@media(max-width:420px){#resetBtn,#recordBtn,#newGameBtn{padding-left:6px;padding-right:6px;font-size:10px;gap:4px}}
