@@ -4,7 +4,7 @@
 Generate one continuous 60-second vertical fight that can be recorded as a raw 1080×1920 video. This is an isolated prototype page, not a replacement for the existing main app.
 
 ## Entry point and stack
-- Entry point: `mvp.html`
+- Current test entry point: `index.html` on `feature/mvp-combat` (existing UI shell retained); standalone prototype remains at `mvp.html`.
 - Vanilla HTML/CSS/JavaScript + Canvas 2D
 - Logical coordinates: 540×960; canvas backing store: 1080×1920
 - Recording: `HTMLCanvasElement.captureStream(30)` + `MediaRecorder`
@@ -19,6 +19,9 @@ Generate one continuous 60-second vertical fight that can be recorded as a raw 1
 - The arena begins shrinking at second 30; the inner danger boundary damages balls that cross it.
 - The match runs for 60 seconds. Winner is the ball with the most damage inflicted, including if its HP reaches zero before the end.
 - Result overlay lists damage totals. It is DOM UI, not part of the recorded canvas footage.
+
+## Test tools
+- The right sidebar lists all eight PNGs in `assets/weapons`; each Spawn button places the selected image in the arena immediately. Multiple ground weapons can coexist; a ball picks one up on contact. Clear removes all ground weapons.
 
 ## Controls
 - `Nouveau combat`: reset match state and begin a new simulation.
