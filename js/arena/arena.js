@@ -48,10 +48,17 @@
 
         _recompute() {
             const c = this.canvas;
+            // Le décor et le fond de la carte restent fixes pendant toute la partie.
+            this.frameX = this.padding;
+            this.frameY = this.padding;
+            this.frameW = Math.max(60, c.width - this.padding * 2);
+            this.frameH = Math.max(60, c.height - this.padding * 2);
+
+            // Seules les limites de collision se déplacent vers l'intérieur.
             const p = this.padding + this.shrinkOffset;
             this.x = p;
             this.y = p;
-            this.w = Math.max(60, c.width  - p * 2);
+            this.w = Math.max(60, c.width - p * 2);
             this.h = Math.max(60, c.height - p * 2);
         }
 
@@ -299,9 +306,14 @@
 
         render(ctx) {
             const { x, y, w, h, cornerRadius } = this;
+            const frameX = this.frameX ?? x;
+            const frameY = this.frameY ?? y;
+            const frameW = this.frameW ?? w;
+            const frameH = this.frameH ?? h;
 
+            // Le fond, la grille et les éléments de la map restent immobiles.
             ctx.save();
-            this._roundRectPath(ctx, x, y, w, h, cornerRadius);
+            this._roundRectPath(ctx, frameX, frameY, frameW, frameH, cornerRadius);
             ctx.fillStyle = PALETTE.floor;
             ctx.fill();
 
@@ -309,22 +321,22 @@
             ctx.strokeStyle = PALETTE.grid;
             ctx.lineWidth = 1;
             const grid = 40;
-            for (let gx = x; gx < x + w; gx += grid) {
-                ctx.beginPath(); ctx.moveTo(gx, y); ctx.lineTo(gx, y + h); ctx.stroke();
+            for (let gx = frameX; gx < frameX + frameW; gx += grid) {
+                ctx.beginPath(); ctx.moveTo(gx, frameY); ctx.lineTo(gx, frameY + frameH); ctx.stroke();
             }
-            for (let gy = y; gy < y + h; gy += grid) {
-                ctx.beginPath(); ctx.moveTo(x, gy); ctx.lineTo(x + w, gy); ctx.stroke();
+            for (let gy = frameY; gy < frameY + frameH; gy += grid) {
+                ctx.beginPath(); ctx.moveTo(frameX, gy); ctx.lineTo(frameX + frameW, gy); ctx.stroke();
             }
             ctx.restore();
 
             // Décor et signaux de danger propres à chaque carte.
             ctx.save();
-            this._roundRectPath(ctx, x, y, w, h, cornerRadius);
+            this._roundRectPath(ctx, frameX, frameY, frameW, frameH, cornerRadius);
             ctx.clip();
             if (this.mapStyle === 'reactor') {
                 const phase = this.time % 4.2;
-                const cx = x + w / 2, cy = y + h / 2;
-                const radius = phase < 1.25 ? 22 + phase * 9 : Math.min(w, h) * 0.47 * Math.max(0, Math.min(1, (phase - 1.25) / 1.1));
+                const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
+                const radius = phase < 1.25 ? 22 + phase * 9 : Math.min(frameW, frameH) * 0.47 * Math.max(0, Math.min(1, (phase - 1.25) / 1.1));
                 ctx.globalAlpha = phase < 1.25 ? 0.25 + phase * 0.34 : phase < 2.35 ? 0.9 : 0.2;
                 ctx.strokeStyle = phase < 1.25 ? '#fb923c' : '#ff2a85';
                 ctx.lineWidth = phase < 1.25 ? 2 + phase : 4;
@@ -335,7 +347,7 @@
                 ctx.beginPath(); ctx.arc(cx, cy, 9 + 4 * Math.sin(this.time * 6), 0, Math.PI * 2); ctx.fill();
             } else if (this.mapStyle === 'crossfire') {
                 const phase = this.time % 4.0;
-                const laneY = y + h * (0.18 + 0.64 * Math.min(phase / 2.8, 1));
+                const laneY = frameY + frameH * (0.18 + 0.64 * Math.min(phase / 2.8, 1));
                 const firing = phase >= 2.8 && phase <= 3.45;
                 ctx.globalAlpha = firing ? 0.95 : phase < 2.8 ? 0.18 + phase * 0.15 : Math.max(0, 0.5 * (4.0 - phase));
                 ctx.strokeStyle = firing ? '#ff2a85' : '#fbbf24';
@@ -346,7 +358,7 @@
                 ctx.setLineDash([]);
             } else if (this.mapStyle === 'void') {
                 for (let i = 0; i < 2; i++) {
-                    const cx = x + w * (i ? 0.72 : 0.28), cy = y + h * (i ? 0.68 : 0.32);
+                    const cx = frameX + frameW * (i ? 0.72 : 0.28), cy = frameY + frameH * (i ? 0.68 : 0.32);
                     ctx.globalAlpha = 0.24 + 0.1 * Math.sin(this.time * 3 + i);
                     ctx.strokeStyle = i ? '#c084fc' : '#00f2fe';
                     ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16;
