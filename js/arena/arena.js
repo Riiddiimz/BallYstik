@@ -419,16 +419,10 @@
                 ctx.strokeStyle = pulse > 0 ? '#ffffff' : PALETTE.obstacleEdge;
                 ctx.lineWidth = 1.8 + pulse * 2.2;
                 ctx.stroke();
-                // Noyau animé façon ressort/propulseur.
-                ctx.rotate(this.time * (pulse > 0 ? 8 : 1.8));
-                ctx.strokeStyle = pulse > 0 ? '#fff7ae' : '#c4b5fd';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(o.x, o.y, o.r * (0.42 + beat * 0.06), this.time, this.time + Math.PI * (1.25 + pulse));
-                ctx.stroke();
+                // Noyau lumineux fixe : aucun élément ne gravite autour de l'obstacle.
                 ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a78bfa';
                 ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 8 + pulse * 22;
+                ctx.shadowBlur = 8 + pulse * 22 + beat * 3;
                 ctx.beginPath();
                 ctx.arc(o.x, o.y, 5 + beat * 2 + pulse * 5, 0, Math.PI * 2);
                 ctx.fill();
