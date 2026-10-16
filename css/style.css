@@ -201,3 +201,8 @@ input[type=range]::-moz-range-thumb {
 #simCanvas {
     display: block;
 }
+
+
+/* MP4 recording status */
+#recordBtn:disabled{opacity:.7;cursor:wait}
+#recordStatus{max-width:min(90%,520px);text-align:center;pointer-events:none}
