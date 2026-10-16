@@ -19,7 +19,7 @@
         contactDamageMult: 1,
         pickupInterval: 5,
         maxSlots: 3,
-        matchMode: 'lastStanding', // lastStanding | timed | kills
+        matchMode: 'lastStanding',
         matchTime: 60,
         shrinkEnabled: false,
         shrinkStart: 30,
@@ -35,7 +35,6 @@
             this.matchTime = 60;
             this.elapsedTime = 0;
             this.finished = false;
-            this.finishedByTimer = false;
             this.hud = null;
             this.pickupSystem = null;
             this.projectiles = [];
@@ -59,7 +58,7 @@
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
                 arena.mapStyle = nextMap;
-                if (mapChanged) arena._buildObstacles(this.options.obstacles);
+                if (mapChanged || opts?.obstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
             }
             if (this.elapsedTime <= 0 && Number.isFinite(Number(this.options.matchTime))) {
                 this.matchTime = Number(this.options.matchTime);
@@ -81,10 +80,8 @@
         // ═══════════════════════════════════════════════════════════
         init(world) {
             this._world = world;
-            this.matchTime = this.options.matchTime;
             this.elapsedTime = 0;
             this.finished = false;
-            this.finishedByTimer = false;
             this.winner = null;
             this.projectiles.length = 0;
             // Les capacités ajoutent leurs tirs via world.projectiles : partager le même tableau que le moteur.
@@ -100,6 +97,7 @@
                     padding: 16,
                     cornerRadius: 44,
                     obstacles: this.options.obstacles,
+                    obstaclePositions: this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
@@ -114,7 +112,7 @@
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
-                world.arena._buildObstacles(this.options.obstacles);
+                world.arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
                 world.arena._recompute();
             }
 
@@ -481,18 +479,10 @@
 
         update(dt, world) {
             // Une manche chronométrée est figée dès que le gagnant est déterminé.
-            if (this.finished && (this.options.matchMode === 'timed' || this.finishedByTimer)) return;
-
-            if (this.finished && this.options.matchMode === 'lastStanding') {
-                // Ralenti dramatique après fin
-                dt *= 0.25;
-            }
-
             this.elapsedTime += dt;
             world.time = this.elapsedTime;
             // Synchronise le temps consommé par le HUD dessiné sur le canvas.
             world.elapsedTime = this.elapsedTime;
-            world.matchTime = this.options.matchTime;
 
             // La carte a ses propres mécaniques lisibles : télégraphe puis danger réel.
             world.arena.update(dt);
@@ -743,29 +733,6 @@
             // HUD
             this.hud.update(dt, world);
 
-            // Fin d'une manche chronométrée : le survivant avec le plus de PV restants gagne,
-            // même si plusieurs boules sont encore en vie à zéro sur le chronomètre.
-            if (!this.finished && this.elapsedTime >= this.matchTime) {
-                this.finished = true;
-                this.finishedByTimer = true;
-                const alive = world.balls.filter(b => b.alive && !b.isClone);
-                const candidates = alive.length ? alive : world.balls.filter(b => !b.isClone);
-
-                // Classement déterministe : PV restants, puis pourcentage de vie, puis ID le plus bas.
-                candidates.sort((a, b) => {
-                    const hpA = Number(a.health?.current) || 0;
-                    const hpB = Number(b.health?.current) || 0;
-                    if (hpB !== hpA) return hpB - hpA;
-
-                    const ratioA = a.health?.max ? hpA / a.health.max : 0;
-                    const ratioB = b.health?.max ? hpB / b.health.max : 0;
-                    if (ratioB !== ratioA) return ratioB - ratioA;
-
-                    return (a.id || 0) - (b.id || 0);
-                });
-
-                this.winner = candidates[0] || null;
-            }
         }
 
         // ═══════════════════════════════════════════════════════════
