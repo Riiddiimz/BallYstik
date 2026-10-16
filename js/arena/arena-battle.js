@@ -478,9 +478,33 @@
         }
 
         update(dt, world) {
-            // Une manche chronométrée est figée dès que le gagnant est déterminé.
+            // Une manche terminée reste figée, mais continue d'être rendue pour afficher le résultat.
+            if (this.finished) return;
+
             this.elapsedTime += dt;
+            const duration = Number(this.matchTime);
+            if (Number.isFinite(duration) && duration > 0 && this.elapsedTime >= duration) {
+                this.elapsedTime = duration;
+                world.time = this.elapsedTime;
+                world.matchTime = duration;
+                world.elapsedTime = this.elapsedTime;
+
+                // À 00:00, le joueur encore vivant avec le plus de vie gagne.
+                const alive = world.balls
+                    .filter(ball => ball.alive && !ball.isClone)
+                    .sort((a, b) => {
+                        const hpA = a.health ? Number(a.health.current) || 0 : 0;
+                        const hpB = b.health ? Number(b.health.current) || 0 : 0;
+                        if (hpB !== hpA) return hpB - hpA;
+                        return (a.id || 0) - (b.id || 0);
+                    });
+                this.winner = alive[0] || null;
+                this.finished = true;
+                return;
+            }
+
             world.time = this.elapsedTime;
+            world.matchTime = Number.isFinite(duration) ? duration : this.options.matchTime;
             // Synchronise le temps consommé par le HUD dessiné sur le canvas.
             world.elapsedTime = this.elapsedTime;
 
