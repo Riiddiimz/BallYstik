@@ -793,11 +793,9 @@
         }
     };
 
-    // ═══════ LAME ORBITALE (asset PNG) ═══════
-    // Rendu commun des armes portées : taille constante et ratio de l'image conservé.
-    // Les futures armes peuvent réutiliser window.BallYstikWeaponRenderer.drawHeld(...).
+    // ═══════ ARMES PORTÉES (assets PNG) ═══════
     window.BallYstikWeaponRenderer = window.BallYstikWeaponRenderer || {};
-    window.BallYstikWeaponRenderer.drawHeld = function (ctx, image, ball, length = 48, offset = 0.35) {
+    window.BallYstikWeaponRenderer.drawHeld = function (ctx, image, ball, length = 64, offset = 0.35) {
         if (!ctx || !image || !image.complete || !image.naturalWidth || !image.naturalHeight) return false;
         const ratio = image.naturalWidth / image.naturalHeight;
         const width = image.naturalHeight > image.naturalWidth ? length * ratio : length;
@@ -811,29 +809,36 @@
     };
 
     window.BallYstikWeaponImages = window.BallYstikWeaponImages || {};
-    if (!window.BallYstikWeaponImages.blade) {
-        const bladeImage = new Image();
-        bladeImage.src = '/assets/weapons/blade.png?v=2';
-        window.BallYstikWeaponImages.blade = bladeImage;
-    }
+    const weaponFiles = {
+        axe: 'ballystik-axe.png',
+        bow: 'ballystik-bow_1.png',
+        hammer: 'ballystik-hammer.png',
+        scepter: 'ballystik-scepter.png',
+        spear: 'ballystik-spear.png',
+        sword: 'ballystik-sword.png'
+    };
+    Object.entries(weaponFiles).forEach(([id, file]) => {
+        if (window.BallYstikWeaponImages[id]) return;
+        const image = new Image();
+        image.src = '/assets/weapons/' + file;
+        window.BallYstikWeaponImages[id] = image;
+    });
 
-    if (!window.BallYstikWeaponImages.blade2) {
-        const blade2Image = new Image();
-        blade2Image.src = '/assets/weapons/blade2.png?v=2';
-        window.BallYstikWeaponImages.blade2 = blade2Image;
-    }
-
-    window.AbilityBehaviors.blade = {
+    const weaponBehavior = {
         attach(ball, world, slot) {
-            ball.weapon = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+            const id = slot.meta.id;
+            ball.weapon = id;
             slot.data = { hitCooldowns: Object.create(null), swing: 0, swingCooldown: 0, angle: 0, hitIds: [] };
-            world.spawnParticle(ball.x, ball.y, { color: '#bfdbfe', count: 26, speed: 220, life: 0.65, spread: Math.PI * 2, size: 3 });
-            world.addShockwave(ball.x, ball.y, { radius: 58, color: '#93c5fd', life: 0.48 });
-            world.playSound('pickup', { pitch: 1.35 });
+            const meta = slot.meta;
+            world.spawnParticle(ball.x, ball.y, { color: meta.glow || '#fde68a', count: 22, speed: 210, life: 0.6, spread: Math.PI * 2, size: 3 });
+            world.addShockwave(ball.x, ball.y, { radius: 52, color: meta.glow || '#fde68a', life: 0.42 });
+            world.playSound('pickup', { pitch: 1.2 });
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
             if (!d) return;
+            const weaponId = slot.meta.id;
+            const meta = slot.meta;
             d.swingCooldown = Math.max(0, d.swingCooldown - dt);
             d.swing = Math.max(0, d.swing - dt);
             for (const id of Object.keys(d.hitCooldowns)) {
@@ -852,65 +857,60 @@
             d.angle = target && best < ball.radius * 3.2
                 ? Math.atan2(target.y - ball.y, target.x - ball.x)
                 : movementAngle;
-            const reach = ball.radius + 27;
+            const reach = ball.radius + (weaponId === 'spear' ? 38 : weaponId === 'hammer' ? 25 : 29);
             const hitRange = ball.radius + reach + (target ? target.radius : 0);
-            const inReach = target && best <= hitRange;
-            if (inReach && d.swingCooldown <= 0 && !d.hitCooldowns[target.id]) {
+            if (target && best <= hitRange && d.swingCooldown <= 0 && !d.hitCooldowns[target.id]) {
                 const dx = target.x - ball.x, dy = target.y - ball.y;
                 const angleToTarget = Math.atan2(dy, dx);
                 const diff = Math.atan2(Math.sin(angleToTarget - d.angle), Math.cos(angleToTarget - d.angle));
-                if (Math.abs(diff) < 1.25) {
-                            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
-                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam(weaponId, 'damage', weaponId === 'blade2' ? 20 : 18) : (weaponId === 'blade2' ? 20 : 18);
-                    world.damage(target, ball, damage, 'blade');
+                if (Math.abs(diff) < 1.3) {
+                    const defaults = { axe: 22, bow: 15, hammer: 26, scepter: 20, spear: 19, sword: 18 };
+                    const damage = window.AbilitySettings ? window.AbilitySettings.getParam(weaponId, 'damage', defaults[weaponId] || 18) : (defaults[weaponId] || 18);
+                    const cooldown = window.AbilitySettings ? window.AbilitySettings.getParam(weaponId, 'hitCooldown', weaponId === 'hammer' ? 0.9 : 0.72) : (weaponId === 'hammer' ? 0.9 : 0.72);
+                    world.damage(target, ball, damage, weaponId);
                     const len = Math.hypot(dx, dy) || 1;
-                    target.vx += (dx / len) * 190;
-                    target.vy += (dy / len) * 190;
-                    d.hitCooldowns[target.id] = 0.72;
-                    d.swingCooldown = 0.34;
+                    const push = weaponId === 'hammer' ? 250 : weaponId === 'spear' ? 210 : 180;
+                    target.vx += (dx / len) * push;
+                    target.vy += (dy / len) * push;
+                    if (world.ArenaBattle && world.ArenaBattle._keepBaseSpeed) world.ArenaBattle._keepBaseSpeed(target);
+                    d.hitCooldowns[target.id] = cooldown;
+                    d.swingCooldown = weaponId === 'hammer' ? 0.42 : 0.32;
                     d.swing = 0.24;
                     d.angle = angleToTarget;
-                    world.spawnParticle(target.x, target.y, { color: '#dbeafe', count: 18, speed: 230, life: 0.38, spread: Math.PI * 2, size: 2.8 });
+                    world.spawnParticle(target.x, target.y, { color: meta.glow || '#fde68a', count: 16, speed: 220, life: 0.38, spread: Math.PI * 2, size: 2.8 });
                     world.addHitFlash(target.x, target.y);
-                    world.addShockwave(target.x, target.y, { radius: 28, color: '#93c5fd', life: 0.22 });
-                    world.playSound('hit', { pitch: 1.25 });
+                    world.addShockwave(target.x, target.y, { radius: 26, color: meta.glow || '#fde68a', life: 0.22 });
+                    world.playSound('hit', { pitch: weaponId === 'hammer' ? 0.85 : 1.15 });
                 }
             }
         },
         render(ctx, ball, world, slot) {
             const d = slot.data;
             if (!d) return;
-            const weaponId = slot.meta && slot.meta.id === 'blade2' ? 'blade2' : 'blade';
+            const weaponId = slot.meta.id;
             const image = window.BallYstikWeaponImages && window.BallYstikWeaponImages[weaponId];
             const swingProgress = d.swing > 0 ? 1 - d.swing / 0.24 : 0;
-            const swingAngle = d.swing > 0 ? Math.sin(swingProgress * Math.PI) * 0.95 - 0.45 : 0;
+            const swingAngle = d.swing > 0 ? Math.sin(swingProgress * Math.PI) * 1.05 - 0.5 : 0;
             ctx.save();
             ctx.translate(ball.x, ball.y);
             ctx.rotate(d.angle + swingAngle);
-            ctx.shadowColor = '#93c5fd';
-            ctx.shadowBlur = d.swing > 0 ? 20 : 8;
+            ctx.shadowColor = slot.meta.glow || '#fde68a';
+            ctx.shadowBlur = d.swing > 0 ? 20 : 9;
             if (image && image.complete && image.naturalWidth > 0) {
-                // Taille fixe, ratio d'origine respecté : l'épée ne s'aplatit pas selon la boule.
-                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, 82, 0.35);
+                const length = weaponId === 'spear' ? 96 : weaponId === 'hammer' ? 86 : 82;
+                window.BallYstikWeaponRenderer.drawHeld(ctx, image, ball, length, 0.35);
             } else {
-                // Fallback visible si le PNG n'est pas encore chargé.
-                ctx.strokeStyle = '#dbeafe';
+                ctx.strokeStyle = slot.meta.color || '#fde68a';
                 ctx.lineWidth = 5;
                 ctx.lineCap = 'round';
                 ctx.beginPath();
                 ctx.moveTo(ball.radius * 0.25, 0);
-                ctx.lineTo(ball.radius + 25, 0);
-                ctx.stroke();
-                ctx.strokeStyle = '#64748b';
-                ctx.lineWidth = 8;
-                ctx.beginPath();
-                ctx.moveTo(ball.radius * 0.2, 0);
-                ctx.lineTo(ball.radius * 0.55, 0);
+                ctx.lineTo(ball.radius + 28, 0);
                 ctx.stroke();
             }
             if (d.swing > 0) {
                 ctx.globalAlpha = 0.65 * (d.swing / 0.24);
-                ctx.strokeStyle = '#bfdbfe';
+                ctx.strokeStyle = slot.meta.glow || '#fde68a';
                 ctx.lineWidth = 3;
                 ctx.beginPath();
                 ctx.arc(0, 0, ball.radius + 24, -0.8, 0.8);
@@ -918,13 +918,11 @@
             }
             ctx.restore();
         },
-        detach(ball) {
-            if (ball.weapon === 'blade' || ball.weapon === 'blade2') delete ball.weapon;
+        detach(ball, world, slot) {
+            if (ball.weapon === slot.meta.id) delete ball.weapon;
         }
     };
-
-    // La seconde arme réutilise la logique de combat, avec sa propre image et ses propres réglages.
-    window.AbilityBehaviors.blade2 = window.AbilityBehaviors.blade;
+    Object.keys(weaponFiles).forEach(id => { window.AbilityBehaviors[id] = weaponBehavior; });
 
     function renderPlasmaShell(ctx, p) {
         ctx.save();
