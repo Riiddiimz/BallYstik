@@ -79,20 +79,27 @@
         _recompute() {
             const c = this.canvas;
             if (this._isVortexMap()) {
-                // Le cercle reste centré et ne subit jamais le shrink rectangulaire.
+                // La carte Spirale respecte les mêmes marges configurées que l'arène :
+                // haut 16 %, bas 10 %, gauche 0 %, droite 14 % par défaut.
+                // Le cercle est inscrit dans cette zone pour ne jamais dépasser les murs.
                 this.shrinkEnabled = false;
                 this.shrinkOffset = 0;
-                this.vortexCx = c.width / 2;
-                this.vortexCy = c.height / 2;
-                this.vortexRadius = Math.min(c.width, c.height) * VORTEX.radiusFactor;
+                const top = Math.min(0.9, Math.max(0, this.arenaMargins.top)) * c.height;
+                const bottom = Math.min(0.9, Math.max(0, this.arenaMargins.bottom)) * c.height;
+                const left = Math.min(0.9, Math.max(0, this.arenaMargins.left)) * c.width;
+                const right = Math.min(0.9, Math.max(0, this.arenaMargins.right)) * c.width;
+                this.frameX = left;
+                this.frameY = top;
+                this.frameW = Math.max(60, c.width - left - right);
+                this.frameH = Math.max(60, c.height - top - bottom);
+                this.vortexCx = this.frameX + this.frameW / 2;
+                this.vortexCy = this.frameY + this.frameH / 2;
+                // Petite marge de sécurité pour le contour lumineux et les collisions.
+                this.vortexRadius = Math.max(1, Math.min(this.frameW, this.frameH) * VORTEX.radiusFactor);
                 this.x = this.vortexCx - this.vortexRadius;
                 this.y = this.vortexCy - this.vortexRadius;
                 this.w = this.vortexRadius * 2;
                 this.h = this.vortexRadius * 2;
-                this.frameX = this.x;
-                this.frameY = this.y;
-                this.frameW = this.w;
-                this.frameH = this.h;
                 return;
             }
             // Le canvas/vidéo garde toujours son format 9:16.
