@@ -5,13 +5,14 @@
 (function () {
     'use strict';
 
-    // DIMENSIONS DE BASE DE L'ARÈNE QUI SE RÉTRÉCIT.
-    // La vidéo reste en 9:16 : seuls les murs de l'arène sont redimensionnés.
-    // Valeurs en proportion du canvas : 0.95 = 95 %, 0.80 = 80 %.
-    // Modifie width et height indépendamment selon la taille souhaitée.
+    // POSITION DES 4 MURS DE BASE DE L'ARÈNE QUI SE RÉTRÉCIT.
+    // Chaque valeur est la marge depuis le bord du canvas : 0.05 = 5 %.
+    // Régle chaque côté indépendamment. La vidéo conserve son format 9:16.
     const ARENA_CONFIG = {
-        width: 0.95,  // Largeur initiale de l'arène : 95 % du canvas
-        height: 0.90  // Hauteur initiale de l'arène : 90 % du canvas
+        top: 0.05,    // Marge en haut
+        bottom: 0.05, // Marge en bas
+        left: 0.025,  // Marge à gauche
+        right: 0.025  // Marge à droite
     };
 
     const PALETTE = {
@@ -99,17 +100,21 @@
                 return;
             }
             // Le canvas/vidéo garde toujours son format 9:16.
-            // ARENA_CONFIG permet de régler séparément la taille du rectangle de combat.
-            const baseW = Math.max(60, c.width * Math.min(1, Math.max(0.1, ARENA_CONFIG.width)));
-            const baseH = Math.max(60, c.height * Math.min(1, Math.max(0.1, ARENA_CONFIG.height)));
-            const baseX = (c.width - baseW) / 2;
-            const baseY = (c.height - baseH) / 2;
+            // Chaque bord de l'arène peut être positionné indépendamment.
+            const top = Math.min(0.9, Math.max(0, ARENA_CONFIG.top)) * c.height;
+            const bottom = Math.min(0.9, Math.max(0, ARENA_CONFIG.bottom)) * c.height;
+            const left = Math.min(0.9, Math.max(0, ARENA_CONFIG.left)) * c.width;
+            const right = Math.min(0.9, Math.max(0, ARENA_CONFIG.right)) * c.width;
+            const baseX = left;
+            const baseY = top;
+            const baseW = Math.max(60, c.width - left - right);
+            const baseH = Math.max(60, c.height - top - bottom);
             this.frameX = baseX;
             this.frameY = baseY;
             this.frameW = baseW;
             this.frameH = baseH;
 
-            // Les murs de collision suivent le rectangle choisi et restent centrés.
+            // Le rétrécissement pousse ensuite chaque mur vers l'intérieur.
             const inset = this.padding + this.shrinkOffset;
             this.x = baseX + inset;
             this.y = baseY + inset;
