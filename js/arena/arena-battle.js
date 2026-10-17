@@ -407,6 +407,17 @@
             if (!ball.alive) return;
             ball.alive = false;
 
+            // Hit-stop à chaque KO, nettement plus long pour la dernière élimination.
+            // La pause est gérée par le contrôleur de rendu et ne modifie pas le dt de la simulation.
+            const realSurvivors = world.balls.filter(other => other.alive && !other.isClone);
+            const isFinalElimination = realSurvivors.length === 1;
+            if (window.BallYstikBridge) {
+                window.BallYstikBridge.deathHitStopUntil = Math.max(
+                    window.BallYstikBridge.deathHitStopUntil || 0,
+                    performance.now() + (isFinalElimination ? 650 : 140)
+                );
+            }
+
             // Explosion de KO en trois temps : éclats colorés, flash blanc, double onde.
             world.spawnParticle(ball.x, ball.y, {
                 color: ball.color, count: 42, speed: 420, life: 1.05, spread: Math.PI * 2, size: 3.2
@@ -594,6 +605,18 @@
                         pickup.baseY = pickup.y;
                     }
                 }
+            }
+
+            // Flash cinématique pendant le hit-stop, plus intense sur l'élimination finale.
+            const hitStopRemaining = (window.BallYstikBridge?.deathHitStopUntil || 0) - performance.now();
+            if (hitStopRemaining > 0) {
+                const finalHitStop = hitStopRemaining > 180;
+                const alpha = Math.min(0.48, (hitStopRemaining / (finalHitStop ? 650 : 140)) * (finalHitStop ? 0.42 : 0.24));
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.restore();
             }
 
             // Boules
