@@ -144,7 +144,7 @@
 
             const reflect = amount * d.reflectRatio;
             if (reflect > 0) {
-                world.damage(attacker, ball, reflect, 'thorns', { ignoreInvuln: true });
+                world.damage(attacker, ball, reflect, 'thorns', { ignoreInvuln: true, noThornsReflect: true });
                 d.spikeStretch = 1;
                 // Ligne de riposte vers l'attaquant
                 world.spawnParticle(attacker.x, attacker.y, {
