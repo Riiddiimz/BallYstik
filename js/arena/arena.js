@@ -107,13 +107,17 @@
         _buildObstacles(count, customPositions = null) {
             this.obstacles = [];
             if (this.mapStyle === 'vortex') {
-                // Les obstacles suivent les bras de la spirale plutôt que des anneaux orbitaux.
-                // Ils restent fixes : les trajectoires et les rebonds dessinent le mouvement.
+                // Le curseur contrôle le nombre TOTAL d'obstacles, cœur central inclus.
+                // 0 désactive donc aussi le cœur central.
+                const requested = Math.max(0, Math.min(10, Math.floor(Number(count) || 0)));
+                if (requested === 0) return;
+
                 const r = VORTEX.obstacleRadius;
                 const spiralArms = 3;
                 const pointsPerArm = 3;
                 const innerRadius = 0.20;
                 const outerRadius = 0.82;
+                const spiralPoints = [];
                 for (let arm = 0; arm < spiralArms; arm++) {
                     for (let i = 0; i < pointsPerArm; i++) {
                         const progress = (i + 0.35) / pointsPerArm;
@@ -124,18 +128,20 @@
                         const y = this.vortexCy + Math.sin(angle) * this.vortexRadius * radiusFactor;
                         // Keep every bumper fully inside the circular arena.
                         if (Math.hypot(x - this.vortexCx, y - this.vortexCy) + r < this.vortexRadius * 0.91) {
-                            this.obstacles.push({
+                            spiralPoints.push({
                                 x, y, r: r * (i === 1 ? 1.05 : 0.92),
                                 hitPulse: 0, baseAngle: angle, orbitRadius: 0, rotateSpeed: 0
                             });
                         }
                     }
                 }
-                // A smaller core leaves a tight but playable passage through the center.
+
+                // Le cœur est compté comme un obstacle et apparaît dès que le curseur est > 0.
                 this.obstacles.push({
                     x: this.vortexCx, y: this.vortexCy, r: r * 0.62,
                     hitPulse: 0, baseAngle: 0, orbitRadius: 0, rotateSpeed: 0
                 });
+                this.obstacles.push(...spiralPoints.slice(0, requested - 1));
                 return;
             }
             if (Array.isArray(customPositions)) {
