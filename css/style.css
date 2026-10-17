@@ -6,6 +6,9 @@
 
 :root {
     --bg-main: #0b0b0d;
+    /* MODIFIE LA TAILLE DE L'ARÈNE ICI : pourcentage de la zone de jeu disponible. */
+    --arena-width: 95%;
+    --arena-height: 90%;
 }
 
 body {
@@ -190,16 +193,29 @@ input[type=range]::-moz-range-thumb {
 @media(min-width:768px){#rightSidebar{width:350px}}
 
 
-/* Le canvas et son conteneur doivent partager le même rayon que l'arène rendue (44px). */
-#frameWrapper,
-#simCanvas {
-    border-radius: 44px !important;
+/* Taille de l'arène réglable via --arena-width et --arena-height dans :root.
+   Le wrapper reste centré dans la zone de jeu et n'impose aucun ratio fixe. */
+#canvasContainer {
+    min-width: 0;
+    min-height: 0;
+    padding: 0 !important;
 }
 #frameWrapper {
+    width: var(--arena-width);
+    height: var(--arena-height);
+    max-width: none;
+    max-height: none;
+    aspect-ratio: auto;
+    margin: auto;
+    flex: 0 0 auto;
     overflow: hidden;
+    border-radius: 44px !important;
 }
 #simCanvas {
     display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 44px !important;
 }
 
 
