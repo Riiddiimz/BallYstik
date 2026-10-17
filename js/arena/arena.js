@@ -219,7 +219,13 @@
                     this.obstacles.push({ x: cx - 90, y: cy + gap, r });
                 }
             } else {
-                if (count === 1) this.obstacles.push({ x: cx, y: cy, r: r + 6 });
+                // Sur la carte Défaut, centre l'obstacle au milieu des murs réels
+                // de l'arène, même si les marges haut/bas/gauche/droite sont asymétriques.
+                if (count === 1) this.obstacles.push({
+                    x: this.frameX + this.frameW / 2,
+                    y: this.frameY + this.frameH / 2,
+                    r: r + 6
+                });
                 else if (count === 2) {
                     this.obstacles.push({ x: cx, y: cy - gap, r });
                     this.obstacles.push({ x: cx, y: cy + gap, r });
