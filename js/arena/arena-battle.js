@@ -405,21 +405,11 @@
                 );
             }
 
-            // Vérifie fin de match (lastStanding)
+            // Un survivant est mémorisé, mais le résultat n'est affiché qu'à 60 secondes.
+            // Cela garantit une durée de combat fixe avant les 2 secondes de résultat.
             if (this.options.matchMode === 'lastStanding') {
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
-                if (alive.length === 1) {
-                    this.winner = alive[0];
-                    this.finished = true;
-                } else if (alive.length === 0) {
-                    // En cas d'élimination simultanée, départage déterministe.
-                    this.winner = world.balls.filter(b => !b.isClone).sort((a, b) => {
-                        const hpA = a.health ? Number(a.health.current) || 0 : 0;
-                        const hpB = b.health ? Number(b.health.current) || 0 : 0;
-                        return hpB - hpA || (a.id || 0) - (b.id || 0);
-                    })[0] || null;
-                    this.finished = true;
-                }
+                if (alive.length === 1) this.winner = alive[0];
             }
         }
 
