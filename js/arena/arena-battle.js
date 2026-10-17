@@ -30,6 +30,8 @@
         arenaMap: 'neon'
     };
 
+    const isVortexMap = map => map === 'vortex' || map === 'vortex_test';
+
     class ArenaBattleMode {
         constructor() {
             this.options = Object.assign({}, DEFAULTS);
@@ -54,15 +56,15 @@
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
                 const mapChanged = arena.mapStyle !== nextMap;
-                arena.shrinkEnabled = nextMap === 'vortex' ? false : !!this.options.shrinkEnabled;
+                arena.shrinkEnabled = isVortexMap(nextMap) ? false : !!this.options.shrinkEnabled;
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
                 arena.mapStyle = nextMap;
                 if (mapChanged) arena._recompute();
-                const obstacleCount = nextMap === 'vortex' ? this.options.vortexObstacles : this.options.obstacles;
-                if (mapChanged || opts?.obstacles != null || opts?.vortexObstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(obstacleCount, nextMap === 'vortex' ? null : this.options.obstaclePositions);
-                if (nextMap === 'vortex' && !arena.suckParticles.length) {
+                const obstacleCount = isVortexMap(nextMap) ? this.options.vortexObstacles : this.options.obstacles;
+                if (mapChanged || opts?.obstacles != null || opts?.vortexObstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(obstacleCount, isVortexMap(nextMap) ? null : this.options.obstaclePositions);
+                if (isVortexMap(nextMap) && !arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) arena.suckParticles.push(arena._newSuckParticle(i, true));
                 }
             }
@@ -102,8 +104,8 @@
                 world.arena = new window.Arena(world.canvas, {
                     padding: 16,
                     cornerRadius: 44,
-                    obstacles: (this.options.arenaMap || 'neon') === 'vortex' ? this.options.vortexObstacles : this.options.obstacles,
-                    obstaclePositions: (this.options.arenaMap || 'neon') === 'vortex' ? null : this.options.obstaclePositions,
+                    obstacles: isVortexMap(this.options.arenaMap || 'neon') ? this.options.vortexObstacles : this.options.obstacles,
+                    obstaclePositions: isVortexMap(this.options.arenaMap || 'neon') ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
@@ -112,16 +114,16 @@
                 });
             } else {
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
-                world.arena.shrinkEnabled = world.arena.mapStyle === 'vortex' ? false : this.options.shrinkEnabled;
+                world.arena.shrinkEnabled = isVortexMap(world.arena.mapStyle) ? false : this.options.shrinkEnabled;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._recompute();
-                world.arena._buildObstacles(world.arena.mapStyle === 'vortex' ? this.options.vortexObstacles : this.options.obstacles,
-                    world.arena.mapStyle === 'vortex' ? null : this.options.obstaclePositions);
-                if (world.arena.mapStyle === 'vortex' && !world.arena.suckParticles.length) {
+                world.arena._buildObstacles(isVortexMap(world.arena.mapStyle) ? this.options.vortexObstacles : this.options.obstacles,
+                    isVortexMap(world.arena.mapStyle) ? null : this.options.obstaclePositions);
+                if (isVortexMap(world.arena.mapStyle) && !world.arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) world.arena.suckParticles.push(world.arena._newSuckParticle(i, true));
                 }
             }
@@ -537,7 +539,7 @@
 
             // Pickups : conserve leur système, mais évite qu'un spawn reste hors du cercle Vortex.
             this.pickupSystem.update(dt, world);
-            if (world.arena.mapStyle === 'vortex') {
+            if (isVortexMap(world.arena.mapStyle)) {
                 for (const pickup of this.pickupSystem.items) {
                     const dx = pickup.x - world.arena.vortexCx, dy = pickup.y - world.arena.vortexCy;
                     const dist = Math.hypot(dx, dy) || 1;
@@ -585,7 +587,7 @@
                 const speedMult = (ball.speedMultiplier ?? 1) * statusMult;
 
                 // Physique Vortex uniquement : attraction centrale et dérive tangentielle horaire.
-                if (world.arena.mapStyle === 'vortex' && !ball.status.isStunned()) {
+                if (isVortexMap(world.arena.mapStyle) && !ball.status.isStunned()) {
                     const arena = world.arena;
                     const dx = ball.x - arena.vortexCx, dy = ball.y - arena.vortexCy;
                     const dist = Math.hypot(dx, dy) || 1;
@@ -641,7 +643,7 @@
                         ball.vy -= relV * ny;
                         other.vx += relV * nx;
                         other.vy += relV * ny;
-                        if (world.arena.mapStyle === 'vortex') {
+                        if (isVortexMap(world.arena.mapStyle)) {
                             this._clampVortexSpeed(ball);
                             this._clampVortexSpeed(other);
                         } else {
@@ -700,7 +702,7 @@
 
                 // Les effets de collision/capacité ne doivent pas faire dériver la vitesse de base.
                 if (!ball.status.isStunned() && !(ball._obstacleBoostTimer > 0)) {
-                    if (world.arena.mapStyle === 'vortex') this._clampVortexSpeed(ball);
+                    if (isVortexMap(world.arena.mapStyle)) this._clampVortexSpeed(ball);
                     else this._keepBaseSpeed(ball);
                 }
 
@@ -727,7 +729,7 @@
                 // Collisions murs
                 const beforeX = p.x, beforeY = p.y;
                 const bounds = world.arena.getBounds();
-                if (world.arena.mapStyle === 'vortex') {
+                if (isVortexMap(world.arena.mapStyle)) {
                     const dx = p.x - world.arena.vortexCx, dy = p.y - world.arena.vortexCy;
                     const dist = Math.hypot(dx, dy) || 1;
                     const limit = world.arena.vortexRadius - (p.radius || 0);
@@ -795,7 +797,7 @@
                                 const len = distance || 1;
                                 victim.vx += (dx / len) * push;
                                 victim.vy += (dy / len) * push;
-                                if (world.arena.mapStyle === 'vortex') this._clampVortexSpeed(victim);
+                                if (isVortexMap(world.arena.mapStyle)) this._clampVortexSpeed(victim);
                                 else this._keepBaseSpeed(victim);
                             }
                         }
