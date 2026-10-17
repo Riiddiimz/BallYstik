@@ -392,14 +392,18 @@
                                 // La seed n'est valide que si la simulation déclenche réellement la victoire
                                 // au moment où il ne reste qu'une boule, entre 00:58 et 01:05.
                                 if (lastAliveCount > 1 && aliveCount === 1 && lastBallKillTime === null) {
+                                    // Valider sur l'événement physique d'élimination, pas sur l'écran
+                                    // de victoire : celui-ci attend le ralenti final en temps réel et
+                                    // n'est donc pas encore actif pendant une simulation accélérée.
                                     lastBallKillTime = simulationTime;
                                     candidateWorked = Number.isFinite(lastBallKillTime)
                                         && lastBallKillTime >= 58
                                         && lastBallKillTime <= 65
-                                        && survivors.length === 1
-                                        && window.ArenaBattle.winner === survivors[0]
-                                        && window.ArenaBattle.winnerDisplayActive
-                                        && !window.ArenaBattle.finished;
+                                        && survivors.length === 1;
+                                    if (candidateWorked) {
+                                        setStatus('Seed #' + candidateSeed + ' valide : dernière élimination à '
+                                            + lastBallKillTime.toFixed(2) + ' s. Chargement de la partie…');
+                                    }
                                     frame = totalSteps;
                                     break;
                                 }
