@@ -356,6 +356,8 @@
                     this.randomState = candidateSeed;
                     let frame = 0;
                     let candidateWorked = false;
+                    let lastAliveCount = 0;
+                    let lastBallKillTime = null;
 
                     this.withSeededRandom(() => {
                         window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
@@ -370,24 +372,25 @@
                             while (frame < totalSteps && performance.now() - sliceStart < frameBudgetMs) {
                                 window.ArenaBattle.update(step, trialWorld);
                                 frame++;
-                                const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
+                                const survivors = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
+                                const aliveCount = survivors.length;
+                                const simulationTime = Number(window.ArenaBattle.elapsedTime);
+
+                                // Le critère est l'instant où l'avant-dernière boule est éliminée,
+                                // pas le moment où l'écran de victoire apparaît à 1:05.
+                                if (lastAliveCount > 1 && aliveCount === 1 && lastBallKillTime === null) {
+                                    lastBallKillTime = simulationTime;
+                                    candidateWorked = Number.isFinite(lastBallKillTime)
+                                        && lastBallKillTime >= 58
+                                        && lastBallKillTime <= 65;
+                                    frame = totalSteps;
+                                    break;
+                                }
+                                lastAliveCount = aliveCount;
+
+                                // Une fin forcée avec plusieurs survivantes n'est jamais une seed valide.
                                 if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
-                                    // Une seed n'est valide que si une seule boule réelle est vivante,
-                                    // et que cette boule est bien celle déclarée gagnante.
-                                    // À 1:05, le moteur peut afficher un résultat de secours même
-                                    // si plusieurs boules survivent : ce cas doit être rejeté.
-                                    const survivors = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
-                                    const winner = window.ArenaBattle.winner;
-                                    const winnerIsOnlySurvivor = survivors.length === 1
-                                        && winner === survivors[0]
-                                        && winner.alive
-                                        && !winner.isClone;
-                                    const finishTime = Number(window.ArenaBattle.elapsedTime);
-                                    candidateWorked = window.ArenaBattle.winnerDisplayActive
-                                        && winnerIsOnlySurvivor
-                                        && Number.isFinite(finishTime)
-                                        && finishTime >= 58
-                                        && finishTime <= 65;
+                                    candidateWorked = false;
                                     frame = totalSteps;
                                     break;
                                 }
