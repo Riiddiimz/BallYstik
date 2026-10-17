@@ -177,31 +177,7 @@
                         <i class="fa-solid fa-fingerprint text-amber-500/60 mr-1"></i>
                         Le mode utilise la seed active pour le spawn des capacités et les positions de départ — rejouable à l'identique.
                     </p>
-            <!-- Deterministic Seed & Target Duration Searcher Accordion -->
-            <div class="rounded-2xl bg-zinc-900/60 border border-cyan-500/40 overflow-hidden">
-                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="seedSearchSettings">
-                    <span class="flex items-center gap-2 text-cyan-400">
-                        <i class="fa-solid fa-fingerprint"></i> Seed déterministe
-                    </span>
-                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
-                </button>
-                <div id="seedSearchSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
-                    
-                    <!-- Active Seed Manual Input -->
-                    <div class="pt-1 border-t border-zinc-800/80">
-                        <label for="manualSeedInput" class="text-[11px] text-zinc-400 block mb-1">Seed active (Reproductible) :</label>
-                        <div class="flex gap-1.5">
-                            <input id="manualSeedInput" type="number" value="104291" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">
-                            <button id="applySeedBtn" title="Appliquer cette seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-lg border border-zinc-700 text-xs font-semibold">
-                                <i class="fa-solid fa-play"></i>
-                            </button>
-                            <button id="copySeedBtn" title="Copier le code de la seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 text-xs">
-                                <i class="fa-solid fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
                 </div>
             </div>
@@ -238,19 +214,35 @@
                 </div>
             </div>
 
-        <!-- Left Action Footer -->
-        <div class="p-3 border-t border-zinc-800/80 bg-zinc-950/90 flex gap-2 shrink-0">
-            <button id="resetBtn" class="flex-1 py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                <i class="fa-solid fa-rotate-right"></i> Réinitialiser
-            </button>
-            <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="flex-1 py-2 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                <i id="recordIcon" class="fa-solid fa-circle text-white"></i>
-                <span id="recordText">Enregistrer MP4</span>
-            </button>
-            <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="flex-1 py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                <i class="fa-solid fa-shuffle"></i> Nouvelle partie
-            </button>
+        <!-- Seed menu pinned en bas à gauche -->
+        <div id="seedMenuDock" class="p-3 border-t border-zinc-800/80 bg-zinc-950/95 shrink-0">
+            <div class="rounded-xl bg-zinc-900/60 border border-cyan-500/40 overflow-hidden">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="seedSearchSettings">
+                    <span class="flex items-center gap-2 text-cyan-400">
+                        <i class="fa-solid fa-fingerprint"></i> Seed déterministe
+                    </span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="seedSearchSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
+                    
+                    <!-- Active Seed Manual Input -->
+                    <div class="pt-1 border-t border-zinc-800/80">
+                        <label for="manualSeedInput" class="text-[11px] text-zinc-400 block mb-1">Seed active (Reproductible) :</label>
+                        <div class="flex gap-1.5">
+                            <input id="manualSeedInput" type="number" value="104291" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1 text-xs text-white font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                            <button id="applySeedBtn" title="Appliquer cette seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-cyan-400 rounded-lg border border-zinc-700 text-xs font-semibold">
+                                <i class="fa-solid fa-play"></i>
+                            </button>
+                            <button id="copySeedBtn" title="Copier le code de la seed" class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 text-xs">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
+
     </aside>
 
     <!-- ====================================================================
@@ -259,10 +251,10 @@
     <main class="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden h-full">
         
         <!-- Floating Top Toolbar -->
-        <div class="absolute top-3.5 left-4 right-4 z-20 flex items-center justify-between pointer-events-none">
+        <div class="absolute bottom-3.5 left-3 right-3 z-20 flex items-end justify-between pointer-events-none">
             
             <!-- Live Simulation Stats -->
-            <div class="flex flex-wrap gap-2 text-xs font-mono pointer-events-auto">
+            <div class="flex flex-col items-start gap-1.5 text-xs font-mono pointer-events-auto">
                 <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
@@ -278,13 +270,26 @@
             </div>
 
             <!-- Quick Action Buttons -->
-            <div class="flex items-center gap-2 pointer-events-auto">
+            <div class="flex flex-col items-stretch gap-1.5 pointer-events-auto">
                 <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
                     <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
                     <span id="playPauseText" class="hidden sm:inline">Pause</span>
                 </button>
                 <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
                     <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
+            <!-- Quick Action Buttons stacked vertically below FPS -->
+            <div class="flex flex-col gap-1.5 pointer-events-auto w-36">
+                <button id="resetBtn" class="w-full py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+                </button>
+                <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="w-full py-2 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                    <i id="recordIcon" class="fa-solid fa-circle text-white"></i>
+                    <span id="recordText">Enregistrer MP4</span>
+                </button>
+                <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="w-full py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                    <i class="fa-solid fa-shuffle"></i> Nouvelle partie
                 </button>
             </div>
         </div>
