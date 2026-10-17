@@ -23,6 +23,8 @@
         world: null,
         canvas: null,
         ctx: null,
+        recordingCanvas: null,
+        recordingCtx: null,
         rafId: null,
         lastTime: 0,
         fpsFrames: 0,
@@ -251,7 +253,17 @@
                 return;
             }
             try {
-                const stream = this.canvas.captureStream(60);
+                // Capture dans une surface fixe 9:16 pour produire un MP4 TikTok en 1080x1920,
+                // indépendamment de la taille d'affichage du canvas dans la page.
+                this.recordingCanvas = document.createElement('canvas');
+                this.recordingCanvas.width = 1080;
+                this.recordingCanvas.height = 1920;
+                this.recordingCtx = this.recordingCanvas.getContext('2d', { alpha: false });
+                if (!this.recordingCtx) throw new Error('Impossible de créer le canvas vidéo.');
+                this.recordingCtx.fillStyle = '#080a10';
+                this.recordingCtx.fillRect(0, 0, 1080, 1920);
+                this.recordingCtx.drawImage(this.canvas, 0, 0, 1080, 1920);
+                const stream = this.recordingCanvas.captureStream(60);
                 const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
                     ? 'video/webm;codecs=vp9'
                     : (MediaRecorder.isTypeSupported('video/webm;codecs=vp8') ? 'video/webm;codecs=vp8' : 'video/webm');
@@ -326,7 +338,7 @@
                 const inputName = 'ballystik-recording.webm';
                 const outputName = 'ballystik-recording.mp4';
                 this.ffmpeg.FS('writeFile', inputName, new Uint8Array(await sourceBlob.arrayBuffer()));
-                await this.ffmpeg.run('-i', inputName, '-an', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outputName);
+                await this.ffmpeg.run('-i', inputName, '-an', '-vf', 'scale=1080:1920', '-r', '60', '-c:v', 'libx264', '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', outputName);
                 const output = this.ffmpeg.FS('readFile', outputName);
                 const mp4Blob = new Blob([output.buffer], { type: 'video/mp4' });
                 const url = URL.createObjectURL(mp4Blob);
@@ -345,6 +357,8 @@
                 this.recording = false;
                 this.recordingChunks = [];
                 this.mediaRecorder = null;
+                this.recordingCanvas = null;
+                this.recordingCtx = null;
                 const text = document.getElementById('recordText');
                 const icon = document.getElementById('recordIcon');
                 const button = document.getElementById('recordBtn');
@@ -379,6 +393,10 @@
             try {
                 window.ArenaBattle.update(dt, this.world);
                 window.ArenaBattle.render(this.ctx, this.world);
+                // Chaque image du jeu est recopiée vers la sortie vidéo fixe en 1080x1920.
+                if (this.recording && this.recordingCtx && this.recordingCanvas) {
+                    this.recordingCtx.drawImage(this.canvas, 0, 0, this.recordingCanvas.width, this.recordingCanvas.height);
+                }
                 this.syncCounters(now);
             } catch (error) {
                 console.error('[BallYstik] Erreur pendant le match :', error);
