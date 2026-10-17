@@ -374,23 +374,33 @@
                                 frame++;
                                 const survivors = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
                                 const aliveCount = survivors.length;
-                                const simulationTime = Number(window.ArenaBattle.elapsedTime);
+                                // Lire l'horloge du monde simulé : c'est celle qu'affiche le HUD
+                                // de la partie rejouée, et non une valeur globale potentiellement désynchronisée.
+                                const simulationTime = Number(trialWorld.elapsedTime);
 
-                                // Le critère est l'instant où l'avant-dernière boule est éliminée,
-                                // pas le moment où l'écran de victoire apparaît à 1:05.
+                                // La seed n'est valide que si la simulation déclenche réellement la victoire
+                                // au moment où il ne reste qu'une boule, entre 00:58 et 01:05.
                                 if (lastAliveCount > 1 && aliveCount === 1 && lastBallKillTime === null) {
                                     lastBallKillTime = simulationTime;
                                     candidateWorked = Number.isFinite(lastBallKillTime)
                                         && lastBallKillTime >= 58
-                                        && lastBallKillTime <= 65;
+                                        && lastBallKillTime <= 65
+                                        && window.ArenaBattle.winnerDisplayActive
+                                        && !window.ArenaBattle.finished;
                                     frame = totalSteps;
                                     break;
                                 }
                                 lastAliveCount = aliveCount;
 
-                                // Une fin forcée avec plusieurs survivantes n'est jamais une seed valide.
+                                // Toute fin de simulation doit être refusée sauf une victoire réelle
+                                // avec exactement une survivante dans la fenêtre demandée.
                                 if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
-                                    candidateWorked = false;
+                                    candidateWorked = candidateWorked
+                                        && aliveCount === 1
+                                        && Number.isFinite(simulationTime)
+                                        && simulationTime >= 58
+                                        && simulationTime <= 65
+                                        && window.ArenaBattle.winnerDisplayActive;
                                     frame = totalSteps;
                                     break;
                                 }
