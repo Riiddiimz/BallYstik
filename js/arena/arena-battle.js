@@ -38,6 +38,8 @@
             this.matchTime = 60;
             this.elapsedTime = 0;
             this.finished = false;
+            this.winnerDisplayActive = false;
+            this.winnerDisplayElapsed = 0;
             this.hud = null;
             this.pickupSystem = null;
             this.projectiles = [];
@@ -90,6 +92,8 @@
             this._world = world;
             this.elapsedTime = 0;
             this.finished = false;
+            this.winnerDisplayActive = false;
+            this.winnerDisplayElapsed = 0;
             this.winner = null;
             this.projectiles.length = 0;
             // Les capacités ajoutent leurs tirs via world.projectiles : partager le même tableau que le moteur.
@@ -215,7 +219,8 @@
                 if (target.health.invuln > 0 && !(opts && opts.ignoreInvuln)) return 0;
 
                 // Applique les modificateurs défensifs (bouclier, épines, etc.)
-                let finalAmount = amount;
+                // Les dégâts sont doublés à partir de 50 secondes.
+                let finalAmount = self.elapsedTime >= 50 ? amount * 2 : amount;
                 for (const slot of target.abilitySlots) {
                     const beh = window.AbilityBehaviors[slot.meta.id];
                     if (beh && beh.onTakeDamage) {
@@ -403,8 +408,16 @@
             // Vérifie fin de match (lastStanding)
             if (this.options.matchMode === 'lastStanding') {
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
-                if (alive.length <= 1) {
-                    this.winner = alive[0] || null;
+                if (alive.length === 1) {
+                    this.winner = alive[0];
+                    this.finished = true;
+                } else if (alive.length === 0) {
+                    // En cas d'élimination simultanée, départage déterministe.
+                    this.winner = world.balls.filter(b => !b.isClone).sort((a, b) => {
+                        const hpA = a.health ? Number(a.health.current) || 0 : 0;
+                        const hpB = b.health ? Number(b.health.current) || 0 : 0;
+                        return hpB - hpA || (a.id || 0) - (b.id || 0);
+                    })[0] || null;
                     this.finished = true;
                 }
             }
@@ -503,7 +516,16 @@
         }
 
         update(dt, world) {
-            // Une manche terminée reste figée, mais continue d'être rendue pour afficher le résultat.
+            // Après 60 secondes, figer le combat et garder le gagnant à l'écran 2 secondes.
+            if (this.winnerDisplayActive) {
+                this.winnerDisplayElapsed += dt;
+                if (this.winnerDisplayElapsed >= 2) {
+                    this.winnerDisplayElapsed = 2;
+                    this.winnerDisplayActive = false;
+                    this.finished = true;
+                }
+                return;
+            }
             if (this.finished) return;
 
             this.elapsedTime += dt;
@@ -514,17 +536,22 @@
                 world.matchTime = duration;
                 world.elapsedTime = this.elapsedTime;
 
-                // À 00:00, le joueur encore vivant avec le plus de vie gagne.
-                const alive = world.balls
-                    .filter(ball => ball.alive && !ball.isClone)
+                // À 60 secondes, un gagnant est toujours désigné.
+                const contenders = world.balls
+                    .filter(ball => !ball.isClone)
                     .sort((a, b) => {
+                        const aliveA = a.alive ? 1 : 0;
+                        const aliveB = b.alive ? 1 : 0;
+                        if (aliveB !== aliveA) return aliveB - aliveA;
                         const hpA = a.health ? Number(a.health.current) || 0 : 0;
                         const hpB = b.health ? Number(b.health.current) || 0 : 0;
                         if (hpB !== hpA) return hpB - hpA;
                         return (a.id || 0) - (b.id || 0);
                     });
-                this.winner = alive[0] || null;
-                this.finished = true;
+                this.winner = contenders[0] || null;
+                this.winnerDisplayActive = true;
+                this.winnerDisplayElapsed = 0;
+                this.finished = false;
                 return;
             }
 
