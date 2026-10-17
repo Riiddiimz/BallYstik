@@ -324,11 +324,12 @@
             let foundSeed = null;
             let attempts = 0;
             let wasCancelled = false;
+            let searchError = null;
             this.running = false;
             if (this.rafId) cancelAnimationFrame(this.rafId);
             this.rafId = null;
             if (button) {
-                button.innerHTML = '<i class="fa-solid fa-stop mr-1"></i> Arrêter la recherche';
+                button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Recherche en cours… <span class="ml-1 text-[10px] opacity-80">(cliquer pour arrêter)</span>';
                 button.classList.add('border-red-500', 'text-red-200');
             }
             const setStatus = message => { if (status) status.textContent = message; };
@@ -397,19 +398,26 @@
                     }
                 }
             } catch (error) {
+                searchError = error;
                 console.error('[BallYstik] Recherche de seed échouée :', error);
-                setStatus('Erreur pendant la recherche : ' + (error.message || 'erreur inconnue'));
+                setStatus('Erreur technique pendant la recherche : ' + (error.message || 'erreur inconnue'));
             } finally {
                 wasCancelled = this.seedSearchCancelRequested;
                 this.seedSearchRunning = false;
                 this.seedSearchCancelRequested = false;
                 if (button) {
-                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante entre 0:59 et 1:05';
+                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante à 1:00';
                     button.classList.remove('border-red-500', 'text-red-200');
                 }
             }
 
-            if (foundSeed != null) {
+            if (searchError) {
+                // Ne jamais masquer une erreur technique par un faux message « 0 essais ».
+                const input = document.getElementById('manualSeedInput');
+                if (input) input.value = String(originalSeed);
+                this.start();
+                setStatus('Recherche arrêtée sur erreur technique après ' + attempts.toLocaleString('fr-FR') + ' seed(s) traitée(s) : ' + (searchError.message || 'erreur inconnue') + '. La seed active a été restaurée.');
+            } else if (foundSeed != null) {
                 const input = document.getElementById('manualSeedInput');
                 if (input) input.value = String(foundSeed);
                 try { localStorage.setItem(SEED_KEY, String(foundSeed)); } catch (_) {}
