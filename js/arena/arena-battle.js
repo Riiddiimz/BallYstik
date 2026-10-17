@@ -425,23 +425,9 @@
                 );
             }
 
-            // En dernier survivant, la dernière boule en vie gagne immédiatement.
-            // On fige le combat et affiche le gagnant pendant 2 secondes.
-            if (this.options.matchMode === 'lastStanding' && !this.winnerDisplayActive && !this.finished) {
-                const alive = world.balls.filter(b => b.alive && !b.isClone);
-                if (alive.length === 1) {
-                    // Si l'élimination arrive sur la dernière image avant 1:00,
-                    // cale l'horloge à 60.000 s pour afficher le gagnant à la seconde exacte.
-                    if (this.elapsedTime >= Number(this.matchTime || 60) - (1 / 60) - 1e-6) {
-                        this.elapsedTime = Number(this.matchTime || 60);
-                        world.time = this.elapsedTime;
-                        world.elapsedTime = this.elapsedTime;
-                    }
-                    this.winner = alive[0];
-                    this.winnerDisplayActive = true;
-                    this.winnerDisplayElapsed = 0;
-                }
-            }
+            // La manche ne s'arrête pas prématurément quand il ne reste qu'une boule.
+            // Le gagnant est déclaré par update() à la durée prévue (60 s), afin que
+            // le chrono et la recherche de seeds correspondent au vrai temps écoulé.
         }
 
         // ═══════════════════════════════════════════════════════════
