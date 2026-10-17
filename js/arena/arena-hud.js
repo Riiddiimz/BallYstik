@@ -109,26 +109,13 @@
         }
         render(ctx, world) {
             const c = ctx.canvas;
-            const topSafe = 60;
+            const topSafe = 12;
 
-            // Timer en haut au centre
-            const t = world.matchTime - world.elapsedTime;
-            const timerText = this._fmt(Math.max(0, t));
-            ctx.save();
-            ctx.font = '900 18px Outfit, system-ui, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = 'rgba(0,0,0,0.55)';
-            const tw = ctx.measureText(timerText).width;
-            ctx.fillRect(c.width / 2 - tw / 2 - 12, topSafe, tw + 24, 30);
-            ctx.fillStyle = t < 10 ? '#ff2a85' : '#ffffff';
-            ctx.shadowColor = t < 10 ? '#ff2a85' : 'transparent';
-            ctx.shadowBlur = t < 10 ? 12 : 0;
-            ctx.fillText(timerText, c.width / 2, topSafe + 6);
-            ctx.restore();
+            // Le compte à rebours n'est plus affiché dans l'arène.
+            // Le temps interne du match reste inchangé.
 
             // Leaderboard en haut à gauche
-            this.leaderboard.render(ctx, 12, topSafe + 40, 150);
+            this.leaderboard.render(ctx, 12, topSafe + 8, 150);
 
             // Kill feed en haut à droite
             this.killFeed.render(ctx, c.width - 180, topSafe + 8, 168);
