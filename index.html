@@ -197,6 +197,17 @@
                             <option value="vortex">Vortex Spirale</option>
                         </select>
                     </div>
+                    <div id="vortexMapSettings" hidden class="space-y-2.5 rounded-xl border border-purple-500/30 bg-zinc-950/50 p-2.5">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Vortex Spirale</p>
+                        <div>
+                            <div class="flex justify-between text-xs text-zinc-400 mb-1">
+                                <label for="vortexObstacleCount">Nombre d’obstacles</label>
+                                <span id="vortexObstacleCountVal" class="text-purple-300 font-mono font-semibold">10</span>
+                            </div>
+                            <input id="vortexObstacleCount" type="range" min="0" max="10" step="1" value="10" class="w-full">
+                        </div>
+                        <p class="text-[10px] text-zinc-500 leading-snug">De 0 à 10 obstacles, cœur central inclus. À 0, aucun obstacle n’apparaît.</p>
+                    </div>
                     <div id="defaultMapSettings" class="space-y-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-2.5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Map Défaut</p>
                         <div>
