@@ -425,11 +425,15 @@
                 );
             }
 
-            // Un survivant est mémorisé, mais le résultat n'est affiché qu'à 60 secondes.
-            // Cela garantit une durée de combat fixe avant les 2 secondes de résultat.
-            if (this.options.matchMode === 'lastStanding') {
+            // En dernier survivant, la dernière boule en vie gagne immédiatement.
+            // On fige le combat et affiche le gagnant pendant 2 secondes.
+            if (this.options.matchMode === 'lastStanding' && !this.winnerDisplayActive && !this.finished) {
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
-                if (alive.length === 1) this.winner = alive[0];
+                if (alive.length === 1) {
+                    this.winner = alive[0];
+                    this.winnerDisplayActive = true;
+                    this.winnerDisplayElapsed = 0;
+                }
             }
         }
 
