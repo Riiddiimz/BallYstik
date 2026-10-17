@@ -69,7 +69,7 @@
                     if (el && saved[cfg[0]] != null) {
                         let storedValue = saved[cfg[0]];
                         if (id === 'abSpeed') storedValue = saved.speedLevel != null ? saved.speedLevel : Math.round((Number(storedValue) - 1.5) / 0.25);
-                        el.value = cfg[1] === 'percent' ? Math.round(storedValue * 100) : storedValue;
+                        el.value = cfg[1] === 'percent' ? storedValue * 100 : storedValue;
                     }
                 });
                 const shrink = document.getElementById('abShrinkToggle');
