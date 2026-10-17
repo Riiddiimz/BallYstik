@@ -11,6 +11,10 @@
         abShrinkStart: ['shrinkStart', 'int', v => v + 's'],
         abShrinkRate: ['shrinkRate', 'int', v => v + ' px/s'],
         abShrinkMax: ['shrinkMax', 'percent', v => v + '%'],
+        abArenaTop: ['arenaTop', 'percent', v => v + '%'],
+        abArenaBottom: ['arenaBottom', 'percent', v => v + '%'],
+        abArenaLeft: ['arenaLeft', 'percent', v => v + '%'],
+        abArenaRight: ['arenaRight', 'percent', v => v + '%'],
         abObstacles: ['obstacles', 'int', v => String(v)],
         vortexObstacleCount: ['vortexObstacles', 'int', v => String(v)],
         abSpeed: ['gameSpeed', 'int', v => 'Vitesse ' + (v > 0 ? '+' : '') + v]
@@ -73,6 +77,29 @@
             } catch (_) {}
             this.updateLabels();
             this.syncShrinkOptions();
+            const copyDimensions = document.getElementById('abCopyArenaDimensions');
+            if (copyDimensions) copyDimensions.addEventListener('click', async () => {
+                const dimensions = {
+                    top: Number(document.getElementById('abArenaTop')?.value || 0) / 100,
+                    bottom: Number(document.getElementById('abArenaBottom')?.value || 0) / 100,
+                    left: Number(document.getElementById('abArenaLeft')?.value || 0) / 100,
+                    right: Number(document.getElementById('abArenaRight')?.value || 0) / 100
+                };
+                const message = 'Dimensions de base de mon arène BallYstik :\\n' +
+                    'Haut : ' + (dimensions.top * 100) + '%\\n' +
+                    'Bas : ' + (dimensions.bottom * 100) + '%\\n' +
+                    'Gauche : ' + (dimensions.left * 100) + '%\\n' +
+                    'Droite : ' + (dimensions.right * 100) + '%\\n\\n' +
+                    'ARENA_CONFIG = ' + JSON.stringify(dimensions, null, 2);
+                try {
+                    await navigator.clipboard.writeText(message);
+                    const status = document.getElementById('abArenaCopyStatus');
+                    if (status) status.textContent = 'Dimensions copiées. Colle-les dans la conversation.';
+                } catch (_) {
+                    const status = document.getElementById('abArenaCopyStatus');
+                    if (status) status.textContent = message;
+                }
+            });
             const mapSelect = document.getElementById('arenaMapSelect');
             const defaultSettings = document.getElementById('defaultMapSettings');
             const vortexSettings = document.getElementById('vortexMapSettings');
