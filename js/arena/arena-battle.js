@@ -607,18 +607,6 @@
                 }
             }
 
-            // Flash cinématique pendant le hit-stop, plus intense sur l'élimination finale.
-            const hitStopRemaining = (window.ArenaBattleBridge?.deathHitStopUntil || 0) - performance.now();
-            if (hitStopRemaining > 0) {
-                const finalHitStop = hitStopRemaining > 180;
-                const alpha = Math.min(0.48, (hitStopRemaining / (finalHitStop ? 650 : 140)) * (finalHitStop ? 0.42 : 0.24));
-                ctx.save();
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                ctx.restore();
-            }
-
             // Boules
             for (const ball of world.balls) {
                 if (!ball.alive) continue;
@@ -943,6 +931,18 @@
             // Fond
             ctx.fillStyle = '#080a10';
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Flash cinématique pendant le hit-stop, plus intense sur l'élimination finale.
+            const hitStopRemaining = (window.ArenaBattleBridge?.deathHitStopUntil || 0) - performance.now();
+            if (hitStopRemaining > 0) {
+                const finalHitStop = hitStopRemaining > 180;
+                const alpha = Math.min(0.48, (hitStopRemaining / (finalHitStop ? 650 : 140)) * (finalHitStop ? 0.42 : 0.24));
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.restore();
+            }
 
             // Arène
             world.arena.render(ctx);
