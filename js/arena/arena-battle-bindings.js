@@ -308,7 +308,7 @@
             const status = document.getElementById('seedSearchStatus');
             const originalSeed = this.getSeed();
             const firstSeed = originalSeed >>> 0 || 1;
-            const maxAttempts = 10000;
+            // Recherche continue jusqu'à trouver une seed ou jusqu'à ce que l'utilisateur l'arrête.
             const step = 1 / 60;
             const totalSteps = 3600;
             const frameBudgetMs = 8;
@@ -328,7 +328,7 @@
             try {
                 // Même principe que Hypnorai : la recherche est découpée en petits lots
                 // pour laisser le navigateur répondre et mettre à jour la progression.
-                for (attempts = 0; attempts < maxAttempts && !this.seedSearchCancelRequested; attempts++) {
+                for (attempts = 0; !this.seedSearchCancelRequested; attempts++) {
                     const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
                     let state = candidateSeed;
                     const prng = { next() {
@@ -403,8 +403,11 @@
                 const input = document.getElementById('manualSeedInput');
                 if (input) input.value = String(foundSeed);
                 try { localStorage.setItem(SEED_KEY, String(foundSeed)); } catch (_) {}
-                setStatus('Seed trouvée : #' + foundSeed + '. Partie relancée pour validation visuelle.');
-                this.start();
+                setStatus('✅ SEED TROUVÉE : #' + foundSeed + '. Elle est enregistrée. Clique sur ▶ Appliquer pour lancer cette partie.');
+                // Ne pas lancer la partie automatiquement : l'utilisateur choisit quand démarrer.
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    try { new Notification('BallYstik — seed trouvée', { body: 'Seed #' + foundSeed + ' trouvée pour une victoire à 1:00. Clique sur Appliquer pour lancer la partie.' }); } catch (_) {}
+                }
             } else {
                 const input = document.getElementById('manualSeedInput');
                 if (wasCancelled) {
@@ -414,7 +417,7 @@
                     const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
                     if (input) input.value = String(nextSeed);
                     try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
-                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Prochaine recherche à partir de #' + nextSeed + '.');
+                    setStatus('Recherche interrompue après ' + attempts + ' essais. Reprends à partir de #' + nextSeed + ' si tu relances.');
                 }
                 this.start();
             }
