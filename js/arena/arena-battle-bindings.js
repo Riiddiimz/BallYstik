@@ -85,11 +85,11 @@
                     left: Number(document.getElementById('abArenaLeft')?.value || 0) / 100,
                     right: Number(document.getElementById('abArenaRight')?.value || 0) / 100
                 };
-                const message = 'Dimensions de base de mon arène BallYstik :\\n' +
-                    'Haut : ' + (dimensions.top * 100) + '%\\n' +
-                    'Bas : ' + (dimensions.bottom * 100) + '%\\n' +
-                    'Gauche : ' + (dimensions.left * 100) + '%\\n' +
-                    'Droite : ' + (dimensions.right * 100) + '%\\n\\n' +
+                const message = 'Dimensions de base de mon arène BallYstik :\n' +
+                    'Haut : ' + (dimensions.top * 100) + '%\n' +
+                    'Bas : ' + (dimensions.bottom * 100) + '%\n' +
+                    'Gauche : ' + (dimensions.left * 100) + '%\n' +
+                    'Droite : ' + (dimensions.right * 100) + '%\n\n' +
                     'ARENA_CONFIG = ' + JSON.stringify(dimensions, null, 2);
                 try {
                     await navigator.clipboard.writeText(message);
