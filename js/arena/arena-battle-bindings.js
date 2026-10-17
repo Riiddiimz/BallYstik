@@ -132,6 +132,8 @@
             if (document.getElementById('abSpeed')) options.gameSpeed = 1.5 + Number(document.getElementById('abSpeed').value) * 0.25;
             options.speedLevel = Number(document.getElementById('abSpeed')?.value || 0);
             options.matchMode = 'lastStanding';
+            // La recherche et les combats rejoués doivent tous deux aller jusqu'à 01:05 au maximum.
+            options.matchTime = 65;
             const mapSelect = document.getElementById('arenaMapSelect');
             options.arenaMap = mapSelect ? mapSelect.value : 'neon';
             try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
