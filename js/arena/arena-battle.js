@@ -238,44 +238,51 @@
                 if (!target || !target.alive || !target.health) return 0;
                 if (target.health.invuln > 0 && !(opts && opts.ignoreInvuln)) return 0;
 
-                // Applique les modificateurs défensifs (bouclier, épines, etc.)
-                // Les dégâts sont doublés à partir de 50 secondes.
-                let finalAmount = self.elapsedTime >= 50 ? amount * 2 : amount;
-                for (const slot of target.abilitySlots) {
-                    const beh = window.AbilityBehaviors[slot.meta.id];
-                    // Les dégâts réfléchis par les épines ne doivent pas déclencher
-                    // une nouvelle réflexion : sinon deux boules avec Épines se rappellent
-                    // mutuellement world.damage jusqu'au dépassement de pile.
-                    if (opts && opts.noThornsReflect && slot.meta.id === 'thorns') continue;
-                    if (beh && beh.onTakeDamage) {
-                        finalAmount = beh.onTakeDamage(target, attacker, finalAmount, world, slot) ?? finalAmount;
+                // Les explosions de mort peuvent déclencher d'autres morts en chaîne.
+                // Limiter la profondeur évite qu'une cascade d'effets épuise la pile JS.
+                world._damageDepth = world._damageDepth || 0;
+                if (world._damageDepth >= 24) return 0;
+                world._damageDepth++;
+
+                try {
+                    // Applique les modificateurs défensifs (bouclier, épines, etc.).
+                    // Les dégâts sont doublés à partir de 50 secondes.
+                    let finalAmount = self.elapsedTime >= 50 ? amount * 2 : amount;
+                    for (const slot of target.abilitySlots) {
+                        const beh = window.AbilityBehaviors[slot.meta.id];
+                        // Un reflet ne doit jamais relancer une réflexion d'épines.
+                        if (opts && opts.noThornsReflect && slot.meta.id === 'thorns') continue;
+                        if (beh && beh.onTakeDamage) {
+                            finalAmount = beh.onTakeDamage(target, attacker, finalAmount, world, slot) ?? finalAmount;
+                        }
                     }
-                }
 
-                const dealt = target.health.damage(finalAmount, opts);
-                if (dealt <= 0) return 0;
+                    const dealt = target.health.damage(finalAmount, opts);
+                    if (dealt <= 0) return 0;
 
-                // Feedback
-                if (source !== 'firetrail' && source !== 'blackhole' && !(opts && opts.silent)) {
-                    const dmgColor = source === 'laser' ? '#ff2a85'
-                        : source === 'mine' ? '#ff8a3d'
-                        : source === 'chain' ? '#a855f7'
-                        : source === 'dash' ? '#fbbf24'
-                        : source === 'thorns' ? '#ef4444'
-                        : '#ffffff';
-                    const crit = dealt >= 15;
-                    self.damageNumbers.spawn(
-                        target.x, target.y - target.radius - 10,
-                        Math.round(dealt),
-                        dmgColor,
-                        { crit, size: crit ? 22 : 16 }
-                    );
-                }
+                    if (source !== 'firetrail' && source !== 'blackhole' && !(opts && opts.silent)) {
+                        const dmgColor = source === 'laser' ? '#ff2a85'
+                            : source === 'mine' ? '#ff8a3d'
+                            : source === 'chain' ? '#a855f7'
+                            : source === 'dash' ? '#fbbf24'
+                            : source === 'thorns' ? '#ef4444'
+                            : '#ffffff';
+                        const crit = dealt >= 15;
+                        self.damageNumbers.spawn(
+                            target.x, target.y - target.radius - 10,
+                            Math.round(dealt),
+                            dmgColor,
+                            { crit, size: crit ? 22 : 16 }
+                        );
+                    }
 
-                if (target.health.dead) {
-                    self._killBall(target, attacker, world, source);
+                    if (target.health.dead) {
+                        self._killBall(target, attacker, world, source);
+                    }
+                    return dealt;
+                } finally {
+                    world._damageDepth--;
                 }
-                return dealt;
             };
 
             world.spawnParticle = function (x, y, opts) {
