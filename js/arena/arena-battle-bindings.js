@@ -31,6 +31,7 @@
         recordingCtx: null,
         rafId: null,
         lastTime: 0,
+        accumulator: 0,
         fpsFrames: 0,
         fpsAt: 0,
         mediaRecorder: null,
@@ -292,6 +293,7 @@
             this.withSeededRandom(() => window.ArenaBattle.reset(this.world));
             this.running = true;
             this.lastTime = performance.now();
+            this.accumulator = 0;
             this.fpsAt = this.lastTime;
             this.fpsFrames = 0;
             if (this.rafId) cancelAnimationFrame(this.rafId);
@@ -322,8 +324,11 @@
             this.updateLabels();
             this.saveOptions();
             // Recherche sans limite de tentatives : elle continue jusqu'à trouver une seed valide ou jusqu'à ce que l'utilisateur clique sur Arrêter.
-            const step = 1 / 60;
-            const totalSteps = 3900;
+            // La simulation de recherche doit employer le même pas fixe et le même multiplicateur
+            // que la partie jouée, sinon une seed peut être validée puis diverger au replay.
+            const simulationSpeed = Math.max(0.1, Number(this.getOptions().gameSpeed) || 1);
+            const step = simulationSpeed / 60;
+            const totalSteps = Math.ceil(65 / step) + 1;
             const frameBudgetMs = 8;
             let foundSeed = null;
             let attempts = 0;
@@ -389,6 +394,8 @@
                                     candidateWorked = Number.isFinite(lastBallKillTime)
                                         && lastBallKillTime >= 58
                                         && lastBallKillTime <= 65
+                                        && survivors.length === 1
+                                        && window.ArenaBattle.winner === survivors[0]
                                         && window.ArenaBattle.winnerDisplayActive
                                         && !window.ArenaBattle.finished;
                                     frame = totalSteps;
@@ -411,7 +418,7 @@
                             }
                         });
                         if (frame < totalSteps && !this.seedSearchCancelRequested) {
-                            setStatus('Seed #' + candidateSeed + ' : simulation ' + Math.min(60, frame / 60).toFixed(1) + ' / 60 s • ' + (attempts + 1) + ' seeds testées.');
+                            setStatus('Seed #' + candidateSeed + ' : simulation ' + Math.min(65, frame * step).toFixed(1) + ' / 65 s • ' + (attempts + 1) + ' seeds testées.');
                             await nextFrame();
                         }
                     }
@@ -610,12 +617,21 @@
 
         tick(now) {
             if (!this.running || !this.world) return;
-            const realDt = Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000));
-            const gameSpeed = Number(window.ArenaBattle.getOptions().gameSpeed) || 1;
-            const dt = realDt * gameSpeed;
+            // Le combat avance sur des pas fixes de 1/60 s. Le multiplicateur accélère
+            // le temps simulé, pas la taille variable des pas : le replay reste déterministe.
+            const realDt = Math.max(0, (now - this.lastTime) / 1000);
+            const gameSpeed = Math.max(0.1, Number(window.ArenaBattle.getOptions().gameSpeed) || 1);
             this.lastTime = now;
+            this.accumulator += Math.min(realDt, 0.25);
+            const fixedStep = 1 / 60;
+            let steps = 0;
             try {
-                this.withSeededRandom(() => window.ArenaBattle.update(dt, this.world));
+                // Catch-up limité par frame pour éviter de bloquer l'interface ; le reliquat est conservé.
+                while (this.accumulator >= fixedStep && steps < 30) {
+                    this.withSeededRandom(() => window.ArenaBattle.update(fixedStep * gameSpeed, this.world));
+                    this.accumulator -= fixedStep;
+                    steps++;
+                }
                 window.ArenaBattle.render(this.ctx, this.world);
                 // Chaque image du jeu est recopiée vers la sortie vidéo fixe en 1080x1920.
                 if (this.recording && this.recordingCtx && this.recordingCanvas) {
