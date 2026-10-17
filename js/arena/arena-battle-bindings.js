@@ -372,12 +372,22 @@
                                 frame++;
                                 const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
                                 if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
-                                    // On accepte uniquement un gagnant apparu à 1:00,
-                                    // jamais une seed qui termine à 0:09 ou après 1:00.
-                                    candidateWorked = alive.length === 1
-                                        && window.ArenaBattle.winnerDisplayActive
-                                        && window.ArenaBattle.elapsedTime >= 59.95
-                                        && window.ArenaBattle.elapsedTime <= 60.05;
+                                    // Une seed n'est valide que si une seule boule réelle est vivante,
+                                    // et que cette boule est bien celle déclarée gagnante.
+                                    // À 1:05, le moteur peut afficher un résultat de secours même
+                                    // si plusieurs boules survivent : ce cas doit être rejeté.
+                                    const survivors = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
+                                    const winner = window.ArenaBattle.winner;
+                                    const winnerIsOnlySurvivor = survivors.length === 1
+                                        && winner === survivors[0]
+                                        && winner.alive
+                                        && !winner.isClone;
+                                    const finishTime = Number(window.ArenaBattle.elapsedTime);
+                                    candidateWorked = window.ArenaBattle.winnerDisplayActive
+                                        && winnerIsOnlySurvivor
+                                        && Number.isFinite(finishTime)
+                                        && finishTime >= 58
+                                        && finishTime <= 65;
                                     frame = totalSteps;
                                     break;
                                 }
@@ -408,7 +418,7 @@
                 this.seedSearchRunning = false;
                 this.seedSearchCancelRequested = false;
                 if (button) {
-                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante à 1:00';
+                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante entre 00:58 et 01:05';
                     button.classList.remove('border-red-500', 'text-red-200');
                 }
             }
