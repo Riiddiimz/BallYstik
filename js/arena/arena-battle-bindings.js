@@ -37,6 +37,19 @@
         recordingChunks: [],
         ffmpeg: null,
         recording: false,
+        seedSearchRunning: false,
+        seedSearchCancelRequested: false,
+        randomState: 1,
+
+        withSeededRandom(callback) {
+            const originalRandom = Math.random;
+            Math.random = () => {
+                this.randomState = (Math.imul(this.randomState, 1664525) + 1013904223) >>> 0;
+                return this.randomState / 4294967296;
+            };
+            try { return callback(); }
+            finally { Math.random = originalRandom; }
+        },
 
         init() {
             this.canvas = document.getElementById('simCanvas');
@@ -122,7 +135,8 @@
             const mapSelect = document.getElementById('arenaMapSelect');
             options.arenaMap = mapSelect ? mapSelect.value : 'neon';
             try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
-            options.shrinkEnabled = !!(shrink && shrink.checked);
+            // L'arène reste fixe : le rétrécissement est désactivé sur toutes les cartes.
+            options.shrinkEnabled = false;
             return options;
         },
 
@@ -154,14 +168,10 @@
                     if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
                 });
             });
-            ['abShrinkToggle'].forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.addEventListener('change', () => {
-                    this.saveOptions();
-                            this.syncShrinkOptions();
-                    if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
-                });
-            });
+            // Le contrôle est conservé visuellement pour expliquer le réglage, mais l'arène reste fixe.
+            const shrinkToggle = document.getElementById('abShrinkToggle');
+            if (shrinkToggle) { shrinkToggle.checked = false; shrinkToggle.disabled = true; }
+            this.syncShrinkOptions();
             const seed = document.getElementById('manualSeedInput');
             if (seed) {
                 try { seed.value = localStorage.getItem(SEED_KEY) || seed.value || '104291'; } catch (_) {}
@@ -169,6 +179,15 @@
                     try { localStorage.setItem(SEED_KEY, String(this.getSeed())); } catch (_) {}
                 });
             }
+            const findSeed = document.getElementById('findWinningSeedBtn');
+            if (findSeed) findSeed.addEventListener('click', () => {
+                if (this.seedSearchRunning) {
+                    this.seedSearchCancelRequested = true;
+                    return;
+                }
+                this.searchWinningSeed();
+            });
+
             const apply = document.getElementById('applySeedBtn');
             if (apply) apply.addEventListener('click', () => this.start());
             const copy = document.getElementById('copySeedBtn');
@@ -260,12 +279,13 @@
                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
                 return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             }};
+            this.randomState = seed >>> 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
                 balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 60
             };
             window.ArenaBattle.applyOptions(this.getOptions());
-            window.ArenaBattle.reset(this.world);
+            this.withSeededRandom(() => window.ArenaBattle.reset(this.world));
             this.running = true;
             this.lastTime = performance.now();
             this.fpsAt = this.lastTime;
@@ -278,6 +298,99 @@
             const playIcon = document.getElementById('playPauseIcon');
             if (playText) playText.textContent = 'Pause';
             if (playIcon) playIcon.className = 'fa-solid fa-pause text-cyan-400';
+        },
+
+        async searchWinningSeed() {
+            if (this.seedSearchRunning || !window.ArenaBattle) return;
+            this.seedSearchRunning = true;
+            this.seedSearchCancelRequested = false;
+            const button = document.getElementById('findWinningSeedBtn');
+            const status = document.getElementById('seedSearchStatus');
+            const originalSeed = this.getSeed();
+            const firstSeed = originalSeed >>> 0 || 1;
+            const maxAttempts = 10000;
+            const step = 1 / 60;
+            const totalSteps = 3600;
+            let foundSeed = null;
+            let attempts = 0;
+            this.running = false;
+            if (this.rafId) cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+            if (button) {
+                button.innerHTML = '<i class="fa-solid fa-stop mr-1"></i> Arrêter la recherche';
+                button.classList.add('border-red-500', 'text-red-200');
+            }
+            const setStatus = message => { if (status) status.textContent = message; };
+
+            try {
+                for (attempts = 0; attempts < maxAttempts && !this.seedSearchCancelRequested; attempts++) {
+                    const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
+                    let state = candidateSeed;
+                    const prng = { next() {
+                        state = (state + 0x6D2B79F5) >>> 0;
+                        let t = state;
+                        t = Math.imul(t ^ (t >>> 15), t | 1);
+                        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+                        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+                    }};
+                    const trialWorld = {
+                        canvas: this.canvas, ctx: this.ctx, prng, seed: candidateSeed,
+                        balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 60
+                    };
+                    this.world = trialWorld;
+                    this.randomState = candidateSeed;
+                    let candidateWorked = false;
+                    this.withSeededRandom(() => {
+                        window.ArenaBattle.applyOptions({ ...this.getOptions(), shrinkEnabled: false });
+                        window.ArenaBattle.reset(trialWorld);
+                        // Aucun son pendant les simulations de recherche.
+                        trialWorld.playSound = () => {};
+                        for (let frame = 0; frame < totalSteps; frame++) {
+                            window.ArenaBattle.update(step, trialWorld);
+                            const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
+                            if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
+                                // Une seed n'est retenue que si l'élimination finale survient sur la dernière image avant 1:00.
+                                candidateWorked = alive.length === 1
+                                    && window.ArenaBattle.winnerDisplayActive
+                                    && window.ArenaBattle.elapsedTime >= 60 - step - 1e-6;
+                                break;
+                            }
+                        }
+                    });
+                    if (candidateWorked) {
+                        foundSeed = candidateSeed;
+                        break;
+                    }
+                    if ((attempts + 1) % 10 === 0) {
+                        setStatus('Recherche en cours… ' + (attempts + 1) + ' seeds testées. Cible : un seul survivant à 1:00.');
+                        await new Promise(resolve => requestAnimationFrame(resolve));
+                    }
+                }
+            } catch (error) {
+                console.error('[BallYstik] Recherche de seed échouée :', error);
+                setStatus('Erreur pendant la recherche. La partie normale peut être relancée.');
+            } finally {
+                this.seedSearchRunning = false;
+                this.seedSearchCancelRequested = false;
+                if (button) {
+                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante à 1:00';
+                    button.classList.remove('border-red-500', 'text-red-200');
+                }
+            }
+
+            if (foundSeed != null) {
+                const input = document.getElementById('manualSeedInput');
+                if (input) input.value = String(foundSeed);
+                try { localStorage.setItem(SEED_KEY, String(foundSeed)); } catch (_) {}
+                setStatus('Seed trouvée : #' + foundSeed + '. Relance de la partie pour vérifier le résultat.');
+                this.start();
+            } else {
+                if (this.seedSearchCancelRequested) setStatus('Recherche arrêtée. Seed active restaurée : #' + originalSeed + '.');
+                else setStatus('Aucune seed trouvée après ' + attempts + ' essais. Relancez la recherche pour continuer depuis une autre seed.');
+                const input = document.getElementById('manualSeedInput');
+                if (input) input.value = String(originalSeed);
+                this.start();
+            }
         },
 
         async startRecording() {
@@ -424,7 +537,7 @@
             const dt = realDt * gameSpeed;
             this.lastTime = now;
             try {
-                window.ArenaBattle.update(dt, this.world);
+                this.withSeededRandom(() => window.ArenaBattle.update(dt, this.world));
                 window.ArenaBattle.render(this.ctx, this.world);
                 // Chaque image du jeu est recopiée vers la sortie vidéo fixe en 1080x1920.
                 if (this.recording && this.recordingCtx && this.recordingCanvas) {
