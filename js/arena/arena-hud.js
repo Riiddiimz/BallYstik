@@ -111,8 +111,27 @@
             const c = ctx.canvas;
             const topSafe = 12;
 
-            // Le compte à rebours n'est plus affiché dans l'arène.
-            // Le temps interne du match reste inchangé.
+            // Chronomètre écoulé : il s'arrête naturellement quand le combat
+            // se termine, car elapsedTime n'avance plus pendant l'écran du gagnant.
+            const elapsed = Math.max(0, Number(world.elapsedTime) || 0);
+            const timerText = this._fmt(elapsed);
+            ctx.save();
+            ctx.font = '900 18px Outfit, system-ui, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const tw = ctx.measureText(timerText).width;
+            const timerX = c.width / 2;
+            const timerY = topSafe + 12;
+            ctx.fillStyle = 'rgba(0,0,0,0.65)';
+            ctx.fillRect(timerX - tw / 2 - 12, timerY - 13, tw + 24, 26);
+            ctx.strokeStyle = 'rgba(0,242,254,0.65)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(timerX - tw / 2 - 12, timerY - 13, tw + 24, 26);
+            ctx.fillStyle = '#ffffff';
+            ctx.shadowColor = '#00f2fe';
+            ctx.shadowBlur = 8;
+            ctx.fillText(timerText, timerX, timerY);
+            ctx.restore();
 
             // Leaderboard en haut à gauche
             this.leaderboard.render(ctx, 12, topSafe + 8, 150);
