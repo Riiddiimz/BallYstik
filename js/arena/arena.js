@@ -93,11 +93,23 @@
             this.frameY = this.padding;
             this.frameW = Math.max(60, c.width - this.padding * 2);
             this.frameH = Math.max(60, c.height - this.padding * 2);
-            const p = this.padding + this.shrinkOffset;
-            this.x = p;
-            this.y = p;
-            this.w = Math.max(60, c.width - p * 2);
-            this.h = Math.max(60, c.height - p * 2);
+
+            // Réduction asymétrique de l'arène de combat, proportionnelle au canvas
+            // pour conserver les mêmes marges visuelles sur l'export vertical 9:16.
+            // Référence 1080x1920 : haut -2 cm (~76 px), bas -1 cm (~38 px),
+            // droite -1 cm (~38 px), gauche inchangée.
+            const cmScale = c.height / 1920;
+            const insetTop = 76 * cmScale;
+            const insetBottom = 38 * cmScale;
+            const insetRight = 38 * cmScale;
+            const left = this.padding + this.shrinkOffset;
+            const top = this.padding + insetTop + this.shrinkOffset;
+            const right = c.width - this.padding - insetRight - this.shrinkOffset;
+            const bottom = c.height - this.padding - insetBottom - this.shrinkOffset;
+            this.x = left;
+            this.y = top;
+            this.w = Math.max(60, right - left);
+            this.h = Math.max(60, bottom - top);
         }
 
         _newSuckParticle(index, initial = false) {
@@ -281,9 +293,13 @@
 
         isInsideDangerZone(ball) {
             if (this._isVortexMap() || !this.shrinkEnabled) return false;
-            const safeP = this.padding + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
-            return ball.x < safeP || ball.x > this.canvas.width - safeP
-                || ball.y < safeP || ball.y > this.canvas.height - safeP;
+            const cmScale = this.canvas.height / 1920;
+            const safeLeft = this.padding + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            const safeTop = this.padding + 76 * cmScale + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            const safeRight = this.canvas.width - this.padding - 38 * cmScale - Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            const safeBottom = this.canvas.height - this.padding - 38 * cmScale - Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            return ball.x < safeLeft || ball.x > safeRight
+                || ball.y < safeTop || ball.y > safeBottom;
         }
 
         addHitFlash(x, y, life = 0.35) {
