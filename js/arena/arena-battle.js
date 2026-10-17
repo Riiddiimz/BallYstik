@@ -959,7 +959,7 @@
             this.hud.render(ctx, world);
 
             // Résultat de manche : boule gagnante agrandie et label lumineux.
-            if (this.finished) this._renderWinner(ctx, world);
+            if (this.finished || this.winnerDisplayActive) this._renderWinner(ctx, world);
         }
 
         _renderWinner(ctx, world) {
