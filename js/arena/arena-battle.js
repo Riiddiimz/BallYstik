@@ -25,6 +25,10 @@
         shrinkStart: 30,
         shrinkRate: 6,
         shrinkMax: 0.16,
+        arenaTop: 0.05,
+        arenaBottom: 0.05,
+        arenaLeft: 0.025,
+        arenaRight: 0.025,
         obstacles: 1,
         vortexObstacles: 10,
         arenaMap: 'neon'
@@ -62,8 +66,14 @@
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
+                arena.arenaMargins = {
+                    top: Number(this.options.arenaTop),
+                    bottom: Number(this.options.arenaBottom),
+                    left: Number(this.options.arenaLeft),
+                    right: Number(this.options.arenaRight)
+                };
                 arena.mapStyle = nextMap;
-                if (mapChanged) arena._recompute();
+                if (mapChanged || opts?.arenaTop != null || opts?.arenaBottom != null || opts?.arenaLeft != null || opts?.arenaRight != null) arena._recompute();
                 const obstacleCount = isVortexMap(nextMap) ? this.options.vortexObstacles : this.options.obstacles;
                 if (mapChanged || opts?.obstacles != null || opts?.vortexObstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(obstacleCount, isVortexMap(nextMap) ? null : this.options.obstaclePositions);
                 if (isVortexMap(nextMap) && !arena.suckParticles.length) {
@@ -114,7 +124,11 @@
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
-                    shrinkMax: this.options.shrinkMax
+                    shrinkMax: this.options.shrinkMax,
+                    arenaTop: this.options.arenaTop,
+                    arenaBottom: this.options.arenaBottom,
+                    arenaLeft: this.options.arenaLeft,
+                    arenaRight: this.options.arenaRight
                 });
             } else {
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
@@ -122,6 +136,12 @@
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
+                world.arena.arenaMargins = {
+                    top: Number(this.options.arenaTop),
+                    bottom: Number(this.options.arenaBottom),
+                    left: Number(this.options.arenaLeft),
+                    right: Number(this.options.arenaRight)
+                };
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._recompute();
