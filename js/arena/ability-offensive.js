@@ -100,7 +100,7 @@
     // ═══════ FLÈCHE ═══════
     window.AbilityBehaviors.arrow = {
         attach(ball, world, slot) {
-            slot.data = { cooldown: 0.4, fireRate: 1.2, telegraph: 0, target: null, projectileSpeed: 480, damage: d.damage ?? 12, bounces: d.bounces ?? 1, range: 400, autoTarget: true };
+            slot.data = { cooldown: 0.4, fireRate: 1.2, telegraph: 0, target: null, projectileSpeed: 480, damage: 12, bounces: 1, range: 400, autoTarget: true };
         },
         update(ball, world, slot, dt) {
             const d = slot.data;
