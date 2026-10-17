@@ -270,6 +270,16 @@
             this.ctx = this.canvas.getContext('2d');
         },
 
+        _beginSimulation(seed, world) {
+            // Le setup doit consommer exactement la même séquence aléatoire en recherche et en replay.
+            this.randomState = seed >>> 0;
+            this.world = world;
+            this.withSeededRandom(() => {
+                window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
+                window.ArenaBattle.reset(world);
+            });
+        },
+
         start() {
             if (!window.ArenaBattle) return;
             this.resizeCanvas();
@@ -282,15 +292,12 @@
                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
                 return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             }};
-            this.randomState = seed >>> 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
                 balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
             };
-            // La partie rejouée doit garder la même durée que la recherche de seed : 65 s.
-            // Sans cela, une seed validée pour 00:58–01:05 pouvait être rejouée avec une fin forcée à 01:00.
-            window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
-            this.withSeededRandom(() => window.ArenaBattle.reset(this.world));
+            // Même setup déterministe que pendant la recherche de seed.
+            this._beginSimulation(seed, this.world);
             this.running = true;
             this.lastTime = performance.now();
             this.accumulator = 0;
@@ -360,18 +367,13 @@
                         canvas: this.canvas, ctx: this.ctx, prng, seed: candidateSeed,
                         balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
                     };
-                    this.world = trialWorld;
-                    this.randomState = candidateSeed;
+                    this._beginSimulation(candidateSeed, trialWorld);
                     let frame = 0;
                     let candidateWorked = false;
                     let lastAliveCount = 0;
                     let lastBallKillTime = null;
 
-                    this.withSeededRandom(() => {
-                        window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
-                        window.ArenaBattle.reset(trialWorld);
-                        trialWorld.playSound = () => {};
-                    });
+                    trialWorld.playSound = () => {};
 
                     // Conserver le même état de simulation entre les tranches de travail.
                     while (frame < totalSteps && !this.seedSearchCancelRequested) {
