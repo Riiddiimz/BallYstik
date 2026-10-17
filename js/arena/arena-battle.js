@@ -243,6 +243,10 @@
                 let finalAmount = self.elapsedTime >= 50 ? amount * 2 : amount;
                 for (const slot of target.abilitySlots) {
                     const beh = window.AbilityBehaviors[slot.meta.id];
+                    // Les dégâts réfléchis par les épines ne doivent pas déclencher
+                    // une nouvelle réflexion : sinon deux boules avec Épines se rappellent
+                    // mutuellement world.damage jusqu'au dépassement de pile.
+                    if (opts && opts.noThornsReflect && slot.meta.id === 'thorns') continue;
                     if (beh && beh.onTakeDamage) {
                         finalAmount = beh.onTakeDamage(target, attacker, finalAmount, world, slot) ?? finalAmount;
                     }
