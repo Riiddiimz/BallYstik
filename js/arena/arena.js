@@ -32,10 +32,10 @@
             this.cornerRadius = options.cornerRadius ?? 44;
             this.mapStyle = options.mapStyle || 'neon';
             this.arenaMargins = {
-                top: Number(options.arenaTop ?? 0.05),
-                bottom: Number(options.arenaBottom ?? 0.05),
-                left: Number(options.arenaLeft ?? 0.025),
-                right: Number(options.arenaRight ?? 0.025)
+                top: Number(options.arenaTop ?? 0.16),
+                bottom: Number(options.arenaBottom ?? 0.10),
+                left: Number(options.arenaLeft ?? 0),
+                right: Number(options.arenaRight ?? 0.14)
             };
             this.vortexTestGL = null;
             this.vortexTestCanvas = null;
