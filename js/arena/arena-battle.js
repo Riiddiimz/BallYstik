@@ -26,6 +26,7 @@
         shrinkRate: 6,
         shrinkMax: 0.16,
         obstacles: 1,
+        vortexObstacles: 10,
         arenaMap: 'neon'
     };
 
@@ -59,7 +60,8 @@
                 arena.shrinkMax = Number(this.options.shrinkMax);
                 arena.mapStyle = nextMap;
                 if (mapChanged) arena._recompute();
-                if (mapChanged || opts?.obstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
+                const obstacleCount = nextMap === 'vortex' ? this.options.vortexObstacles : this.options.obstacles;
+                if (mapChanged || opts?.obstacles != null || opts?.vortexObstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(obstacleCount, nextMap === 'vortex' ? null : this.options.obstaclePositions);
                 if (nextMap === 'vortex' && !arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) arena.suckParticles.push(arena._newSuckParticle(i, true));
                 }
@@ -100,8 +102,8 @@
                 world.arena = new window.Arena(world.canvas, {
                     padding: 16,
                     cornerRadius: 44,
-                    obstacles: this.options.obstacles,
-                    obstaclePositions: this.options.obstaclePositions,
+                    obstacles: (this.options.arenaMap || 'neon') === 'vortex' ? this.options.vortexObstacles : this.options.obstacles,
+                    obstaclePositions: (this.options.arenaMap || 'neon') === 'vortex' ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
                     shrink: this.options.shrinkEnabled,
                     shrinkStart: this.options.shrinkStart,
@@ -117,7 +119,8 @@
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._recompute();
-                world.arena._buildObstacles(this.options.obstacles, this.options.obstaclePositions);
+                world.arena._buildObstacles(world.arena.mapStyle === 'vortex' ? this.options.vortexObstacles : this.options.obstacles,
+                    world.arena.mapStyle === 'vortex' ? null : this.options.obstaclePositions);
                 if (world.arena.mapStyle === 'vortex' && !world.arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) world.arena.suckParticles.push(world.arena._newSuckParticle(i, true));
                 }
