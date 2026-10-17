@@ -407,14 +407,15 @@
             if (!ball.alive) return;
             ball.alive = false;
 
-            // Hit-stop à chaque KO, nettement plus long pour la dernière élimination.
-            // La pause est gérée par le contrôleur de rendu et ne modifie pas le dt de la simulation.
+            // Vrai ralenti après chaque KO, plus long lors de l'élimination finale.
+            // Le contrôleur ralentit l'accumulation du temps de jeu sans changer le dt physique.
             const realSurvivors = world.balls.filter(other => other.alive && !other.isClone);
             const isFinalElimination = realSurvivors.length === 1;
             if (window.ArenaBattleBridge) {
-                window.ArenaBattleBridge.deathHitStopUntil = Math.max(
-                    window.ArenaBattleBridge.deathHitStopUntil || 0,
-                    performance.now() + (isFinalElimination ? 650 : 140)
+                const duration = isFinalElimination ? 1800 : 420;
+                window.ArenaBattleBridge.deathSlowMoUntil = Math.max(
+                    window.ArenaBattleBridge.deathSlowMoUntil || 0,
+                    performance.now() + duration
                 );
             }
 
@@ -932,11 +933,11 @@
             ctx.fillStyle = '#080a10';
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-            // Flash cinématique pendant le hit-stop, plus intense sur l'élimination finale.
-            const hitStopRemaining = (window.ArenaBattleBridge?.deathHitStopUntil || 0) - performance.now();
-            if (hitStopRemaining > 0) {
-                const finalHitStop = hitStopRemaining > 180;
-                const alpha = Math.min(0.48, (hitStopRemaining / (finalHitStop ? 650 : 140)) * (finalHitStop ? 0.42 : 0.24));
+            // Flash de KO pendant le vrai ralenti ; plus marqué à la fin du combat.
+            const slowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
+            if (slowMoRemaining > 0) {
+                const finalSlowMo = slowMoRemaining > 500;
+                const alpha = Math.min(0.34, (slowMoRemaining / (finalSlowMo ? 1800 : 420)) * (finalSlowMo ? 0.30 : 0.16));
                 ctx.save();
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = '#ffffff';
