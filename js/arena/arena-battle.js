@@ -972,6 +972,36 @@
             // HUD
             this.hud.render(ctx, world);
 
+            // Bannière affichée pendant la phase de dégâts doublés (50 s jusqu'à la fin du combat).
+            if (this.elapsedTime >= 50 && !this.finished && !this.winnerDisplayActive) {
+                const arenaTop = world.arena && Number.isFinite(world.arena.frameY)
+                    ? world.arena.frameY
+                    : ctx.canvas.height * 0.16;
+                const centerX = ctx.canvas.width / 2;
+                const bannerY = Math.max(42, arenaTop - 34);
+                const pulse = 0.88 + 0.12 * Math.sin(this.elapsedTime * 8);
+                ctx.save();
+                ctx.globalAlpha = pulse;
+                ctx.font = '900 30px Outfit, system-ui, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const textWidth = ctx.measureText('DAMAGE ×2').width;
+                const bannerWidth = textWidth + 42;
+                ctx.fillStyle = 'rgba(35, 10, 8, 0.92)';
+                ctx.strokeStyle = '#ff4d4d';
+                ctx.lineWidth = 2;
+                ctx.shadowColor = '#ff3030';
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                ctx.roundRect(centerX - bannerWidth / 2, bannerY - 23, bannerWidth, 46, 12);
+                ctx.fill();
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+                ctx.fillStyle = '#fff';
+                ctx.fillText('DAMAGE ×2', centerX, bannerY);
+                ctx.restore();
+            }
+
             // Résultat de manche : boule gagnante agrandie et label lumineux.
             if (this.finished || this.winnerDisplayActive) this._renderWinner(ctx, world);
         }
