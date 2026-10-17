@@ -284,7 +284,9 @@
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
                 balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
             };
-            window.ArenaBattle.applyOptions(this.getOptions());
+            // La partie rejouée doit garder la même durée que la recherche de seed : 65 s.
+            // Sans cela, une seed validée pour 00:58–01:05 pouvait être rejouée avec une fin forcée à 01:00.
+            window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
             this.withSeededRandom(() => window.ArenaBattle.reset(this.world));
             this.running = true;
             this.lastTime = performance.now();
