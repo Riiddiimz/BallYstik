@@ -403,10 +403,11 @@
                 const input = document.getElementById('manualSeedInput');
                 if (input) input.value = String(foundSeed);
                 try { localStorage.setItem(SEED_KEY, String(foundSeed)); } catch (_) {}
-                setStatus('✅ SEED TROUVÉE : #' + foundSeed + '. Elle est enregistrée. Clique sur ▶ Appliquer pour lancer cette partie.');
-                // Ne pas lancer la partie automatiquement : l'utilisateur choisit quand démarrer.
+                setStatus('✅ SEED TROUVÉE : #' + foundSeed + ' — lancement de la partie.');
+                // Lance immédiatement la seed trouvée : aucun clic supplémentaire nécessaire.
+                this.start();
                 if ('Notification' in window && Notification.permission === 'granted') {
-                    try { new Notification('BallYstik — seed trouvée', { body: 'Seed #' + foundSeed + ' trouvée pour une victoire à 1:00. Clique sur Appliquer pour lancer la partie.' }); } catch (_) {}
+                    try { new Notification('BallYstik — partie trouvée', { body: 'Seed #' + foundSeed + ' : la partie démarre.' }); } catch (_) {}
                 }
             } else {
                 const input = document.getElementById('manualSeedInput');
