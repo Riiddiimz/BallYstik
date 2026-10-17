@@ -6,9 +6,6 @@
 
 :root {
     --bg-main: #0b0b0d;
-    /* MODIFIE LA TAILLE DE L'ARÈNE ICI : pourcentage de la zone de jeu disponible. */
-    --arena-width: 95%;
-    --arena-height: 90%;
 }
 
 body {
@@ -193,21 +190,9 @@ input[type=range]::-moz-range-thumb {
 @media(min-width:768px){#rightSidebar{width:350px}}
 
 
-/* Taille de l'arène réglable via --arena-width et --arena-height dans :root.
-   Le wrapper reste centré dans la zone de jeu et n'impose aucun ratio fixe. */
-#canvasContainer {
-    min-width: 0;
-    min-height: 0;
-    padding: 0 !important;
-}
+/* Le cadre vidéo conserve son format vertical 9:16.
+   La taille de l'arène à l'intérieur se règle dans ARENA_CONFIG (arena.js). */
 #frameWrapper {
-    width: var(--arena-width);
-    height: var(--arena-height);
-    max-width: none;
-    max-height: none;
-    aspect-ratio: auto;
-    margin: auto;
-    flex: 0 0 auto;
     overflow: hidden;
     border-radius: 44px !important;
 }
