@@ -62,7 +62,7 @@
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
                 const mapChanged = arena.mapStyle !== nextMap;
-                arena.shrinkEnabled = isVortexMap(nextMap) ? false : !!this.options.shrinkEnabled;
+                arena.shrinkEnabled = false;
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
@@ -121,7 +121,7 @@
                     obstacles: isVortexMap(this.options.arenaMap || 'neon') ? this.options.vortexObstacles : this.options.obstacles,
                     obstaclePositions: isVortexMap(this.options.arenaMap || 'neon') ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
-                    shrink: this.options.shrinkEnabled,
+                    shrink: false,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
                     shrinkMax: this.options.shrinkMax,
@@ -132,7 +132,7 @@
                 });
             } else {
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
-                world.arena.shrinkEnabled = isVortexMap(world.arena.mapStyle) ? false : this.options.shrinkEnabled;
+                world.arena.shrinkEnabled = false;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
@@ -430,6 +430,13 @@
             if (this.options.matchMode === 'lastStanding' && !this.winnerDisplayActive && !this.finished) {
                 const alive = world.balls.filter(b => b.alive && !b.isClone);
                 if (alive.length === 1) {
+                    // Si l'élimination arrive sur la dernière image avant 1:00,
+                    // cale l'horloge à 60.000 s pour afficher le gagnant à la seconde exacte.
+                    if (this.elapsedTime >= Number(this.matchTime || 60) - (1 / 60) - 1e-6) {
+                        this.elapsedTime = Number(this.matchTime || 60);
+                        world.time = this.elapsedTime;
+                        world.elapsedTime = this.elapsedTime;
+                    }
                     this.winner = alive[0];
                     this.winnerDisplayActive = true;
                     this.winnerDisplayElapsed = 0;
