@@ -5,11 +5,13 @@
 (function () {
     'use strict';
 
-    // MODIFIE LA TAILLE DE L'ARÈNE ICI (sans changer le format vidéo 9:16).
-    // 1 = toute la surface du canvas ; 0.90 = 90 % de sa largeur/hauteur.
+    // DIMENSIONS DE BASE DE L'ARÈNE QUI SE RÉTRÉCIT.
+    // La vidéo reste en 9:16 : seuls les murs de l'arène sont redimensionnés.
+    // Valeurs en proportion du canvas : 0.95 = 95 %, 0.80 = 80 %.
+    // Modifie width et height indépendamment selon la taille souhaitée.
     const ARENA_CONFIG = {
-        width: 0.95,
-        height: 0.90
+        width: 0.95,  // Largeur initiale de l'arène : 95 % du canvas
+        height: 0.90  // Hauteur initiale de l'arène : 90 % du canvas
     };
 
     const PALETTE = {
@@ -267,7 +269,9 @@
                 this.shrinkMoving = false;
             this.shrinkWarning = 0;
             if (this.shrinkEnabled && this.elapsed > this.shrinkStart) {
-                const maxPx = Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+                // La réduction maximale dépend des dimensions de base choisies,
+                // et non de la taille totale du canvas vidéo.
+                const maxPx = Math.min(this.frameW, this.frameH) * this.shrinkMax;
                 if (this.shrinkOffset < maxPx) {
                     const cycle = (this.elapsed - this.shrinkStart) % this.shrinkCycleLength;
                     if (cycle < this.shrinkWarningLength) {
