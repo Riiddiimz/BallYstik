@@ -107,25 +107,33 @@
         _buildObstacles(count, customPositions = null) {
             this.obstacles = [];
             if (this.mapStyle === 'vortex') {
+                // Les obstacles suivent les bras de la spirale plutôt que des anneaux orbitaux.
+                // Ils restent fixes : les trajectoires et les rebonds dessinent le mouvement.
                 const r = VORTEX.obstacleRadius;
-                const rings = [
-                    { radius: 0.42, count: 3, phase: 0.3 },
-                    { radius: 0.68, count: 3, phase: 1.7 }
-                ];
-                for (const ring of rings) {
-                    for (let i = 0; i < ring.count; i++) {
-                        const angle = ring.phase + (i / ring.count) * Math.PI * 2;
-                        this.obstacles.push({
-                            x: this.vortexCx + Math.cos(angle) * this.vortexRadius * ring.radius,
-                            y: this.vortexCy + Math.sin(angle) * this.vortexRadius * ring.radius,
-                            r, hitPulse: 0, baseAngle: angle,
-                            orbitRadius: this.vortexRadius * ring.radius,
-                            rotateSpeed: 0.12 * VORTEX.spinSign
-                        });
+                const spiralArms = 3;
+                const pointsPerArm = 3;
+                const innerRadius = 0.20;
+                const outerRadius = 0.82;
+                for (let arm = 0; arm < spiralArms; arm++) {
+                    for (let i = 0; i < pointsPerArm; i++) {
+                        const progress = (i + 0.35) / pointsPerArm;
+                        const radiusFactor = innerRadius + (outerRadius - innerRadius) * progress;
+                        const angle = (arm / spiralArms) * Math.PI * 2
+                            + progress * Math.PI * 1.65 + Math.PI * 0.12;
+                        const x = this.vortexCx + Math.cos(angle) * this.vortexRadius * radiusFactor;
+                        const y = this.vortexCy + Math.sin(angle) * this.vortexRadius * radiusFactor;
+                        // Keep every bumper fully inside the circular arena.
+                        if (Math.hypot(x - this.vortexCx, y - this.vortexCy) + r < this.vortexRadius * 0.91) {
+                            this.obstacles.push({
+                                x, y, r: r * (i === 1 ? 1.05 : 0.92),
+                                hitPulse: 0, baseAngle: angle, orbitRadius: 0, rotateSpeed: 0
+                            });
+                        }
                     }
                 }
+                // A smaller core leaves a tight but playable passage through the center.
                 this.obstacles.push({
-                    x: this.vortexCx, y: this.vortexCy, r: r * 0.85,
+                    x: this.vortexCx, y: this.vortexCy, r: r * 0.62,
                     hitPulse: 0, baseAngle: 0, orbitRadius: 0, rotateSpeed: 0
                 });
                 return;
