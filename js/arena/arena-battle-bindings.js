@@ -311,8 +311,10 @@
             const maxAttempts = 10000;
             const step = 1 / 60;
             const totalSteps = 3600;
+            const frameBudgetMs = 8;
             let foundSeed = null;
             let attempts = 0;
+            let wasCancelled = false;
             this.running = false;
             if (this.rafId) cancelAnimationFrame(this.rafId);
             this.rafId = null;
@@ -321,8 +323,11 @@
                 button.classList.add('border-red-500', 'text-red-200');
             }
             const setStatus = message => { if (status) status.textContent = message; };
+            const nextFrame = () => new Promise(resolve => requestAnimationFrame(resolve));
 
             try {
+                // Même principe que Hypnorai : la recherche est découpée en petits lots
+                // pour laisser le navigateur répondre et mettre à jour la progression.
                 for (attempts = 0; attempts < maxAttempts && !this.seedSearchCancelRequested; attempts++) {
                     const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
                     let state = candidateSeed;
@@ -339,38 +344,53 @@
                     };
                     this.world = trialWorld;
                     this.randomState = candidateSeed;
+                    let frame = 0;
                     let candidateWorked = false;
+
                     this.withSeededRandom(() => {
-                        window.ArenaBattle.applyOptions({ ...this.getOptions(), shrinkEnabled: false });
+                        window.ArenaBattle.applyOptions({ ...this.getOptions(), shrinkEnabled: false, matchTime: 60 });
                         window.ArenaBattle.reset(trialWorld);
-                        // Aucun son pendant les simulations de recherche.
                         trialWorld.playSound = () => {};
-                        for (let frame = 0; frame < totalSteps; frame++) {
-                            window.ArenaBattle.update(step, trialWorld);
-                            const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
-                            if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
-                                // Une seed n'est retenue que si l'élimination finale survient sur la dernière image avant 1:00.
-                                candidateWorked = alive.length === 1
-                                    && window.ArenaBattle.winnerDisplayActive
-                                    && window.ArenaBattle.elapsedTime >= 60 - step - 1e-6;
-                                break;
-                            }
-                        }
                     });
+
+                    // Conserver le même état de simulation entre les tranches de travail.
+                    while (frame < totalSteps && !this.seedSearchCancelRequested) {
+                        const sliceStart = performance.now();
+                        this.withSeededRandom(() => {
+                            while (frame < totalSteps && performance.now() - sliceStart < frameBudgetMs) {
+                                window.ArenaBattle.update(step, trialWorld);
+                                frame++;
+                                const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
+                                if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
+                                    candidateWorked = alive.length === 1
+                                        && window.ArenaBattle.winnerDisplayActive
+                                        && Math.abs(window.ArenaBattle.elapsedTime - 60) < 1e-5;
+                                    frame = totalSteps;
+                                    break;
+                                }
+                            }
+                        });
+                        if (frame < totalSteps && !this.seedSearchCancelRequested) {
+                            setStatus('Seed #' + candidateSeed + ' : simulation ' + Math.min(60, frame / 60).toFixed(1) + ' / 60 s • ' + (attempts + 1) + ' seeds testées.');
+                            await nextFrame();
+                        }
+                    }
+
+                    if (this.seedSearchCancelRequested) break;
                     if (candidateWorked) {
                         foundSeed = candidateSeed;
                         break;
                     }
-                    if ((attempts + 1) % 10 === 0) {
-                        setStatus('Recherche en cours… ' + (attempts + 1) + ' seeds testées. Cible : un seul survivant à 1:00.');
-                        await new Promise(resolve => requestAnimationFrame(resolve));
+                    if ((attempts + 1) % 5 === 0) {
+                        setStatus('Recherche en cours… ' + (attempts + 1) + ' seeds testées. Dernière seed : #' + candidateSeed + '.');
+                        await nextFrame();
                     }
                 }
             } catch (error) {
                 console.error('[BallYstik] Recherche de seed échouée :', error);
-                setStatus('Erreur pendant la recherche. La partie normale peut être relancée.');
+                setStatus('Erreur pendant la recherche : ' + (error.message || 'erreur inconnue'));
             } finally {
-                var wasCancelled = this.seedSearchCancelRequested;
+                wasCancelled = this.seedSearchCancelRequested;
                 this.seedSearchRunning = false;
                 this.seedSearchCancelRequested = false;
                 if (button) {
@@ -383,7 +403,7 @@
                 const input = document.getElementById('manualSeedInput');
                 if (input) input.value = String(foundSeed);
                 try { localStorage.setItem(SEED_KEY, String(foundSeed)); } catch (_) {}
-                setStatus('Seed trouvée : #' + foundSeed + '. Relance de la partie pour vérifier le résultat.');
+                setStatus('Seed trouvée : #' + foundSeed + '. Partie relancée pour validation visuelle.');
                 this.start();
             } else {
                 const input = document.getElementById('manualSeedInput');
