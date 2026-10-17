@@ -370,6 +370,7 @@
                 console.error('[BallYstik] Recherche de seed échouée :', error);
                 setStatus('Erreur pendant la recherche. La partie normale peut être relancée.');
             } finally {
+                var wasCancelled = this.seedSearchCancelRequested;
                 this.seedSearchRunning = false;
                 this.seedSearchCancelRequested = false;
                 if (button) {
@@ -385,7 +386,7 @@
                 setStatus('Seed trouvée : #' + foundSeed + '. Relance de la partie pour vérifier le résultat.');
                 this.start();
             } else {
-                if (this.seedSearchCancelRequested) setStatus('Recherche arrêtée. Seed active restaurée : #' + originalSeed + '.');
+                if (wasCancelled) setStatus('Recherche arrêtée. Seed active restaurée : #' + originalSeed + '.');
                 else setStatus('Aucune seed trouvée après ' + attempts + ' essais. Relancez la recherche pour continuer depuis une autre seed.');
                 const input = document.getElementById('manualSeedInput');
                 if (input) input.value = String(originalSeed);
