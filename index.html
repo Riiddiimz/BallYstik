@@ -250,46 +250,46 @@
          ==================================================================== -->
     <main class="flex-1 relative bg-black flex flex-col items-center justify-center overflow-hidden h-full">
         
-        <!-- Floating Top Toolbar -->
+        <!-- Bottom-left stats and game actions -->
         <div class="absolute bottom-3.5 left-3 right-3 z-20 flex items-end justify-between pointer-events-none">
-            
-            <!-- Live Simulation Stats -->
-            <div class="flex flex-col items-start gap-1.5 text-xs font-mono pointer-events-auto">
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                    <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
+            <div class="flex flex-col items-start gap-1.5 pointer-events-auto">
+                <!-- Live Simulation Stats -->
+                <div class="flex flex-col items-start gap-1.5 text-xs font-mono">
+                    <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span>FPS: <strong id="fpsCounter" class="text-white">60</strong></span>
+                    </div>
+                    <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
+                        <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
+                        <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
+                    </div>
+                    <div class="hidden sm:flex px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 items-center gap-1.5 border border-zinc-800/80">
+                        <i class="fa-solid fa-fingerprint text-purple-400 text-xs"></i>
+                        <span id="activeSeedBadge" class="text-purple-300 font-bold">#104291</span>
+                    </div>
                 </div>
-                <div class="px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 flex items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-circle-dot text-pink-400 text-xs"></i>
-                    <span>Balles: <strong id="ballCounter" class="text-white">1</strong></span>
-                </div>
-                <div class="hidden sm:flex px-2.5 py-1.5 rounded-xl glass-panel text-zinc-300 items-center gap-1.5 border border-zinc-800/80">
-                    <i class="fa-solid fa-fingerprint text-purple-400 text-xs"></i>
-                    <span id="activeSeedBadge" class="text-purple-300 font-bold">#104291</span>
+                <!-- Game actions stacked vertically below FPS -->
+                <div class="flex flex-col gap-1.5 w-36">
+                    <button id="resetBtn" class="w-full py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                        <i class="fa-solid fa-rotate-right"></i> Réinitialiser
+                    </button>
+                    <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="w-full py-2 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                        <i id="recordIcon" class="fa-solid fa-circle text-white"></i>
+                        <span id="recordText">Enregistrer MP4</span>
+                    </button>
+                    <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="w-full py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
+                        <i class="fa-solid fa-shuffle"></i> Nouvelle partie
+                    </button>
                 </div>
             </div>
-
-            <!-- Quick Action Buttons -->
-            <div class="flex flex-col items-stretch gap-1.5 pointer-events-auto">
+            <!-- Playback controls remain at the bottom-right -->
+            <div class="flex items-center gap-2 pointer-events-auto">
                 <button id="playPauseBtn" aria-label="Play ou Pause" class="px-3 py-1.5 rounded-xl glass-panel text-zinc-200 hover:text-white hover:border-cyan-500/50 transition flex items-center gap-1.5 text-xs font-semibold shadow-md active:scale-95">
                     <i id="playPauseIcon" class="fa-solid fa-pause text-cyan-400"></i>
                     <span id="playPauseText" class="hidden sm:inline">Pause</span>
                 </button>
                 <button id="fullscreenBtn" aria-label="Plein écran" class="p-2 rounded-xl glass-panel text-zinc-300 hover:text-white transition text-xs shadow-md active:scale-95">
                     <i class="fa-solid fa-expand"></i>
-                </button>
-            </div>
-            <!-- Quick Action Buttons stacked vertically below FPS -->
-            <div class="flex flex-col gap-1.5 pointer-events-auto w-36">
-                <button id="resetBtn" class="w-full py-2 px-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white rounded-xl font-bold shadow-lg shadow-pink-500/25 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                    <i class="fa-solid fa-rotate-right"></i> Réinitialiser
-                </button>
-                <button id="recordBtn" aria-label="Enregistrer la partie en MP4" class="w-full py-2 px-3 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                    <i id="recordIcon" class="fa-solid fa-circle text-white"></i>
-                    <span id="recordText">Enregistrer MP4</span>
-                </button>
-                <button id="newGameBtn" title="Lancer une nouvelle partie avec une seed aléatoire" class="w-full py-2 px-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white rounded-xl font-bold shadow-lg shadow-cyan-500/20 active:scale-95 transition flex items-center justify-center gap-1.5 text-xs">
-                    <i class="fa-solid fa-shuffle"></i> Nouvelle partie
                 </button>
             </div>
         </div>
