@@ -411,9 +411,9 @@
             // La pause est gérée par le contrôleur de rendu et ne modifie pas le dt de la simulation.
             const realSurvivors = world.balls.filter(other => other.alive && !other.isClone);
             const isFinalElimination = realSurvivors.length === 1;
-            if (window.BallYstikBridge) {
-                window.BallYstikBridge.deathHitStopUntil = Math.max(
-                    window.BallYstikBridge.deathHitStopUntil || 0,
+            if (window.ArenaBattleBridge) {
+                window.ArenaBattleBridge.deathHitStopUntil = Math.max(
+                    window.ArenaBattleBridge.deathHitStopUntil || 0,
                     performance.now() + (isFinalElimination ? 650 : 140)
                 );
             }
@@ -608,7 +608,7 @@
             }
 
             // Flash cinématique pendant le hit-stop, plus intense sur l'élimination finale.
-            const hitStopRemaining = (window.BallYstikBridge?.deathHitStopUntil || 0) - performance.now();
+            const hitStopRemaining = (window.ArenaBattleBridge?.deathHitStopUntil || 0) - performance.now();
             if (hitStopRemaining > 0) {
                 const finalHitStop = hitStopRemaining > 180;
                 const alpha = Math.min(0.48, (hitStopRemaining / (finalHitStop ? 650 : 140)) * (finalHitStop ? 0.42 : 0.24));
