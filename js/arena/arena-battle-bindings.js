@@ -324,11 +324,10 @@
             this.updateLabels();
             this.saveOptions();
             // Recherche sans limite de tentatives : elle continue jusqu'à trouver une seed valide ou jusqu'à ce que l'utilisateur clique sur Arrêter.
-            // La simulation de recherche doit employer le même pas fixe et le même multiplicateur
-            // que la partie jouée, sinon une seed peut être validée puis diverger au replay.
-            const simulationSpeed = Math.max(0.1, Number(this.getOptions().gameSpeed) || 1);
-            const step = simulationSpeed / 60;
-            const totalSteps = Math.ceil(65 / step) + 1;
+            // La recherche et la partie utilisent exactement le même pas simulé.
+            // gameSpeed accélère le nombre de pas joués par seconde réelle, pas le dt physique.
+            const step = 1 / 60;
+            const totalSteps = 3900;
             const frameBudgetMs = 8;
             let foundSeed = null;
             let attempts = 0;
@@ -617,18 +616,17 @@
 
         tick(now) {
             if (!this.running || !this.world) return;
-            // Le combat avance sur des pas fixes de 1/60 s. Le multiplicateur accélère
-            // le temps simulé, pas la taille variable des pas : le replay reste déterministe.
-            const realDt = Math.max(0, (now - this.lastTime) / 1000);
+            const realDt = Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000));
             const gameSpeed = Math.max(0.1, Number(window.ArenaBattle.getOptions().gameSpeed) || 1);
             this.lastTime = now;
-            this.accumulator += Math.min(realDt, 0.25);
+
+            // La vitesse accélère l'accumulateur, jamais le pas physique transmis à update().
+            this.accumulator = (this.accumulator || 0) + realDt * gameSpeed;
             const fixedStep = 1 / 60;
             let steps = 0;
             try {
-                // Catch-up limité par frame pour éviter de bloquer l'interface ; le reliquat est conservé.
                 while (this.accumulator >= fixedStep && steps < 30) {
-                    this.withSeededRandom(() => window.ArenaBattle.update(fixedStep * gameSpeed, this.world));
+                    this.withSeededRandom(() => window.ArenaBattle.update(fixedStep, this.world));
                     this.accumulator -= fixedStep;
                     steps++;
                 }
