@@ -12,6 +12,7 @@
         abShrinkRate: ['shrinkRate', 'int', v => v + ' px/s'],
         abShrinkMax: ['shrinkMax', 'percent', v => v + '%'],
         abObstacles: ['obstacles', 'int', v => String(v)],
+        vortexObstacleCount: ['vortexObstacles', 'int', v => String(v)],
         abSpeed: ['gameSpeed', 'int', v => 'Vitesse ' + (v > 0 ? '+' : '') + v]
     };
     const STORAGE_KEY = 'ballystik.arena.options.v1';
@@ -64,6 +65,11 @@
             } catch (_) {}
             this.updateLabels();
             this.syncShrinkOptions();
+            const mapSelect = document.getElementById('arenaMapSelect');
+            const defaultSettings = document.getElementById('defaultMapSettings');
+            const vortexSettings = document.getElementById('vortexMapSettings');
+            if (defaultSettings) defaultSettings.hidden = (mapSelect?.value || 'neon') !== 'neon';
+            if (vortexSettings) vortexSettings.hidden = mapSelect?.value !== 'vortex';
         },
 
         getOptions() {
@@ -160,7 +166,9 @@
             if (mapSelect) mapSelect.addEventListener('change', () => {
                 this.saveOptions();
                 const mapSettings = document.getElementById('defaultMapSettings');
+                const vortexSettings = document.getElementById('vortexMapSettings');
                 if (mapSettings) mapSettings.hidden = mapSelect.value !== 'neon';
+                if (vortexSettings) vortexSettings.hidden = mapSelect.value !== 'vortex';
                 try { localStorage.removeItem('ballystik.arena.obstaclePositions.v1'); } catch (_) {}
                 if (window.ArenaBattle) window.ArenaBattle.applyOptions({ ...this.getOptions(), obstaclePositions: null });
                 this.start();
