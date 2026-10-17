@@ -292,6 +292,7 @@
                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
                 return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             }};
+            this.deathHitStopUntil = 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
                 balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
@@ -622,15 +623,21 @@
             const gameSpeed = Math.max(0.1, Number(window.ArenaBattle.getOptions().gameSpeed) || 1);
             this.lastTime = now;
 
-            // La vitesse accélère l'accumulateur, jamais le pas physique transmis à update().
-            this.accumulator = (this.accumulator || 0) + realDt * gameSpeed;
+            // Hit-stop visuel : on suspend brièvement la simulation sans modifier son dt
+            // ni la séquence physique, afin que la recherche de seed reste déterministe.
+            const hitStopActive = now < (this.deathHitStopUntil || 0);
+            if (!hitStopActive) {
+                this.accumulator = (this.accumulator || 0) + realDt * gameSpeed;
+            }
             const fixedStep = 1 / 60;
             let steps = 0;
             try {
-                while (this.accumulator >= fixedStep && steps < 30) {
+                while (!hitStopActive && this.accumulator >= fixedStep && steps < 30) {
                     this.withSeededRandom(() => window.ArenaBattle.update(fixedStep, this.world));
                     this.accumulator -= fixedStep;
                     steps++;
+                    // Si une boule vient de mourir, arrêter les pas supplémentaires de cette frame.
+                    if (performance.now() < (this.deathHitStopUntil || 0)) break;
                 }
                 window.ArenaBattle.render(this.ctx, this.world);
                 // Chaque image du jeu est recopiée vers la sortie vidéo fixe en 1080x1920.
