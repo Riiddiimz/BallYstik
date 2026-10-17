@@ -372,10 +372,12 @@
                                 frame++;
                                 const alive = trialWorld.balls.filter(ball => ball.alive && !ball.isClone);
                                 if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
+                                    // On accepte uniquement un gagnant apparu à 1:00,
+                                    // jamais une seed qui termine à 0:09 ou après 1:00.
                                     candidateWorked = alive.length === 1
                                         && window.ArenaBattle.winnerDisplayActive
-                                        && window.ArenaBattle.elapsedTime >= 59
-                                        && window.ArenaBattle.elapsedTime <= 65;
+                                        && window.ArenaBattle.elapsedTime >= 59.95
+                                        && window.ArenaBattle.elapsedTime <= 60.05;
                                     frame = totalSteps;
                                     break;
                                 }
