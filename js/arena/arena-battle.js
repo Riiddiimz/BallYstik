@@ -536,14 +536,14 @@
             if (this.finished) return;
 
             this.elapsedTime += dt;
-            const duration = Number(this.matchTime);
+            const duration = Number(this.matchTime) || 65;
             if (Number.isFinite(duration) && duration > 0 && this.elapsedTime >= duration) {
                 this.elapsedTime = duration;
                 world.time = this.elapsedTime;
                 world.matchTime = duration;
                 world.elapsedTime = this.elapsedTime;
 
-                // À 60 secondes, un gagnant est toujours désigné.
+                // À 1:05 au plus tard, clôturer la manche même si plusieurs boules survivent.
                 const contenders = world.balls
                     .filter(ball => !ball.isClone)
                     .sort((a, b) => {
@@ -878,6 +878,19 @@
 
             // Damage numbers
             this.damageNumbers.update(dt);
+
+            // À partir de 0:59, une boule seule déclenche immédiatement la victoire.
+            // Si elle survit seule plus tôt, la manche continue jusqu'à cette fenêtre.
+            if (this.elapsedTime >= 59) {
+                const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
+                if (survivors.length === 1) {
+                    this.winner = survivors[0];
+                    this.winnerDisplayActive = true;
+                    this.winnerDisplayElapsed = 0;
+                    this.finished = false;
+                    return;
+                }
+            }
 
             // HUD
             this.hud.update(dt, world);
