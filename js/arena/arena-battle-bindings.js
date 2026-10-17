@@ -386,10 +386,16 @@
                 setStatus('Seed trouvée : #' + foundSeed + '. Relance de la partie pour vérifier le résultat.');
                 this.start();
             } else {
-                if (wasCancelled) setStatus('Recherche arrêtée. Seed active restaurée : #' + originalSeed + '.');
-                else setStatus('Aucune seed trouvée après ' + attempts + ' essais. Relancez la recherche pour continuer depuis une autre seed.');
                 const input = document.getElementById('manualSeedInput');
-                if (input) input.value = String(originalSeed);
+                if (wasCancelled) {
+                    if (input) input.value = String(originalSeed);
+                    setStatus('Recherche arrêtée. Seed active restaurée : #' + originalSeed + '.');
+                } else {
+                    const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
+                    if (input) input.value = String(nextSeed);
+                    try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
+                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Prochaine recherche à partir de #' + nextSeed + '.');
+                }
                 this.start();
             }
         },
