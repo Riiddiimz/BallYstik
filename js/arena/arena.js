@@ -285,11 +285,12 @@
 
         isInsideDangerZone(ball) {
             if (this._isVortexMap() || !this.shrinkEnabled) return false;
-            const cmScale = this.canvas.height / 1920;
-            const safeLeft = this.padding + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
-            const safeTop = this.padding + 76 * cmScale + Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
-            const safeRight = this.canvas.width - this.padding - 38 * cmScale - Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
-            const safeBottom = this.canvas.height - this.padding - 38 * cmScale - Math.min(this.canvas.width, this.canvas.height) * this.shrinkMax;
+            // La zone dangereuse suit les dimensions dynamiques de l'arène, quelle que soit sa forme.
+            const maxInset = Math.min(this.w, this.h) * this.shrinkMax;
+            const safeLeft = this.padding + maxInset;
+            const safeTop = this.padding + maxInset;
+            const safeRight = this.canvas.width - this.padding - maxInset;
+            const safeBottom = this.canvas.height - this.padding - maxInset;
             return ball.x < safeLeft || ball.x > safeRight
                 || ball.y < safeTop || ball.y > safeBottom;
         }
