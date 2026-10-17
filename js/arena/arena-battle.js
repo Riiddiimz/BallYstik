@@ -902,10 +902,11 @@
             this.damageNumbers.update(dt);
 
             // Dès qu'il ne reste qu'une seule boule réelle en vie, elle gagne.
-            // La victoire ne dépend pas de la fin du chrono : l'écran Winner s'affiche
-            // immédiatement et reste visible pendant 2 secondes.
+            // Laisser d'abord se voir tout le ralenti final, puis afficher Winner 2 secondes.
             const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
             if (survivors.length === 1) {
+                const finalSlowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
+                if (finalSlowMoRemaining > 0) return;
                 this.winner = survivors[0];
                 console.info('[BallYstik][WINNER]', {
                     time: Number(this.elapsedTime.toFixed(2)),
@@ -932,18 +933,6 @@
             // Fond
             ctx.fillStyle = '#080a10';
             ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-            // Flash de KO pendant le vrai ralenti ; plus marqué à la fin du combat.
-            const slowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
-            if (slowMoRemaining > 0) {
-                const finalSlowMo = slowMoRemaining > 500;
-                const alpha = Math.min(0.34, (slowMoRemaining / (finalSlowMo ? 1800 : 420)) * (finalSlowMo ? 0.30 : 0.16));
-                ctx.save();
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-                ctx.restore();
-            }
 
             // Arène
             world.arena.render(ctx);
@@ -1048,6 +1037,18 @@
                 ctx.shadowBlur = 0;
                 ctx.fillStyle = '#fff';
                 ctx.fillText('DAMAGE ×2', centerX, bannerY);
+                ctx.restore();
+            }
+
+            // Flash de KO dessiné au-dessus de l'arène et des effets, pour qu'il soit réellement visible.
+            const slowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
+            if (slowMoRemaining > 0 && !this.winnerDisplayActive && !this.finished) {
+                const finalSlowMo = slowMoRemaining > 500;
+                const alpha = Math.min(0.34, (slowMoRemaining / (finalSlowMo ? 1800 : 420)) * (finalSlowMo ? 0.30 : 0.16));
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
                 ctx.restore();
             }
 
