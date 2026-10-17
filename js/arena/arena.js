@@ -94,22 +94,14 @@
             this.frameW = Math.max(60, c.width - this.padding * 2);
             this.frameH = Math.max(60, c.height - this.padding * 2);
 
-            // Réduction asymétrique de l'arène de combat, proportionnelle au canvas
-            // pour conserver les mêmes marges visuelles sur l'export vertical 9:16.
-            // Référence 1080x1920 : haut -2 cm (~76 px), bas -1 cm (~38 px),
-            // droite -1 cm (~38 px), gauche inchangée.
-            const cmScale = c.height / 1920;
-            const insetTop = 76 * cmScale;
-            const insetBottom = 38 * cmScale;
-            const insetRight = 38 * cmScale;
-            const left = this.padding + this.shrinkOffset;
-            const top = this.padding + insetTop + this.shrinkOffset;
-            const right = c.width - this.padding - insetRight - this.shrinkOffset;
-            const bottom = c.height - this.padding - insetBottom - this.shrinkOffset;
-            this.x = left;
-            this.y = top;
-            this.w = Math.max(60, right - left);
-            this.h = Math.max(60, bottom - top);
+            // Les dimensions de l'arène suivent toujours la taille réelle du canvas.
+            // Les collisions utilisent x/y/w/h : les boules rebondissent donc sur ces murs.
+            // Le padding ne sert qu'à garder le halo de la bordure visible dans le canvas.
+            const inset = this.padding + this.shrinkOffset;
+            this.x = inset;
+            this.y = inset;
+            this.w = Math.max(60, c.width - inset * 2);
+            this.h = Math.max(60, c.height - inset * 2);
         }
 
         _newSuckParticle(index, initial = false) {
