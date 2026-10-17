@@ -425,9 +425,8 @@
                 );
             }
 
-            // La manche ne s'arrête pas prématurément quand il ne reste qu'une boule.
-            // Le gagnant est déclaré par update() à la durée prévue (60 s), afin que
-            // le chrono et la recherche de seeds correspondent au vrai temps écoulé.
+            // La victoire est vérifiée à chaque update : si cette élimination laisse
+            // une seule boule réelle en vie, elle gagne immédiatement, quel que soit le chrono.
         }
 
         // ═══════════════════════════════════════════════════════════
@@ -879,17 +878,16 @@
             // Damage numbers
             this.damageNumbers.update(dt);
 
-            // À partir de 0:59, une boule seule déclenche immédiatement la victoire.
-            // Si elle survit seule plus tôt, la manche continue jusqu'à cette fenêtre.
-            if (this.elapsedTime >= 59) {
-                const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
-                if (survivors.length === 1) {
-                    this.winner = survivors[0];
-                    this.winnerDisplayActive = true;
-                    this.winnerDisplayElapsed = 0;
-                    this.finished = false;
-                    return;
-                }
+            // Dès qu'il ne reste qu'une seule boule réelle en vie, elle gagne.
+            // La victoire ne dépend pas de la fin du chrono : l'écran Winner s'affiche
+            // immédiatement et reste visible pendant 2 secondes.
+            const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
+            if (survivors.length === 1) {
+                this.winner = survivors[0];
+                this.winnerDisplayActive = true;
+                this.winnerDisplayElapsed = 0;
+                this.finished = false;
+                return;
             }
 
             // HUD
