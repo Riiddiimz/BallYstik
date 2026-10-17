@@ -895,6 +895,13 @@
             const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
             if (survivors.length === 1) {
                 this.winner = survivors[0];
+                console.info('[BallYstik][WINNER]', {
+                    time: Number(this.elapsedTime.toFixed(2)),
+                    livingRealBalls: survivors.length,
+                    livingClones: world.balls.filter(ball => ball.alive && ball.isClone).length,
+                    livingTotal: world.balls.filter(ball => ball.alive).length,
+                    winnerId: survivors[0].id
+                });
                 this.winnerDisplayActive = true;
                 this.winnerDisplayElapsed = 0;
                 this.finished = false;
@@ -923,6 +930,9 @@
             // Boules
             for (const ball of world.balls) {
                 if (!ball.alive) continue;
+                // Les clones restent des effets de combat, pas des survivants : ne pas les
+                // afficher pendant l'écran Winner pour éviter l'impression de deux gagnants.
+                if (this.winnerDisplayActive && ball.isClone) continue;
                 this._renderBall(ctx, ball, world);
             }
 
