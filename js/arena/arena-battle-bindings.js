@@ -292,7 +292,7 @@
                 t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
                 return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
             }};
-            this.deathHitStopUntil = 0;
+            this.deathSlowMoUntil = 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
                 balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
@@ -623,21 +623,21 @@
             const gameSpeed = Math.max(0.1, Number(window.ArenaBattle.getOptions().gameSpeed) || 1);
             this.lastTime = now;
 
-            // Hit-stop visuel : on suspend brièvement la simulation sans modifier son dt
-            // ni la séquence physique, afin que la recherche de seed reste déterministe.
-            const hitStopActive = now < (this.deathHitStopUntil || 0);
-            if (!hitStopActive) {
-                this.accumulator = (this.accumulator || 0) + realDt * gameSpeed;
-            }
+            // Vrai ralenti : la physique continue avec le dt fixe, mais le temps simulé
+            // avance plus lentement pendant l'effet. Les trajectoires restent déterministes.
+            const slowMoActive = now < (this.deathSlowMoUntil || 0);
+            const slowMoFactor = slowMoActive ? 0.22 : 1;
+            this.accumulator = (this.accumulator || 0) + realDt * gameSpeed * slowMoFactor;
             const fixedStep = 1 / 60;
             let steps = 0;
             try {
-                while (!hitStopActive && this.accumulator >= fixedStep && steps < 30) {
+                while (this.accumulator >= fixedStep && steps < 30) {
                     this.withSeededRandom(() => window.ArenaBattle.update(fixedStep, this.world));
                     this.accumulator -= fixedStep;
                     steps++;
-                    // Si une boule vient de mourir, arrêter les pas supplémentaires de cette frame.
-                    if (performance.now() < (this.deathHitStopUntil || 0)) break;
+                    // Une élimination déclenche un ralenti ; la frame s'arrête ici,
+                    // puis la simulation continue au rythme ralenti aux frames suivantes.
+                    if (performance.now() < (this.deathSlowMoUntil || 0)) break;
                 }
                 window.ArenaBattle.render(this.ctx, this.world);
                 // Chaque image du jeu est recopiée vers la sortie vidéo fixe en 1080x1920.
