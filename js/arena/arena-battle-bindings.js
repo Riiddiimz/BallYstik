@@ -323,14 +323,9 @@
             const originalSeed = this.getSeed();
             const firstSeed = originalSeed >>> 0 || 1;
 
-            // Réglages de recherche favorisant les éliminations, conservés aussi pour
-            // rejouer exactement la seed trouvée dans la partie réelle.
-            const hpInput = document.getElementById('abMaxHp');
-            const contactInput = document.getElementById('abContactDmg');
-            if (hpInput) hpInput.value = '50';
-            if (contactInput) contactInput.value = '2';
-            this.updateLabels();
-            this.saveOptions();
+            // La recherche utilise les réglages choisis par l'utilisateur, sans les modifier.
+            // Chaque candidate est testée avec les mêmes PV, dégâts, carte et vitesse
+            // que la partie qui sera lancée si une seed valide est trouvée.
             // Recherche sans limite de tentatives : elle continue jusqu'à trouver une seed valide ou jusqu'à ce que l'utilisateur clique sur Arrêter.
             // La recherche et la partie utilisent exactement le même pas simulé.
             // gameSpeed accélère le nombre de pas joués par seconde réelle, pas le dt physique.
