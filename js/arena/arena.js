@@ -5,6 +5,13 @@
 (function () {
     'use strict';
 
+    // MODIFIE LA TAILLE DE L'ARÈNE ICI (sans changer le format vidéo 9:16).
+    // 1 = toute la surface du canvas ; 0.90 = 90 % de sa largeur/hauteur.
+    const ARENA_CONFIG = {
+        width: 0.95,
+        height: 0.90
+    };
+
     const PALETTE = {
         floor:     'rgba(9, 12, 24, 0.94)',
         grid:      'rgba(90, 130, 210, 0.07)',
@@ -89,19 +96,23 @@
                 this.frameH = this.h;
                 return;
             }
-            this.frameX = this.padding;
-            this.frameY = this.padding;
-            this.frameW = Math.max(60, c.width - this.padding * 2);
-            this.frameH = Math.max(60, c.height - this.padding * 2);
+            // Le canvas/vidéo garde toujours son format 9:16.
+            // ARENA_CONFIG permet de régler séparément la taille du rectangle de combat.
+            const baseW = Math.max(60, c.width * Math.min(1, Math.max(0.1, ARENA_CONFIG.width)));
+            const baseH = Math.max(60, c.height * Math.min(1, Math.max(0.1, ARENA_CONFIG.height)));
+            const baseX = (c.width - baseW) / 2;
+            const baseY = (c.height - baseH) / 2;
+            this.frameX = baseX;
+            this.frameY = baseY;
+            this.frameW = baseW;
+            this.frameH = baseH;
 
-            // Les dimensions de l'arène suivent toujours la taille réelle du canvas.
-            // Les collisions utilisent x/y/w/h : les boules rebondissent donc sur ces murs.
-            // Le padding ne sert qu'à garder le halo de la bordure visible dans le canvas.
+            // Les murs de collision suivent le rectangle choisi et restent centrés.
             const inset = this.padding + this.shrinkOffset;
-            this.x = inset;
-            this.y = inset;
-            this.w = Math.max(60, c.width - inset * 2);
-            this.h = Math.max(60, c.height - inset * 2);
+            this.x = baseX + inset;
+            this.y = baseY + inset;
+            this.w = Math.max(60, baseW - inset * 2);
+            this.h = Math.max(60, baseH - inset * 2);
         }
 
         _newSuckParticle(index, initial = false) {
@@ -285,12 +296,12 @@
 
         isInsideDangerZone(ball) {
             if (this._isVortexMap() || !this.shrinkEnabled) return false;
-            // La zone dangereuse suit les dimensions dynamiques de l'arène, quelle que soit sa forme.
+            // La zone dangereuse reste à l'intérieur des murs de l'arène configurée.
             const maxInset = Math.min(this.w, this.h) * this.shrinkMax;
-            const safeLeft = this.padding + maxInset;
-            const safeTop = this.padding + maxInset;
-            const safeRight = this.canvas.width - this.padding - maxInset;
-            const safeBottom = this.canvas.height - this.padding - maxInset;
+            const safeLeft = this.x + maxInset;
+            const safeTop = this.y + maxInset;
+            const safeRight = this.x + this.w - maxInset;
+            const safeBottom = this.y + this.h - maxInset;
             return ball.x < safeLeft || ball.x > safeRight
                 || ball.y < safeTop || ball.y > safeBottom;
         }
