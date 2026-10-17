@@ -308,6 +308,15 @@
             const status = document.getElementById('seedSearchStatus');
             const originalSeed = this.getSeed();
             const firstSeed = originalSeed >>> 0 || 1;
+
+            // Réglages de recherche favorisant les éliminations, conservés aussi pour
+            // rejouer exactement la seed trouvée dans la partie réelle.
+            const hpInput = document.getElementById('abMaxHp');
+            const contactInput = document.getElementById('abContactDmg');
+            if (hpInput) hpInput.value = '50';
+            if (contactInput) contactInput.value = '2';
+            this.updateLabels();
+            this.saveOptions();
             // Recherche continue jusqu'à trouver une seed ou jusqu'à ce que l'utilisateur l'arrête.
             const step = 1 / 60;
             const totalSteps = 3600;
@@ -328,7 +337,7 @@
             try {
                 // Même principe que Hypnorai : la recherche est découpée en petits lots
                 // pour laisser le navigateur répondre et mettre à jour la progression.
-                for (attempts = 0; !this.seedSearchCancelRequested && attempts < 2000; attempts++) {
+                for (attempts = 0; !this.seedSearchCancelRequested && attempts < 10000; attempts++) {
                     const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
                     let state = candidateSeed;
                     const prng = { next() {
@@ -418,7 +427,7 @@
                     const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
                     if (input) input.value = String(nextSeed);
                     try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
-                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Tu peux relancer la recherche à partir de #' + nextSeed + '.');
+                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Réessaie : les réglages sont conservés et la recherche peut être relancée à partir de #' + nextSeed + '.');
                 }
                 this.start();
             }
