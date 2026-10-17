@@ -328,7 +328,7 @@
             try {
                 // Même principe que Hypnorai : la recherche est découpée en petits lots
                 // pour laisser le navigateur répondre et mettre à jour la progression.
-                for (attempts = 0; !this.seedSearchCancelRequested; attempts++) {
+                for (attempts = 0; !this.seedSearchCancelRequested && attempts < 2000; attempts++) {
                     const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
                     let state = candidateSeed;
                     const prng = { next() {
@@ -418,7 +418,7 @@
                     const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
                     if (input) input.value = String(nextSeed);
                     try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
-                    setStatus('Recherche interrompue après ' + attempts + ' essais. Reprends à partir de #' + nextSeed + ' si tu relances.');
+                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Tu peux relancer la recherche à partir de #' + nextSeed + '.');
                 }
                 this.start();
             }
