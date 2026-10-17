@@ -317,7 +317,7 @@
             if (contactInput) contactInput.value = '2';
             this.updateLabels();
             this.saveOptions();
-            // Recherche continue jusqu'à trouver une seed ou jusqu'à ce que l'utilisateur l'arrête.
+            // Recherche sans limite de tentatives : elle continue jusqu'à trouver une seed valide ou jusqu'à ce que l'utilisateur clique sur Arrêter.
             const step = 1 / 60;
             const totalSteps = 3900;
             const frameBudgetMs = 8;
@@ -337,7 +337,7 @@
             try {
                 // Même principe que Hypnorai : la recherche est découpée en petits lots
                 // pour laisser le navigateur répondre et mettre à jour la progression.
-                for (attempts = 0; !this.seedSearchCancelRequested && attempts < 10000; attempts++) {
+                for (attempts = 0; !this.seedSearchCancelRequested; attempts++) {
                     const candidateSeed = (firstSeed + attempts) >>> 0 || 1;
                     let state = candidateSeed;
                     const prng = { next() {
@@ -392,7 +392,7 @@
                         break;
                     }
                     if ((attempts + 1) % 5 === 0) {
-                        setStatus('Recherche en cours… ' + (attempts + 1) + ' seeds testées. Dernière seed : #' + candidateSeed + '.');
+                        setStatus('Recherche en cours… ' + (attempts + 1).toLocaleString('fr-FR') + ' seeds testées. Dernière seed : #' + candidateSeed + '. La recherche continue automatiquement.');
                         await nextFrame();
                     }
                 }
@@ -428,7 +428,7 @@
                     const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
                     if (input) input.value = String(nextSeed);
                     try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
-                    setStatus('Aucune seed gagnante entre 0:59 et 1:05 trouvée après ' + attempts + ' essais. Réessaie à partir de #' + nextSeed + '.');
+                    setStatus('Recherche interrompue sans seed gagnante après ' + attempts.toLocaleString('fr-FR') + ' essais. Seed suivante : #' + nextSeed + '.');
                 }
                 this.start();
             }
