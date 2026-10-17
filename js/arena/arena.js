@@ -5,16 +5,6 @@
 (function () {
     'use strict';
 
-    // POSITION DES 4 MURS DE BASE DE L'ARÈNE QUI SE RÉTRÉCIT.
-    // Chaque valeur est la marge depuis le bord du canvas : 0.05 = 5 %.
-    // Régle chaque côté indépendamment. La vidéo conserve son format 9:16.
-    const ARENA_CONFIG = {
-        top: 0.05,    // Marge en haut
-        bottom: 0.05, // Marge en bas
-        left: 0.025,  // Marge à gauche
-        right: 0.025  // Marge à droite
-    };
-
     const PALETTE = {
         floor:     'rgba(9, 12, 24, 0.94)',
         grid:      'rgba(90, 130, 210, 0.07)',
@@ -41,6 +31,12 @@
             this.padding      = options.padding      ?? 16;
             this.cornerRadius = options.cornerRadius ?? 44;
             this.mapStyle = options.mapStyle || 'neon';
+            this.arenaMargins = {
+                top: Number(options.arenaTop ?? 0.05),
+                bottom: Number(options.arenaBottom ?? 0.05),
+                left: Number(options.arenaLeft ?? 0.025),
+                right: Number(options.arenaRight ?? 0.025)
+            };
             this.vortexTestGL = null;
             this.vortexTestCanvas = null;
             this.vortexTestProgram = null;
@@ -101,10 +97,10 @@
             }
             // Le canvas/vidéo garde toujours son format 9:16.
             // Chaque bord de l'arène peut être positionné indépendamment.
-            const top = Math.min(0.9, Math.max(0, ARENA_CONFIG.top)) * c.height;
-            const bottom = Math.min(0.9, Math.max(0, ARENA_CONFIG.bottom)) * c.height;
-            const left = Math.min(0.9, Math.max(0, ARENA_CONFIG.left)) * c.width;
-            const right = Math.min(0.9, Math.max(0, ARENA_CONFIG.right)) * c.width;
+            const top = Math.min(0.9, Math.max(0, this.arenaMargins.top)) * c.height;
+            const bottom = Math.min(0.9, Math.max(0, this.arenaMargins.bottom)) * c.height;
+            const left = Math.min(0.9, Math.max(0, this.arenaMargins.left)) * c.width;
+            const right = Math.min(0.9, Math.max(0, this.arenaMargins.right)) * c.width;
             const baseX = left;
             const baseY = top;
             const baseW = Math.max(60, c.width - left - right);
