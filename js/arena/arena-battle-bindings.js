@@ -44,10 +44,16 @@
             this.loadOptions();
             this.bindControls();
             this.resizeCanvas();
-            window.addEventListener('resize', () => {
+            const resizeGame = () => {
                 this.resizeCanvas();
                 if (this.world) window.ArenaBattle.reset(this.world);
-            });
+            };
+            // Suit aussi les changements de taille du conteneur (pas seulement la fenêtre).
+            if ('ResizeObserver' in window) {
+                this.resizeObserver = new ResizeObserver(resizeGame);
+                this.resizeObserver.observe(document.getElementById('frameWrapper') || this.canvas);
+            }
+            window.addEventListener('resize', resizeGame);
             this.start();
         },
 
