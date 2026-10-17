@@ -282,7 +282,7 @@
             this.randomState = seed >>> 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
-                balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 60
+                balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
             };
             window.ArenaBattle.applyOptions(this.getOptions());
             this.withSeededRandom(() => window.ArenaBattle.reset(this.world));
@@ -319,7 +319,7 @@
             this.saveOptions();
             // Recherche continue jusqu'à trouver une seed ou jusqu'à ce que l'utilisateur l'arrête.
             const step = 1 / 60;
-            const totalSteps = 3600;
+            const totalSteps = 3900;
             const frameBudgetMs = 8;
             let foundSeed = null;
             let attempts = 0;
@@ -349,7 +349,7 @@
                     }};
                     const trialWorld = {
                         canvas: this.canvas, ctx: this.ctx, prng, seed: candidateSeed,
-                        balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 60
+                        balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
                     };
                     this.world = trialWorld;
                     this.randomState = candidateSeed;
@@ -357,7 +357,7 @@
                     let candidateWorked = false;
 
                     this.withSeededRandom(() => {
-                        window.ArenaBattle.applyOptions({ ...this.getOptions(), shrinkEnabled: false, matchTime: 60 });
+                        window.ArenaBattle.applyOptions({ ...this.getOptions(), matchTime: 65 });
                         window.ArenaBattle.reset(trialWorld);
                         trialWorld.playSound = () => {};
                     });
@@ -373,7 +373,8 @@
                                 if (window.ArenaBattle.winnerDisplayActive || window.ArenaBattle.finished) {
                                     candidateWorked = alive.length === 1
                                         && window.ArenaBattle.winnerDisplayActive
-                                        && Math.abs(window.ArenaBattle.elapsedTime - 60) < 1e-5;
+                                        && window.ArenaBattle.elapsedTime >= 59
+                                        && window.ArenaBattle.elapsedTime <= 65;
                                     frame = totalSteps;
                                     break;
                                 }
@@ -403,7 +404,7 @@
                 this.seedSearchRunning = false;
                 this.seedSearchCancelRequested = false;
                 if (button) {
-                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante à 1:00';
+                    button.innerHTML = '<i class="fa-solid fa-magnifying-glass mr-1"></i> Rechercher une seed gagnante entre 0:59 et 1:05';
                     button.classList.remove('border-red-500', 'text-red-200');
                 }
             }
@@ -427,7 +428,7 @@
                     const nextSeed = (firstSeed + Math.max(1, attempts)) >>> 0 || 1;
                     if (input) input.value = String(nextSeed);
                     try { localStorage.setItem(SEED_KEY, String(nextSeed)); } catch (_) {}
-                    setStatus('Aucune seed trouvée après ' + attempts + ' essais. Réessaie : les réglages sont conservés et la recherche peut être relancée à partir de #' + nextSeed + '.');
+                    setStatus('Aucune seed gagnante entre 0:59 et 1:05 trouvée après ' + attempts + ' essais. Réessaie à partir de #' + nextSeed + '.');
                 }
                 this.start();
             }
