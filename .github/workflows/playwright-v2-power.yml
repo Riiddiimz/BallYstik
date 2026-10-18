@@ -1,0 +1,63 @@
+name: Playwright — v2-power
+
+on:
+  push:
+    branches:
+      - v2-power
+  pull_request:
+    branches:
+      - v2-power
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: playwright-v2-power-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: npm install --no-save @playwright/test
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Start local web server
+        run: |
+          python3 -m http.server 4173 --bind 127.0.0.1 > /tmp/ballystik-http.log 2>&1 &
+          echo $! > /tmp/ballystik-http.pid
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:4173/ > /dev/null; then
+              echo "BallYstik server ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat /tmp/ballystik-http.log
+          exit 1
+
+      - name: Run browser smoke tests
+        run: npx playwright test tests/playwright.spec.cjs --reporter=list
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-v2-power
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
