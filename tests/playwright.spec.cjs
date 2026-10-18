@@ -111,7 +111,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       } else if (powerId === 'star_hunter') {
         behavior.update(ball, world, slot, dt);
         const p = world.projectiles.find(projectile => projectile.powerId === powerId);
-        if (p) for (let i = 0; i < 24; i++) {
+        if (p) for (let i = 0; i < 20; i++) {
           p.trail.push({ x: p.x, y: p.y });
           if (p.trail.length > 10) p.trail.shift();
           p.x += p.vx * dt; p.y += p.vy * dt;
