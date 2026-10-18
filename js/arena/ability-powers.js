@@ -129,6 +129,7 @@ function updatePower(id,ball,world,slot,dt) {
    for(const p of world.projectiles){if(p.ownerId!==ball.id||p.powerId!==id||!p.target||!p.target.alive)continue;const dx=p.target.x-p.x,dy=p.target.y-p.y,l=Math.hypot(dx,dy)||1;p.vx+=(dx/l)*1300*dt;p.vy+=(dy/l)*1300*dt;const s=Math.hypot(p.vx,p.vy)||1;if(s>540){p.vx=p.vx/s*540;p.vy=p.vy/s*540;}}
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const p=projectile(world,ball,t,{powerId:id,target:t,speed:280,life:2.6,damage:20,splashRadius:0,radius:7,color:'#fb923c',type:'star-hunter'});const speed=Math.hypot(p.vx,p.vy)||280;const launchAngle=Math.atan2(p.vy,p.vx)+(ball.id%2?-.48:.48);p.vx=Math.cos(launchAngle)*speed;p.vy=Math.sin(launchAngle)*speed;d.cooldown=2.8;}}
  } else if(id==='bomb_shrapnel'){
+   if(d.blastFlash){d.blastFlash.life-=dt;if(d.blastFlash.life<=0)d.blastFlash=null;}
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const p=projectile(world,ball,t,{powerId:id,speed:330,life:2.6,damage:15,splashRadius:92,radius:9,color:'#38bdf8',type:'bomb-shrapnel'});p.shrapnel=true;d.cooldown=3.2;}}
  } else if(id==='ghost_billiard'){
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const a=Math.atan2(t.y-ball.y,t.x-ball.x);for(let i=-1;i<=1;i++){const angle=a+i*.22;world.projectiles.push({x:ball.x+Math.cos(angle)*ball.radius,y:ball.y+Math.sin(angle)*ball.radius,vx:Math.cos(angle)*610,vy:Math.sin(angle)*610,radius:5,life:2.5,bounces:3,ownerId:ball.id,color:'#c084fc',damage:9,type:'ghost-billiard',trail:[],render:function(ctx,p){ctx.save();ctx.shadowColor='#c084fc';ctx.shadowBlur=20;ctx.fillStyle='#f5d0fe';ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,TAU);ctx.fill();ctx.restore();}});}d.cooldown=2.3;}}
@@ -223,7 +224,16 @@ function renderPower(id,ctx,ball,world,slot) {
    if(d.target&&d.charge>0){ring(ctx,d.target.x,d.target.y,22,'#7ce7ff',.4+d.charge,2);ctx.save();ctx.strokeStyle='#7ce7ff';ctx.globalAlpha=.25+d.charge*.7;ctx.setLineDash([10,8]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.lineTo(d.target.x,d.target.y);ctx.stroke();ctx.restore();}
    if(d.beam){ctx.save();ctx.strokeStyle='#fff';ctx.shadowColor=color;ctx.shadowBlur=26;ctx.lineWidth=12*d.beam.life/.22;ctx.beginPath();ctx.moveTo(d.beam.x1,d.beam.y1);ctx.lineTo(d.beam.x2,d.beam.y2);ctx.stroke();ctx.restore();}
  } else if(id==='bomb_shrapnel'){
-   /* La bombe porte sa propre silhouette sphérique ; l’explosion est rendue par le moteur à l’impact. */
+   if(d.blastFlash){
+     const f=d.blastFlash,t=1-Math.max(0,f.life)/(f.maxLife||.48),r=34+t*74;
+     glow(ctx,f.x,f.y,105,'#38bdf8',.5*(1-t)+.18);
+     ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=Math.max(.2,f.life/(f.maxLife||.48));
+     ctx.strokeStyle='#7dd3fc';ctx.shadowColor='#38bdf8';ctx.shadowBlur=26;ctx.lineWidth=5;
+     ctx.beginPath();ctx.arc(f.x,f.y,r,0,TAU);ctx.stroke();
+     ctx.strokeStyle='#fff';ctx.shadowBlur=12;ctx.lineWidth=3;
+     for(let i=0;i<12;i++){const a=i*TAU/12;ctx.beginPath();ctx.moveTo(f.x+Math.cos(a)*16,f.y+Math.sin(a)*16);ctx.lineTo(f.x+Math.cos(a)*r*1.1,f.y+Math.sin(a)*r*1.1);ctx.stroke();}
+     ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(f.x,f.y,12*(1-t)+4,0,TAU);ctx.fill();ctx.restore();
+   }
  } else if(id==='zero_detonator'){
    if(d.charge>0&&d.blastPoint){ring(ctx,d.blastPoint.x,d.blastPoint.y,170*(1-d.charge/.8), '#dbeafe',.85,3);glow(ctx,d.blastPoint.x,d.blastPoint.y,28,'#fff',1);}
    if(d.blastFlash)ring(ctx,d.blastFlash.x,d.blastFlash.y,160,'#7ce7ff',d.blastFlash.life/.3,6);
