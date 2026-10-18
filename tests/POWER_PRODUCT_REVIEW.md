@@ -303,3 +303,20 @@ Le [workflow Playwright 39164180097](https://github.com/Riiddiimz/BallYstik/acti
 Les 24 comportements ont été activés dans des mondes isolés, leurs conséquences techniques principales ont été contrôlées, et leurs fonctions de rendu Canvas ont été appelées sans exception. Le premier passage avait révélé trois scénarios de test trop courts ou mal positionnés (zones pas encore déposées, cible au centre de la Singularité) ; ces scénarios ont été corrigés, puis les 24 tests ont réussi. Ces échecs initiaux étaient des défauts de configuration des tests, pas des bugs prouvés dans les pouvoirs.
 
 **Interprétation :** fiabilité minimale du déclenchement et absence d'exception au rendu confirmées dans les scénarios simulés. Les visuels n'ont pas été notés : aucune vidéo/capture réelle par pouvoir n'a été examinée. Les 13 écarts code/promesse listés dans la deuxième passe restent à traiter comme risques produit prioritaires, pas comme 13 défauts tous confirmés visuellement.
+
+
+---
+
+## Catalogue actif validé — 10 pouvoirs
+
+La liste de 24 pouvoirs évaluée plus haut est historique. Le catalogue actif visé pour `v2-power` est désormais limité à 10 signatures : rayon instantané, missile traqueur, bombe explosive, onde de choc, lave persistante, trou noir, téléportation, transformation géante, parade réflectrice et duplication.
+
+### Critère de décision renforcé
+
+Un pouvoir ne reste dans le catalogue que si :
+- son événement visuel est différent de celui des neuf autres ;
+- son effet est compréhensible sans lire son nom ;
+- son résultat mécanique est visible dans la même séquence ;
+- sa promesse correspond à la mécanique réelle.
+
+La validation technique automatisée vérifie le déclenchement et les conséquences ; elle ne permet pas d’attribuer honnêtement une note de beauté ou de compréhension au viewer sans captures ou vidéo réelle.
