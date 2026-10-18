@@ -38,9 +38,24 @@ function projectile(world,ball,target,opts) {
   p.render=function(ctx,q){
     ctx.save();ctx.globalCompositeOperation='lighter';ctx.shadowColor=q.color;ctx.shadowBlur=q.type==='bomb-shrapnel'?24:18;
     if(q.type==='bomb-shrapnel'){
-      ctx.strokeStyle=q.color;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(q.x,q.y,q.radius*1.65,q.radius*.78,Math.atan2(q.vy,q.vx),0,TAU);ctx.stroke();
+      ctx.strokeStyle=q.color;ctx.lineWidth=2.5;ctx.beginPath();ctx.ellipse(q.x,q.y,q.radius*1.65,q.radius*.78,Math.atan2(q.vy,q.vx),0,TAU);ctx.stroke();
       ctx.fillStyle=q.color;ctx.beginPath();ctx.arc(q.x,q.y,q.radius,0,TAU);ctx.fill();
       ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x-q.radius*.25,q.y-q.radius*.25,q.radius*.35,0,TAU);ctx.fill();
+    } else if(q.type==='star-hunter'){
+      // La courbe orange persistante rend immédiatement le guidage distinct du tir rectiligne.
+      const trail=q.trail||[];
+      for(let i=1;i<trail.length;i++){
+        const a=trail[i-1],b=trail[i],alpha=i/trail.length;
+        ctx.globalAlpha=.12+.68*alpha;ctx.strokeStyle=q.color;ctx.lineWidth=2+4*alpha;
+        ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+      }
+      if(trail.length){const last=trail[trail.length-1];ctx.globalAlpha=.85;ctx.strokeStyle='#fed7aa';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(q.x,q.y);ctx.stroke();}
+      const angle=Math.atan2(q.vy,q.vx);
+      ctx.globalAlpha=1;ctx.fillStyle=q.color;ctx.beginPath();
+      ctx.moveTo(q.x+Math.cos(angle)*q.radius*1.8,q.y+Math.sin(angle)*q.radius*1.8);
+      ctx.lineTo(q.x+Math.cos(angle+2.45)*q.radius*1.5,q.y+Math.sin(angle+2.45)*q.radius*1.5);
+      ctx.lineTo(q.x+Math.cos(angle-2.45)*q.radius*1.5,q.y+Math.sin(angle-2.45)*q.radius*1.5);
+      ctx.closePath();ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x,q.y,q.radius*.55,0,TAU);ctx.fill();
     } else {
       ctx.strokeStyle=q.color;ctx.lineWidth=q.radius*1.1;ctx.beginPath();ctx.moveTo(q.x-q.vx*.035,q.y-q.vy*.035);ctx.lineTo(q.x,q.y);ctx.stroke();
       ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x,q.y,q.radius*.55,0,TAU);ctx.fill();
