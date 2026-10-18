@@ -77,10 +77,16 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       if (!world || !bridge || !behavior || !meta || !world.balls || world.balls.length < 2) {
         return { error: 'Monde, balles ou pouvoir indisponible', powerId };
       }
+      // Chaque capture part d'un état propre : aucun projectile ou effet du pouvoir précédent.
+      world.projectiles.length = 0;
+      window.ArenaBattle.particles.length = 0;
+      window.ArenaBattle.shockwaves.length = 0;
+      world.balls = world.balls.filter(b => !b.isClone);
       const bounds = world.arena.getBounds();
       const width = bounds.right - bounds.left;
       const height = bounds.bottom - bounds.top;
       const balls = world.balls.filter(b => b.alive && !b.isClone);
+      for (const existingBall of balls) existingBall.abilitySlots = [];
       const ball = balls[0];
       const target = balls.find(b => b !== ball && b.team !== ball.team);
       if (!target) return { error: 'Cible adverse absente', powerId };
@@ -105,9 +111,9 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       } else if (powerId === 'star_hunter') {
         behavior.update(ball, world, slot, dt);
         const p = world.projectiles.find(projectile => projectile.powerId === powerId);
-        if (p) for (let i = 0; i < 12; i++) {
+        if (p) for (let i = 0; i < 24; i++) {
           p.trail.push({ x: p.x, y: p.y });
-          if (p.trail.length > 6) p.trail.shift();
+          if (p.trail.length > 10) p.trail.shift();
           p.x += p.vx * dt; p.y += p.vy * dt;
           behavior.update(ball, world, slot, dt);
         }
