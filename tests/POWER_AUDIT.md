@@ -1,6 +1,6 @@
 # Process d’audit Playwright — pouvoirs BallYstik
 
-Ce protocole est à appliquer **séparément aux 24 pouvoirs**, puis à rejouer après chaque modification d’un pouvoir. Il distingue les contrôles automatisables (présence, déclenchement, erreurs, traces visuelles) de la validation de lisibilité, qui exige de regarder les captures comme un spectateur sur téléphone.
+Ce protocole s’applique au **catalogue actif de 10 pouvoirs** de `v2-power` et doit être rejoué après chaque modification. Les listes et résultats portant sur 24 pouvoirs plus bas sont historiques. Le protocole distingue les contrôles automatisables (présence, déclenchement, erreurs, traces visuelles) de la validation de lisibilité, qui exige de regarder les captures comme un spectateur sur téléphone.
 
 ## 1. Fiche obligatoire par pouvoir
 
