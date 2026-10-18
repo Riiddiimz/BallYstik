@@ -89,3 +89,22 @@ Le rapport doit contenir :
 6. une action de correction précise pour chaque défaut.
 
 **État initial :** les tests smoke actuels ne valident pas les animations et conséquences des 24 pouvoirs. Ne pas marquer de pouvoir PASS avant que son scénario individuel ait été exécuté et ses preuves revues.
+
+
+## Passe exécutée — 18 octobre 2026
+
+**Référence de code testée :** `424c1307c3e687c45c483b04f76381048322af2b`  
+**Navigateur CI :** Chromium via Playwright, viewport par défaut du test.  
+**Résultat du workflow :** [Playwright v2-power — succès](https://github.com/Riiddiimz/BallYstik/actions/runs/39163652606).
+
+### Résultats réels
+
+- **24/24** : revue statique du registre et des comportements terminée.
+- **Smoke UI** : chargement, présence des 24 entrées, 8 familles, interaction/persistance des réglages et présence des contrôles principaux — réussi.
+- **4 pouvoirs testés dynamiquement** : Dernier Souffle, Dôme Réfractaire, Bélier Titan et Surcharge Électrique — assertions ciblées réussies.
+- **20 pouvoirs restants** : pas encore couverts par un test de conséquence individuelle dans Playwright.
+- **24/24 pouvoirs** : validation visuelle mobile et compréhension sans audio **non réalisée** ; aucune note visuelle ne doit être inventée.
+
+### Limite de validation
+
+Le workflow ne doit pas être interprété comme un audit visuel complet : il n'a pas produit/revu une capture avant-pendant-après pour chacun des pouvoirs. Le statut produit final de chaque pouvoir reste **NON ÉVALUÉ** jusqu'à l'exécution du protocole complet de la section 2. La revue statique et les quatre tests comportementaux sont des éléments de preuve partiels, pas des PASS définitifs.
