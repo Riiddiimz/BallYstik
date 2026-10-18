@@ -153,3 +153,24 @@ Chaque test appelle le vrai comportement du pouvoir, vérifie une conséquence a
 - Capture vidéo réelle en combat : **NON FAITE**.
 - Lisibilité 9:16, compréhension sans nom ni audio, fréquence d'activation en match et impact sur la victoire : **NON ÉVALUÉS**.
 - Équilibre numérique, interactions entre pouvoirs et bugs après plusieurs minutes : **NON COUVERTS** par cette passe.
+
+
+---
+
+## Mise à jour — refonte validée des 10 pouvoirs (18 octobre 2026)
+
+La grille des 24 pouvoirs ci-dessus est conservée comme historique de l’audit précédent. Elle ne décrit plus le catalogue actif de `v2-power`.
+
+Le catalogue actif doit contenir exactement ces 10 signatures :
+1. `judgment_ray` — rayon instantané en ligne droite.
+2. `star_hunter` — missile à trajectoire courbe qui poursuit une cible.
+3. `bomb_shrapnel` — bombe sphérique qui explose à l’impact.
+4. `seismic_nova` — anneau rouge expansif qui repousse.
+5. `magma_rift` — fissure de lave persistante au sol.
+6. `singularity` — trou noir qui attire puis implose.
+7. `quantum_jump` — disparition et réapparition derrière la cible.
+8. `colossus` — transformation géante avec impacts renforcés.
+9. `prism_reflector` — parade hexagonale qui bloque et renvoie une attaque.
+10. `multiplication` — une boule devient trois boules apparentes.
+
+Les tests Playwright ont été réécrits pour contrôler les 10 entrées, leurs comportements, leurs conséquences mesurables et l’absence d’erreur au rendu Canvas. Un passage réussi ne vaut pas validation visuelle : il reste nécessaire de regarder des séquences 9:16 réelles et de faire le test « qu’est-ce que tu viens de voir ? » auprès d’une personne qui ne connaît pas le projet.
