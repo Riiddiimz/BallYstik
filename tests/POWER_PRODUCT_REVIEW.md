@@ -294,3 +294,12 @@ L'audit de code des **24/24 pouvoirs est terminé**. Les quatre tests ciblés ci
 7. **Singularité / Distorsion Temporelle / Détonateur Zéro** — prouver visuellement l'aspiration, le ralentissement et le point de détonation.
 
 Aucun score sur 100 n'est attribué tant que les dimensions visuelles et de compréhension n'ont pas été observées.
+
+
+## Quatrième passe — résultats individuels Playwright
+
+Le [workflow Playwright 39164180097](https://github.com/Riiddiimz/BallYstik/actions/runs/39164180097) a réussi sur le commit `61c3f887627cc90bad89cdcbf614017dce7baa89` : **31 tests passés**, dont 24 scénarios individuels, un par pouvoir.
+
+Les 24 comportements ont été activés dans des mondes isolés, leurs conséquences techniques principales ont été contrôlées, et leurs fonctions de rendu Canvas ont été appelées sans exception. Le premier passage avait révélé trois scénarios de test trop courts ou mal positionnés (zones pas encore déposées, cible au centre de la Singularité) ; ces scénarios ont été corrigés, puis les 24 tests ont réussi. Ces échecs initiaux étaient des défauts de configuration des tests, pas des bugs prouvés dans les pouvoirs.
+
+**Interprétation :** fiabilité minimale du déclenchement et absence d'exception au rendu confirmées dans les scénarios simulés. Les visuels n'ont pas été notés : aucune vidéo/capture réelle par pouvoir n'a été examinée. Les 13 écarts code/promesse listés dans la deuxième passe restent à traiter comme risques produit prioritaires, pas comme 13 défauts tous confirmés visuellement.
