@@ -84,7 +84,7 @@ function updatePower(id,ball,world,slot,dt) {
    for(const p of world.projectiles){if(p.ownerId!==ball.id||p.powerId!==id||!p.target||!p.target.alive)continue;const dx=p.target.x-p.x,dy=p.target.y-p.y,l=Math.hypot(dx,dy)||1;p.vx+=(dx/l)*1300*dt;p.vy+=(dy/l)*1300*dt;const s=Math.hypot(p.vx,p.vy)||1;if(s>540){p.vx=p.vx/s*540;p.vy=p.vy/s*540;}}
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){projectile(world,ball,t,{powerId:id,target:t,speed:280,life:2.6,damage:20,splashRadius:90,radius:7,color:'#fb923c',type:'star-hunter'});d.cooldown=2.8;}}
  } else if(id==='bomb_shrapnel'){
-   if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){projectile(world,ball,t,{powerId:id,speed:330,life:2.6,damage:15,splashRadius:92,radius:9,color:'#38bdf8',type:'bomb-shrapnel'});d.cooldown=3.2;}}
+   if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const p=projectile(world,ball,t,{powerId:id,speed:330,life:2.6,damage:15,splashRadius:92,radius:9,color:'#38bdf8',type:'bomb-shrapnel'});p.shrapnel=true;d.cooldown=3.2;}}
  } else if(id==='ghost_billiard'){
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const a=Math.atan2(t.y-ball.y,t.x-ball.x);for(let i=-1;i<=1;i++){const angle=a+i*.22;world.projectiles.push({x:ball.x+Math.cos(angle)*ball.radius,y:ball.y+Math.sin(angle)*ball.radius,vx:Math.cos(angle)*610,vy:Math.sin(angle)*610,radius:5,life:2.5,bounces:3,ownerId:ball.id,color:'#c084fc',damage:9,type:'ghost-billiard',trail:[],render:function(ctx,p){ctx.save();ctx.shadowColor='#c084fc';ctx.shadowBlur=20;ctx.fillStyle='#f5d0fe';ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,TAU);ctx.fill();ctx.restore();}});}d.cooldown=2.3;}}
  } else if(id==='seismic_nova'){
