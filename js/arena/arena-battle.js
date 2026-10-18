@@ -252,6 +252,7 @@
                         const beh = window.AbilityBehaviors[slot.meta.id];
                         // Un reflet ne doit jamais relancer une réflexion d'épines.
                         if (opts && opts.noThornsReflect && slot.meta.id === 'thorns') continue;
+                        if (opts && opts.noPowerReflect && slot.meta.id === 'revenge_mirror') continue;
                         if (beh && beh.onTakeDamage) {
                             finalAmount = beh.onTakeDamage(target, attacker, finalAmount, world, slot) ?? finalAmount;
                         }
@@ -259,6 +260,8 @@
 
                     const dealt = target.health.damage(finalAmount, opts);
                     if (dealt <= 0) return 0;
+                    // Les leurres de Multiplication disparaissent au premier impact reçu.
+                    if (target.isPowerDecoy && target.health) { target.health.current = 0; target.health.dead = true; }
 
                     if (source !== 'firetrail' && source !== 'blackhole' && !(opts && opts.silent)) {
                         const dmgColor = source === 'laser' ? '#ff2a85'

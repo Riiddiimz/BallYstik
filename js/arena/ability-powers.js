@@ -100,7 +100,7 @@ function updatePower(id,ball,world,slot,dt) {
    tickZones(ball,world,d,dt,'toxic');
  } else if(id==='singularity'){
    if(d.cooldown<=0){const t=nearest(ball,world,650);if(t){d.zones.push({x:t.x,y:t.y,r:155,life:2,maxLife:2,tick:.3});d.cooldown=5;}}
-   for(const z of d.zones){for(const t of enemies(ball,world)){const dx=z.x-t.x,dy=z.y-t.y,l=Math.hypot(dx,dy)||1;if(l<z.r*2){t.vx+=dx/l*230*dt;t.vy+=dy/l*230*dt;if(l<z.r&&z.tick<=0){world.damage(t,ball,2,'singularity');z.tick=.3;}}}}
+   for(const z of d.zones){for(const t of enemies(ball,world)){const dx=z.x-t.x,dy=z.y-t.y,l=Math.hypot(dx,dy)||1;if(l<z.r*2){t.vx+=dx/l*230*dt;t.vy+=dy/l*230*dt;z.tick=(z.tick||0)-dt;if(l<z.r&&z.tick<=0){world.damage(t,ball,2,'singularity');z.tick=.3;}}}}
    d.zones=d.zones.filter(z=>z.life>0);for(const z of d.zones)z.life-=dt;
  } else if(id==='polarity_flip'){
    if(d.cooldown<=0){d.target=nearest(ball,world,650);if(d.target){d.active=1;d.cooldown=4.1;}}
@@ -126,7 +126,7 @@ function updatePower(id,ball,world,slot,dt) {
    if(d.active>0){d.angle+=dt*3.5;for(let i=0;i<6;i++){const a=d.angle+i*TAU/6;const x=ball.x+Math.cos(a)*64,y=ball.y+Math.sin(a)*64;for(const t of enemies(ball,world)){if(Math.hypot(t.x-x,t.y-y)<t.radius+12&&!d.droneHits[t.id]){world.damage(t,ball,4,'voracious-swarm');const l=distance(ball,t)||1;t.vx+=(t.x-x)/l*75;t.vy+=(t.y-y)/l*75;d.droneHits[t.id]=.45;}}}for(const k in d.droneHits){d.droneHits[k]-=dt;if(d.droneHits[k]<=0)delete d.droneHits[k];}}
  } else if(id==='colossus'){
    if(d.cooldown<=0){d.active=3;d.cooldown=6;d.originalRadius=ball.radius;ball.radius=d.originalRadius*1.6;ball.speedMultiplier=.7;world.addShockwave(ball.x,ball.y,{radius:100,color:'#fbbf24',life:.4});}
-   if(d.active>0){ball.speedMultiplier=.7;ball.radius=d.originalRadius||ball.radius;}else{ball.speedMultiplier=1;ball.radius=d.originalRadius||ball.radius;}
+   if(d.active>0){ball.speedMultiplier=.7;ball.radius=(d.originalRadius||ball.radius)*1.6;}else{ball.speedMultiplier=1;ball.radius=d.originalRadius||ball.radius;}
  } else if(id==='electric_overload'){
    if(d.cooldown<=0){d.active=2.5;d.cooldown=5.2;d.hitTimers={};world.spawnParticle(ball.x,ball.y,{color:'#7ce7ff',count:22,speed:250,life:.5,spread:TAU});}
    if(d.active>0){for(const t of enemies(ball,world)){if(distance(ball,t)<ball.radius+t.radius+42&&!d.hitTimers[t.id]){world.damage(t,ball,7,'electric-overload');d.hitTimers[t.id]=.45;world.spawnParticle(t.x,t.y,{color:'#7ce7ff',count:12,speed:180,life:.3,spread:TAU});}}}
