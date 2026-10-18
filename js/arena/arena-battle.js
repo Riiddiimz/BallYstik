@@ -800,7 +800,7 @@
                 p.life -= dt;
                 // Trail
                 p.trail.push({ x: p.x, y: p.y });
-                if (p.trail.length > 6) p.trail.shift();
+                if (p.trail.length > 10) p.trail.shift();
 
                 // Collisions murs
                 const beforeX = p.x, beforeY = p.y;
