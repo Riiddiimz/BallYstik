@@ -108,3 +108,48 @@ Le rapport doit contenir :
 ### Limite de validation
 
 Le workflow ne doit pas être interprété comme un audit visuel complet : il n'a pas produit/revu une capture avant-pendant-après pour chacun des pouvoirs. Le statut produit final de chaque pouvoir reste **NON ÉVALUÉ** jusqu'à l'exécution du protocole complet de la section 2. La revue statique et les quatre tests comportementaux sont des éléments de preuve partiels, pas des PASS définitifs.
+
+
+## Quatrième passe — déclenchement individuel des 24 pouvoirs (18 octobre 2026)
+
+**Exécution :** [Playwright run 39164180097 — SUCCESS](https://github.com/Riiddiimz/BallYstik/actions/runs/39164180097)  
+**Commit testé :** `61c3f887627cc90bad89cdcbf614017dce7baa89`  
+**Résultat : 31 tests réussis**, dont un scénario individuel par pouvoir, en plus des smoke tests et des 4 tests comportementaux précédents.
+
+| Pouvoir | Contrôle individuel | Résultat |
+|---|---|---|
+| Rayon du Jugement | Charge, rayon et dégâts | PASS |
+| Chasseur Stellaire | Création du projectile à tête chercheuse | PASS |
+| Billard Fantôme | Création de 3 projectiles rebondissants | PASS |
+| Nova Sismique | Dégâts et onde de choc | PASS |
+| Bélier Titan | Charge et multiplicateur de vitesse | PASS |
+| Détonateur Zéro | Explosion différée et dégâts | PASS |
+| Faille Magmatique | Création des zones de lave | PASS |
+| Prison de Givre | Création de la zone de ralentissement | PASS |
+| Brouillard Toxique | Création des zones toxiques | PASS |
+| Singularité | Zone active et attraction mesurable d'une cible voisine | PASS |
+| Polarité Inversée | Modification de la vitesse de la cible | PASS |
+| Distorsion Temporelle | Application du timer de ralentissement | PASS |
+| Fantôme Éclair | Dash et multiplicateur de vitesse | PASS |
+| Portail Miroir | Déplacement instantané et deux positions de portail | PASS |
+| Orbite Folle | Activation et changement de trajectoire | PASS |
+| Multiplication | Création de deux leurres | PASS |
+| Tourelle Sentinelle | Déploiement et émission d'un projectile | PASS |
+| Essaim Vorace | Activation des six drones | PASS |
+| Colosse | Agrandissement et réduction de vitesse | PASS |
+| Surcharge Électrique | Activation et dégâts à courte portée | PASS |
+| Comète Ardente | Accélération et création de traînée brûlante | PASS |
+| Dôme Réfractaire | Activation du bouclier | PASS |
+| Miroir Vengeur | Réflexion de dégâts | PASS |
+| Dernier Souffle | Explosion posthume et dégâts | PASS |
+
+### Ce que signifie PASS ici
+
+Chaque test appelle le vrai comportement du pouvoir, vérifie une conséquence attendue, puis appelle sa fonction de rendu Canvas sans exception. Le monde de combat et le contexte Canvas sont simulés pour rendre le test reproductible. **Ce n'est pas une preuve que l'effet est beau, lisible sur mobile, équilibré en partie réelle ou compris sans son.** Aucun score esthétique ou rétention n'est attribué par ces tests.
+
+### Limites / suite
+
+- Déclenchement et rendu sans exception : **24/24 PASS** dans les scénarios isolés.
+- Capture vidéo réelle en combat : **NON FAITE**.
+- Lisibilité 9:16, compréhension sans nom ni audio, fréquence d'activation en match et impact sur la victoire : **NON ÉVALUÉS**.
+- Équilibre numérique, interactions entre pouvoirs et bugs après plusieurs minutes : **NON COUVERTS** par cette passe.
