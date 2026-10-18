@@ -72,7 +72,7 @@ function updatePower(id,ball,world,slot,dt) {
  if(id==='judgment_ray'){
    const target=nearest(ball,world,720);
    if(target&&d.cooldown<=.6){d.target=target;d.charge=Math.min(.6,d.charge+dt);}else{d.charge=0;d.target=null;}
-   if(d.charge>=.6&&d.cooldown<=.6){hit(ball,target,world,18,90,'#7ce7ff','judgment-ray');d.beam={x1:ball.x,y1:ball.y,x2:target.x,y2:target.y,life:.22};d.cooldown=2.2;d.charge=0;d.target=null;}
+   if(d.charge>=.6&&d.cooldown<=.6){const x1=ball.x,y1=ball.y,x2=target.x,y2=target.y,dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1;const struck=[];for(const victim of enemies(ball,world)){const px=victim.x-x1,py=victim.y-y1,along=(px*dx+py*dy)/(len*len),side=Math.abs(px*dy-py*dx)/len;if(along>0&&along<=1.25&&side<victim.radius+18){struck.push({victim,along});}}struck.sort((a,b)=>a.along-b.along);for(const item of struck.slice(0,2)){world.damage(item.victim,ball,item.along>1?9:18,'judgment-ray');world.spawnParticle(item.victim.x,item.victim.y,{color:'#7ce7ff',count:12,speed:210,life:.35,spread:TAU});}d.beam={x1,y1,x2,y2,life:.22};d.cooldown=2.2;d.charge=0;d.target=null;}
    if(d.beam){d.beam.life-=dt;if(d.beam.life<=0)d.beam=null;}
  } else if(id==='star_hunter'){
    for(const p of world.projectiles){if(p.ownerId!==ball.id||p.powerId!==id||!p.target||!p.target.alive)continue;const dx=p.target.x-p.x,dy=p.target.y-p.y,l=Math.hypot(dx,dy)||1;p.vx+=(dx/l)*1300*dt;p.vy+=(dy/l)*1300*dt;const s=Math.hypot(p.vx,p.vy)||1;if(s>540){p.vx=p.vx/s*540;p.vy=p.vy/s*540;}}
@@ -119,7 +119,8 @@ function updatePower(id,ball,world,slot,dt) {
  } else if(id==='multiplication'){
    if(d.cooldown<=0){for(let i=0;i<2;i++){const cloneId=world.spawnCloneFor(ball,{lifetime:3,hpRatio:.12,opacity:.42});const c=world.balls.find(b=>b.id===cloneId);if(c){c.isPowerDecoy=true;c.vx=ball.vx+(i?90:-90);c.vy=ball.vy+(i?-90:90);}}d.cooldown=6;world.spawnParticle(ball.x,ball.y,{color:'#22d3ee',count:24,speed:240,life:.45,spread:TAU});}
  } else if(id==='sentinel_turret'){
-   if(d.turretLife<=0){d.turretLife=4;d.turretX=ball.x;d.turretY=ball.y;d.turretFire=.1;}
+   d.turretCooldown=(d.turretCooldown||0)-dt;
+   if(d.turretLife<=0&&d.turretCooldown<=0){d.turretLife=4;d.turretCooldown=8;d.turretX=ball.x;d.turretY=ball.y;d.turretFire=.1;}
    if(d.turretLife>0){d.turretLife-=dt;d.turretFire-=dt;if(d.turretFire<=0){const t=nearest({x:d.turretX,y:d.turretY,team:ball.team},world,540);if(t){projectile(world,{...ball,x:d.turretX,y:d.turretY},{x:t.x,y:t.y},{powerId:id,speed:520,life:1.8,damage:6,radius:5,color:'#67e8f9',type:'sentinel'});d.turretFire=.8;}}}
  } else if(id==='voracious_swarm'){
    if(d.cooldown<=0){d.active=4;d.cooldown=6.5;d.angle=0;d.droneHits={};}
