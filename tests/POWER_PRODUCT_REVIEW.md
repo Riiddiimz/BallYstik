@@ -223,3 +223,45 @@ Le test Playwright attend le texte **« 24 / 24 »**, mais le compteur de régla
 - Tests visuels individuels Playwright : **pas encore présents**.
 - Première anomalie à résoudre : compteur/test « 24 / 24 » contre le poids négatif de Dernier Souffle.
 - Les observations ci-dessus sont des hypothèses de test fondées sur le code, pas des verdicts finaux sur le rendu.
+
+
+## Deuxième passe — écarts code / promesse produit (18 octobre 2026)
+
+Cette passe croise les descriptions du registre et les comportements de `js/arena/ability-powers.js`. Elle ne remplace pas l'observation en navigateur. Les points ci-dessous sont des risques visibles dans le code, à confirmer par tests reproductibles avant toute modification.
+
+### Anomalies et écarts prioritaires
+
+| Priorité | Pouvoir | Constat dans le code | Risque spectateur / combat | Vérification à exécuter |
+|---|---|---|---|---|
+| P0 | Dernier Souffle | Poids de registre `-1`; la sélection aléatoire filtre les poids strictement positifs. | Le pouvoir semble absent du combat normal, sauf activation manuelle ou configuration spéciale. | Vérifier comment il est attribué et si une boule peut l'avoir équipé avant de mourir. |
+| P1 | Surcharge Électrique | La description promet des « décharges en chaîne », mais le comportement applique des dégâts aux ennemis proches du lanceur et le rendu dessine des éclairs autour de lui ; aucune chaîne visuelle de cible en cible n'apparaît dans ce fichier. | La promesse est plus spectaculaire que l'effet codé ; peut ressembler à une simple aura de dégâts. | Forcer deux ennemis proches et vérifier si l'éclair relie réellement plusieurs cibles. |
+| P1 | Dôme Réfractaire | Le bouclier est consommé par le premier dégât positif, quelle que soit son importance ; il ne filtre pas les « grosses attaques ». Il réduit ce dégât à 18 %. | Une petite collision peut potentiellement consommer le bouclier malgré la description. | Comparer petite touche et gros impact ; vérifier la disparition visuelle. |
+| P1 | Bélier Titan | Le lanceur prend une direction et une vitesse temporaire, mais sa trajectoire n'est pas corrigée explicitement vers la cible pendant la charge. Le contact doit se produire dans une fenêtre de 0,65 s. | Peut foncer à côté de la cible et paraître inefficace ou aléatoire. | Tester cible proche, latérale et mobile ; mesurer le taux d'impact. |
+| P1 | Fantôme Éclair | Le dash dure 0,32 s ; la rémanence est dessinée depuis une position mémorisée avec des décalages de vitesse. | L'effet peut être trop bref ou les rémanences ne pas correspondre au chemin parcouru. | Capture vidéo, vérifier déplacement, invulnérabilité et retour de vitesse. |
+| P1 | Portail Miroir | Le code téléporte la boule à l'opposé de la cible et dessine deux anneaux ; il ne crée pas de portail traversable. | Le nom peut suggérer un passage entre portails, alors qu'il s'agit d'une téléportation directe. | Regarder sans le nom : le spectateur comprend-il la téléportation ? |
+| P1 | Orbite Folle | Le code fait tourner la direction de vitesse, mais la boule n'orbite pas autour d'un point ou d'un adversaire. | Le mouvement visible peut ne pas correspondre au mot « orbite ». | Filmer 1,2 s et juger si le mouvement se lit comme une rotation ou une trajectoire courbe. |
+| P1 | Prison de Givre | Le code ralentit la cible et réduit ponctuellement sa vitesse, mais ne l'immobilise pas. | « Prison » peut surpromettre une immobilisation. | Mesurer la vitesse avant/après et vérifier le signal visuel du ralentissement. |
+| P2 | Multiplication | Les doubles sont des leurres temporaires ; aucun lien visuel explicite n'identifie la vraie boule dans ce comportement. | Difficile de distinguer l'original des leurres dans un combat chargé. | Vérifier à l'échelle mobile si l'original est identifiable. |
+| P2 | Tourelle Sentinelle | Les tirs infligent 6 dégâts toutes les 0,8 s ; la tourelle est représentée surtout par un anneau et quatre traits. | Elle peut être confondue avec un marqueur décoratif et son impact sembler faible. | Vérifier la lisibilité de la tourelle, des tirs et des pertes de PV. |
+| P2 | Essaim Vorace | Six éléments tournent autour de la boule ; le rendu n'inclut pas d'animation de piqué dédiée au moment des dégâts. | Peut se lire comme une aura orbitale plutôt qu'un essaim qui attaque. | Vérifier si le contact drone-cible est visible au moment des dégâts. |
+| P2 | Singularité | La zone attire et inflige 2 dégâts par tick ; le rendu est un trou noir avec anneaux. | Peut sembler décorative si l'aspiration ne déplace pas nettement les cibles. | Comparer la trajectoire avec/sans pouvoir et mesurer l'attraction vers le centre. |
+| P2 | Distorsion Temporelle | Le ralentissement affecte les ennemis à moins de 180 px ; le rendu affiche deux anneaux autour du lanceur. | Le périmètre est lisible, mais le ralentissement lui-même peut être imperceptible visuellement. | Comparer la vitesse d'une cible dedans puis dehors ; envisager une teinte/traînée dédiée. |
+| P2 | Détonateur Zéro | Le point de détonation est mémorisé au début de la charge ; le lanceur peut se déplacer pendant les 0,8 s. | L'explosion peut se produire derrière le lanceur et sembler manquer sa cible. | Vérifier si le point reste marqué et si les cibles dans le rayon sont touchées. |
+
+### Ordre recommandé pour les tests dynamiques
+
+1. **Dernier Souffle** — disponibilité et activation à la mort.
+2. **Dôme Réfractaire** — règle de consommation du bouclier.
+3. **Bélier Titan** — taux de contact et vitesse après la charge.
+4. **Surcharge Électrique** — chaîne électrique annoncée vs aura de proximité.
+5. **Fantôme Éclair / Portail Miroir / Orbite Folle** — lisibilité des mouvements en vidéo.
+6. **Prison de Givre / Distorsion Temporelle / Singularité** — preuve visuelle de l'effet sur les adversaires.
+7. **Multiplication / Tourelle Sentinelle / Essaim Vorace** — identification des invocations et preuve de dégâts.
+
+### Statut après cette passe
+
+- Revue statique : **24/24 parcourus**.
+- Écarts code/promesse listés : **14 points à vérifier**.
+- Notes de beauté/compréhension sur téléphone : **NON ÉVALUÉES**, aucune capture vidéo n'a été revue.
+- Tests individuels de déclenchement : **NON EXÉCUTÉS** dans cette passe ; le workflow smoke ne couvre pas les comportements de combat.
+- Aucune note globale /100 n'est attribuée à ce stade.
