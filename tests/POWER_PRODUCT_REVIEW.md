@@ -2,7 +2,7 @@
 
 ## Objectif
 
-Évaluer chacun des 24 pouvoirs de la branche `v2-power` pour décider s’il améliore réellement une vidéo de combat BallYstik : utilité en combat, beauté visuelle, compréhension immédiate, lisibilité sur téléphone et contribution au rythme/à la rétention.
+Évaluer le catalogue actif de 10 pouvoirs de la branche `v2-power` pour décider s’il améliore réellement une vidéo de combat BallYstik : utilité en combat, beauté visuelle, compréhension immédiate, lisibilité sur téléphone et contribution au rythme/à la rétention. L’analyse des 24 pouvoirs est conservée comme historique de la refonte.
 
 Cette grille complète `tests/POWER_AUDIT.md`. Un test technique réussi ne signifie pas qu’un pouvoir est bon visuellement ou compréhensible.
 
