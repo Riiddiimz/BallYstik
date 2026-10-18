@@ -204,6 +204,7 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
           return id;
         }
       };
+      if (expectation === 'pull') world.balls.push({ id: 3, x: 220, y: 100, radius: 18, vx: 0, vy: 0, team: 'blue', alive: true, hp: 100, maxHp: 100 });
       const slot = { data: {}, meta: { color: registryEntry.color } };
       behavior.attach(ball, world, slot);
       slot.data.cooldown = 0;
@@ -226,6 +227,8 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
       } else {
         const steps = expectation === 'damage' && powerId === 'judgment_ray' ? 45
           : expectation === 'delayed-damage' ? 45
+          : expectation === 'pull' ? 20
+          : expectation === 'zone' ? 8
           : expectation === 'turret' ? 8 : 3;
         for (let i = 0; i < steps; i++) behavior.update(ball, world, slot, 0.02);
       }
@@ -241,7 +244,7 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
         case 'ram': passed = slot.data.active > 0 && ball.speedMultiplier === 2.2; break;
         case 'delayed-damage': passed = calls.damage.some(c => c[3] === 'zero-detonator'); break;
         case 'zone': passed = slot.data.zones.length > 0; break;
-        case 'pull': passed = slot.data.zones.length > 0 && (target.vx !== 0 || target.vy !== 0); break;
+        case 'pull': passed = slot.data.zones.length > 0 && (world.balls[2].vx !== 0 || world.balls[2].vy !== 0); break;
         case 'control': passed = slot.data.active > 0 && (target.vx !== 0 || target.vy !== 0); break;
         case 'slow': passed = (target._powerSlowTimer || 0) > 0; break;
         case 'dash': passed = !!slot.data.dash && ball.speedMultiplier === 3.1; break;
