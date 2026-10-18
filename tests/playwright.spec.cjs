@@ -85,9 +85,13 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       // Mise en scène dans les limites de l'arène ; le canevas et le moteur de rendu restent réels.
       ball.x = bounds.left + width * .34; ball.y = bounds.top + height * .48;
       target.x = bounds.left + width * .62; target.y = bounds.top + height * .48;
+      for (const [index, otherBall] of balls.entries()) {
+        if (otherBall === ball || otherBall === target) continue;
+        otherBall.x = bounds.left + width * (.46 + index * .08);
+        otherBall.y = bounds.top + height * .74;
+        otherBall.vx = 0; otherBall.vy = 0;
+      }
       ball.vx = 0; ball.vy = 0; target.vx = 0; target.vy = 0;
-      const other = balls.find(b => b !== ball && b !== target);
-      if (other) { other.x = bounds.left + width * .5; other.y = bounds.top + height * .72; other.vx = 0; other.vy = 0; }
       ball.abilitySlots = [];
       const slot = { meta, data: {}, timeLeft: 999, maxTime: 999, cooldownBase: 0 };
       behavior.attach(ball, world, slot);
@@ -96,12 +100,25 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       const dt = .02;
       if (powerId === 'judgment_ray') {
         for (let i = 0; i < 32; i++) behavior.update(ball, world, slot, dt);
+      } else if (powerId === 'star_hunter') {
+        behavior.update(ball, world, slot, dt);
+        const p = world.projectiles.find(projectile => projectile.powerId === powerId);
+        if (p) for (let i = 0; i < 12; i++) {
+          p.trail.push({ x: p.x, y: p.y });
+          if (p.trail.length > 6) p.trail.shift();
+          p.x += p.vx * dt; p.y += p.vy * dt;
+          behavior.update(ball, world, slot, dt);
+        }
       } else if (powerId === 'magma_rift') {
         slot.data.drop = 0;
-        for (let i = 0; i < 4; i++) behavior.update(ball, world, slot, dt);
+        for (let i = 0; i < 8; i++) {
+          behavior.update(ball, world, slot, .15);
+          ball.x = Math.min(bounds.right - ball.radius, ball.x + width * .075);
+        }
       } else {
         behavior.update(ball, world, slot, dt);
       }
+      if (powerId === 'seismic_nova') slot.data.flash = .22;
       if (powerId === 'bomb_shrapnel') {
         const projectile = world.projectiles.find(p => p.powerId === powerId);
         if (projectile) { projectile.x = target.x; projectile.y = target.y; }
@@ -131,6 +148,10 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
     }, id);
     expect(setup.error, id + ': préparation de la capture').toBeUndefined();
     expect(setup.canvasHeight, id + ': canvas réel non vide').toBeGreaterThan(0);
+    expect(setup.aspectRatio, id + ': le canvas vidéo doit rester en 9:16').toBeCloseTo(9 / 16, 2);
+    if (id === 'bomb_shrapnel') {
+      expect(setup.realImpactFragments, 'la bombe doit réellement produire 8 éclats à l’impact').toBe(8);
+    }
     await page.locator('#simCanvas').screenshot({ path: 'test-results/power-visuals/' + id + '.png' });
   }
 });
