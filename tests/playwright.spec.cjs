@@ -141,3 +141,132 @@ test.describe('BallYstik v2-power — comportements prioritaires', () => {
     expect(result.damage).toBe(7);
   });
 });
+
+
+// Audit individuel : chaque pouvoir est déclenché dans un scénario isolé.
+// Ces tests vérifient le déclenchement, une conséquence mesurable et l'absence
+// d'exception pendant le rendu Canvas. Ils ne remplacent pas une notation visuelle humaine.
+const POWER_CASES = [
+  ['judgment_ray', 'Rayon du Jugement', 'damage'],
+  ['star_hunter', 'Chasseur Stellaire', 'projectile'],
+  ['ghost_billiard', 'Billard Fantôme', 'triple-projectile'],
+  ['seismic_nova', 'Nova Sismique', 'damage'],
+  ['titan_ram', 'Bélier Titan', 'ram'],
+  ['zero_detonator', 'Détonateur Zéro', 'delayed-damage'],
+  ['magma_rift', 'Faille Magmatique', 'zone'],
+  ['ice_prison', 'Prison de Givre', 'zone'],
+  ['toxic_mist', 'Brouillard Toxique', 'zone'],
+  ['singularity', 'Singularité', 'pull'],
+  ['polarity_flip', 'Polarité Inversée', 'control'],
+  ['time_distortion', 'Distorsion Temporelle', 'slow'],
+  ['lightning_ghost', 'Fantôme Éclair', 'dash'],
+  ['mirror_portal', 'Portail Miroir', 'teleport'],
+  ['crazy_orbit', 'Orbite Folle', 'orbit'],
+  ['multiplication', 'Multiplication', 'clones'],
+  ['sentinel_turret', 'Tourelle Sentinelle', 'turret'],
+  ['voracious_swarm', 'Essaim Vorace', 'swarm'],
+  ['colossus', 'Colosse', 'transform'],
+  ['electric_overload', 'Surcharge Électrique', 'damage'],
+  ['blazing_comet', 'Comète Ardente', 'trail'],
+  ['refractive_dome', 'Dôme Réfractaire', 'shield'],
+  ['revenge_mirror', 'Miroir Vengeur', 'reflect'],
+  ['last_breath', 'Dernier Souffle', 'death']
+];
+
+for (const [powerId, powerName, expectation] of POWER_CASES) {
+  test(`audit individuel — ${powerName} (${powerId})`, async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    const result = await page.evaluate(({ powerId, expectation }) => {
+      const behavior = window.AbilityBehaviors[powerId];
+      const registryEntry = window.AbilityRegistry.get(powerId);
+      if (!behavior || !registryEntry) return { error: 'Pouvoir absent du registre ou des comportements' };
+
+      const ball = {
+        id: 1, x: 100, y: 100, radius: 20, baseMoveSpeed: 200,
+        vx: 0, vy: 0, team: 'red', alive: true, speedMultiplier: 1,
+        hp: 100, maxHp: 100
+      };
+      const target = {
+        id: 2, x: 145, y: 100, radius: 18, vx: 0, vy: 0,
+        team: 'blue', alive: true, hp: 100, maxHp: 100
+      };
+      const calls = { damage: [], particles: 0, shockwaves: 0, clones: 0 };
+      const world = {
+        balls: [ball, target],
+        projectiles: [],
+        arena: { getBounds: () => ({ left: 0, right: 600, top: 0, bottom: 1000 }) },
+        damage: (...args) => calls.damage.push(args),
+        spawnParticle: () => calls.particles++,
+        addShockwave: () => calls.shockwaves++,
+        spawnCloneFor: (source) => {
+          const id = 100 + (++calls.clones);
+          world.balls.push({ ...source, id, x: source.x + 30 * calls.clones, y: source.y + 25 * calls.clones, alive: true, isClone: true });
+          return id;
+        }
+      };
+      const slot = { data: {}, meta: { color: registryEntry.color } };
+      behavior.attach(ball, world, slot);
+      slot.data.cooldown = 0;
+
+      const ctx = new Proxy({
+        createRadialGradient: () => ({ addColorStop: () => {} }),
+        measureText: () => ({ width: 1 })
+      }, {
+        get: (obj, key) => key in obj ? obj[key] : (() => {}),
+        set: (obj, key, value) => { obj[key] = value; return true; }
+      });
+
+      const initial = { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, radius: ball.radius };
+      if (expectation === 'death') {
+        ball.alive = false;
+        behavior.onDeath(ball, world, slot);
+      } else if (expectation === 'reflect') {
+        behavior.update(ball, world, slot, 0.016);
+        behavior.onTakeDamage(ball, target, 12, world, slot);
+      } else {
+        const steps = expectation === 'damage' && powerId === 'judgment_ray' ? 45
+          : expectation === 'delayed-damage' ? 45
+          : expectation === 'turret' ? 8 : 3;
+        for (let i = 0; i < steps; i++) behavior.update(ball, world, slot, 0.02);
+      }
+
+      let renderError = null;
+      try { behavior.render(ctx, ball, world, slot); } catch (e) { renderError = e.message; }
+
+      let passed = false;
+      switch (expectation) {
+        case 'damage': passed = calls.damage.length > 0; break;
+        case 'projectile': passed = world.projectiles.some(p => p.powerId === powerId); break;
+        case 'triple-projectile': passed = world.projectiles.filter(p => p.type === 'ghost-billiard').length === 3; break;
+        case 'ram': passed = slot.data.active > 0 && ball.speedMultiplier === 2.2; break;
+        case 'delayed-damage': passed = calls.damage.some(c => c[3] === 'zero-detonator'); break;
+        case 'zone': passed = slot.data.zones.length > 0; break;
+        case 'pull': passed = slot.data.zones.length > 0 && (target.vx !== 0 || target.vy !== 0); break;
+        case 'control': passed = slot.data.active > 0 && (target.vx !== 0 || target.vy !== 0); break;
+        case 'slow': passed = (target._powerSlowTimer || 0) > 0; break;
+        case 'dash': passed = !!slot.data.dash && ball.speedMultiplier === 3.1; break;
+        case 'teleport': passed = !!slot.data.portal && (ball.x !== initial.x || ball.y !== initial.y); break;
+        case 'orbit': passed = slot.data.active > 0 && (ball.vx !== initial.vx || ball.vy !== initial.vy); break;
+        case 'clones': passed = calls.clones === 2; break;
+        case 'turret': passed = slot.data.turretLife > 0 && world.projectiles.some(p => p.powerId === powerId); break;
+        case 'swarm': passed = slot.data.active > 0; break;
+        case 'transform': passed = ball.radius > initial.radius && ball.speedMultiplier === 0.7; break;
+        case 'trail': passed = slot.data.zones.length > 0 && ball.speedMultiplier === 1.4; break;
+        case 'shield': passed = slot.data.shield === true; break;
+        case 'reflect': passed = calls.damage.some(c => c[3] === 'revenge-mirror'); break;
+        case 'death': passed = calls.damage.some(c => c[3] === 'last-breath') && calls.shockwaves > 0; break;
+      }
+      return {
+        passed, renderError, damageCount: calls.damage.length, projectileCount: world.projectiles.length,
+        zoneCount: slot.data.zones.length, cloneCount: calls.clones, active: slot.data.active,
+        cooldown: slot.data.cooldown, shield: slot.data.shield, mirror: slot.data.mirror,
+        radius: ball.radius, speedMultiplier: ball.speedMultiplier,
+        targetVx: target.vx, targetVy: target.vy, slowTimer: target._powerSlowTimer || 0
+      };
+    }, { powerId, expectation });
+
+    expect(result.error, `${powerName}: présence dans le registre`).toBeUndefined();
+    expect(result.renderError, `${powerName}: rendu Canvas sans exception`).toBeNull();
+    expect(result.passed, `${powerName}: déclenchement et conséquence attendue. Résultat: ${JSON.stringify(result)}`).toBe(true);
+  });
+}
