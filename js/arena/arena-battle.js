@@ -216,7 +216,10 @@
             ball.abilitySlots = []; // { meta, data, timeLeft, maxTime, cooldownBase }
             ball.isPlayer = opts.isPlayer ?? false;
             // Toutes les boules partagent la même vitesse de déplacement de base.
-            ball.baseMoveSpeed = 180;
+            // Le réglage Vitesse agit sur le déplacement des boules, jamais sur le chrono.
+            const configuredSpeed = Number(this.options.gameSpeed);
+            const speedRatio = Number.isFinite(configuredSpeed) && configuredSpeed > 0 ? configuredSpeed / 1.5 : 1;
+            ball.baseMoveSpeed = 180 * speedRatio;
             const initialSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
             const initialAngle = initialSpeed > 0 ? Math.atan2(ball.vy, ball.vx) : ((ball.id * 2.399963229728653) % (Math.PI * 2));
             ball.vx = Math.cos(initialAngle) * ball.baseMoveSpeed;
