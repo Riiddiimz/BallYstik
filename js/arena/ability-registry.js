@@ -13,7 +13,7 @@ const groups = {
 };
 const list = [
 ['judgment_ray','Rayon du Jugement','distance','Une ligne de visée pointillée annonce un rayon qui traverse instantanément l’arène.','Charge 0,6 s · rayon perforant · touche les cibles alignées.','#7ce7ff','╱',12,8],
-['star_hunter','Chasseur Stellaire','distance','Un missile orange courbe sa trajectoire pour poursuivre une cible.','Missile guidé · 20 dégâts · explosion légère à l’impact.','#fb923c','➤',12,8],
+['star_hunter','Chasseur Stellaire','distance','Un missile orange courbe sa trajectoire pour poursuivre une cible et la frappe directement, sans explosion de zone.','Missile guidé · 20 dégâts directs · trajectoire courbe.','#fb923c','➤',12,8],
 ['bomb_shrapnel','Bombe à fragmentation','distance','Une bombe lumineuse vole puis explose au contact en une gerbe radiale.','Projectile explosif · dégâts de zone à l’impact.','#38bdf8','✹',12,8],
 ['seismic_nova','Nova Sismique','impact','Un anneau rouge part de la boule et repousse les adversaires sur son passage.','Onde de choc expansive · repousse les ennemis proches.','#fb4d5d','◎',12,8],
 ['magma_rift','Faille Magmatique','zone','La boule laisse une fissure de lave persistante qui brûle les adversaires qui la traversent.','Traînée au sol · brûlure pendant quelques secondes.','#ff6b35','♨',12,8],
