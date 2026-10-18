@@ -255,7 +255,7 @@
                         const beh = window.AbilityBehaviors[slot.meta.id];
                         // Un reflet ne doit jamais relancer une réflexion d'épines.
                         if (opts && opts.noThornsReflect && slot.meta.id === 'thorns') continue;
-                        if (opts && opts.noPowerReflect && slot.meta.id === 'revenge_mirror') continue;
+                        if (opts && opts.noPowerReflect && (slot.meta.id === 'revenge_mirror' || slot.meta.id === 'prism_reflector')) continue;
                         if (beh && beh.onTakeDamage) {
                             finalAmount = beh.onTakeDamage(target, attacker, finalAmount, world, slot) ?? finalAmount;
                         }
