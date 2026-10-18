@@ -227,13 +227,12 @@ Une fois les 24 audits terminés, fournir :
 
 ## Deuxième passe — écarts code / promesse produit (18 octobre 2026)
 
-Cette passe croise les descriptions du registre et les comportements de `js/arena/ability-powers.js`. Elle ne remplace pas l'observation en navigateur. Les points ci-dessous sont des risques visibles dans le code, à confirmer par tests reproductibles avant toute modification.
+Cette passe croise les descriptions du registre et les comportements de `js/arena/ability-powers.js`. Elle ne remplace pas l'observation visuelle en navigateur. Les points ci-dessous sont des écarts ou risques visibles dans le code, à confirmer en simulation avant toute modification.
 
 ### Anomalies et écarts prioritaires
 
 | Priorité | Pouvoir | Constat dans le code | Risque spectateur / combat | Vérification à exécuter |
 |---|---|---|---|---|
-| P0 | Dernier Souffle | Poids de registre `-1`; la sélection aléatoire filtre les poids strictement positifs. | Le pouvoir semble absent du combat normal, sauf activation manuelle ou configuration spéciale. | Vérifier comment il est attribué et si une boule peut l'avoir équipé avant de mourir. |
 | P1 | Surcharge Électrique | La description promet des « décharges en chaîne », mais le comportement applique des dégâts aux ennemis proches du lanceur et le rendu dessine des éclairs autour de lui ; aucune chaîne visuelle de cible en cible n'apparaît dans ce fichier. | La promesse est plus spectaculaire que l'effet codé ; peut ressembler à une simple aura de dégâts. | Forcer deux ennemis proches et vérifier si l'éclair relie réellement plusieurs cibles. |
 | P1 | Dôme Réfractaire | Le bouclier est consommé par le premier dégât positif, quelle que soit son importance ; il ne filtre pas les « grosses attaques ». Il réduit ce dégât à 18 %. | Une petite collision peut potentiellement consommer le bouclier malgré la description. | Comparer petite touche et gros impact ; vérifier la disparition visuelle. |
 | P1 | Bélier Titan | Le lanceur prend une direction et une vitesse temporaire, mais sa trajectoire n'est pas corrigée explicitement vers la cible pendant la charge. Le contact doit se produire dans une fenêtre de 0,65 s. | Peut foncer à côté de la cible et paraître inefficace ou aléatoire. | Tester cible proche, latérale et mobile ; mesurer le taux d'impact. |
@@ -265,3 +264,33 @@ Cette passe croise les descriptions du registre et les comportements de `js/aren
 - Notes de beauté/compréhension sur téléphone : **NON ÉVALUÉES**, aucune capture vidéo n'a été revue.
 - Tests individuels de déclenchement : **NON EXÉCUTÉS** dans cette passe ; le workflow smoke ne couvre pas les comportements de combat.
 - Aucune note globale /100 n'est attribuée à ce stade.
+
+
+## Troisième passe — conclusion de l'audit statique (18 octobre 2026)
+
+### Vérification du faux positif Dernier Souffle
+
+Le registre utilise l'ordre `duration, weight`. Pour `last_breath`, `duration = -1` et `weight = 4`. La sélection aléatoire filtre le poids et non la durée : **Dernier Souffle n'est donc pas exclu par le registre**. L'ancienne ligne P0 de la deuxième passe était erronée et est retirée. Il reste **13 risques code/promesse** listés dans le tableau ci-dessus.
+
+### Contrôles exécutés
+
+- Revue statique des 24 entrées du registre et des 24 comportements.
+- Smoke Playwright : menu des 24 pouvoirs, groupes, réglages persistés et contrôles du combat.
+- Tests comportementaux ciblés réussis dans Chromium : Dernier Souffle (explosion posthume), Dôme Réfractaire (réduction/consommation), Bélier Titan (déclenchement de charge) et Surcharge Électrique (dégâts à proximité).
+- Workflow GitHub Actions : [run 39163652606 — succès](https://github.com/Riiddiimz/BallYstik/actions/runs/39163652606), commit testé `424c1307c3e687c45c483b04f76381048322af2b`.
+
+### Verdict honnête
+
+L'audit de code des **24/24 pouvoirs est terminé**. Les quatre tests ciblés ci-dessus passent, mais cela ne prouve pas à lui seul que chaque pouvoir est équilibré, qu'il se déclenche dans un vrai combat, ou que son animation est compréhensible sur téléphone. Les notes visuelles, la compréhension sans nom/audio et la rétention restent **NON ÉVALUÉES**, faute de captures/vidéos de chaque pouvoir effectivement observées. Ne pas présenter les 24 pouvoirs comme validés visuellement.
+
+### Priorités de correction
+
+1. **Surcharge Électrique** — soit implémenter une vraie chaîne visuelle de cible en cible, soit reformuler la promesse en aura électrique de proximité.
+2. **Dôme Réfractaire** — aligner la règle « prochaine grosse attaque » sur le comportement réel ; aujourd'hui le premier dégât positif consomme le bouclier.
+3. **Bélier Titan** — mesurer le taux d'impact sur cible mobile et vérifier la remise à la vitesse normale après la charge.
+4. **Prison de Givre** — choisir entre un vrai gel temporaire et une description explicite de ralentissement.
+5. **Fantôme Éclair / Portail Miroir / Orbite Folle** — capturer la séquence réelle pour vérifier la lecture des déplacements.
+6. **Multiplication / Tourelle Sentinelle / Essaim Vorace** — rendre immédiatement identifiable la vraie boule, la tourelle et les attaques des drones.
+7. **Singularité / Distorsion Temporelle / Détonateur Zéro** — prouver visuellement l'aspiration, le ralentissement et le point de détonation.
+
+Aucun score sur 100 n'est attribué tant que les dimensions visuelles et de compréhension n'ont pas été observées.
