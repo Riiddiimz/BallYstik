@@ -128,7 +128,7 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
       switch (expectation) {
         case 'ray': passed = calls.damage.length > 0 && !!slot.data.beam; break;
         case 'homing': passed = world.projectiles.some(p => p.powerId === powerId && p.target); break;
-        case 'bomb': passed = world.projectiles.some(p => p.powerId === powerId && p.splashRadius >= 80); break;
+        case 'bomb': passed = world.projectiles.some(p => p.powerId === powerId && p.splashRadius >= 80 && p.shrapnel === true); break;
         case 'nova': passed = calls.damage.length > 0 && calls.shockwaves > 0; break;
         case 'magma': passed = slot.data.zones.length > 0; break;
         case 'singularity': passed = slot.data.zones.length > 0 &&
