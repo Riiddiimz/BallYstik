@@ -320,3 +320,44 @@ Un pouvoir ne reste dans le catalogue que si :
 - sa promesse correspond à la mécanique réelle.
 
 La validation technique automatisée vérifie le déclenchement et les conséquences ; elle ne permet pas d’attribuer honnêtement une note de beauté ou de compréhension au viewer sans captures ou vidéo réelle.
+
+
+---
+
+## Vérification finale du catalogue de 10 pouvoirs — 18 octobre 2026
+
+### Résultats automatisés
+
+Le workflow [Playwright 39166766537](https://github.com/Riiddiimz/BallYstik/actions/runs/39166766537) a réussi sur le commit `faa6a2f94949569e7913e988f7bf0c43917c933d` : **15 tests passés**.
+
+Cela couvre :
+- chargement de l'interface et présence exacte des 10 pouvoirs ;
+- réglages persistants et contrôles principaux ;
+- captures de l'image réelle du canvas en format vertical 9:16 ;
+- clic sur chacun des 10 boutons SPAWN et vérification de la création du bon pickup dans le moteur ;
+- un scénario technique individuel pour chacun des 10 pouvoirs ;
+- pour la bombe, collision moteur réelle, animation d'explosion et création des 8 éclats ;
+- absence d'exception JavaScript non gérée pendant le chargement.
+
+Les captures PNG du canvas (sans les boutons HTML superposés) sont disponibles dans l'[artefact visuel du workflow](https://github.com/Riiddiimz/BallYstik/actions/runs/39166766537/artifacts/12150763178). La taille capturée est de 350 × 624 pixels ; le ratio rasterisé est 0,5609, proche de 9:16 (0,5625), l'écart venant de l'arrondi aux pixels entiers. Le CSS du cadre a été corrigé pour préserver le ratio vertical au lieu d'étirer le cadre à toute la largeur disponible.
+
+### Revue visuelle des 10 signatures
+
+| Pouvoir | Lecture dans la capture | Verdict |
+|---|---|---|
+| Rayon du Jugement | Trait blanc/cyan rectiligne qui traverse les boules alignées | Distinct et lisible |
+| Chasseur Stellaire | Missile orange avec traînée courbe de poursuite | Distinct du rayon et de la bombe |
+| Bombe à fragmentation | Explosion cyan radiale, anneau lumineux et éclats | Distinct du missile ; l'impact est maintenant explicite |
+| Nova Sismique | Grand anneau rouge expansif centré sur la boule | Distinct de la bombe, car l'onde part du porteur |
+| Faille Magmatique | Traînée orange/jaune continue, persistante au sol | Distincte des autres zones ; rendu relié plutôt que cercles isolés |
+| Singularité Violette | Centre noir et anneaux violets d'attraction | Distincte ; l'implosion est déclenchée à la fin de la durée |
+| Saut Quantique | Anneaux au départ et à l'arrivée, reliés par un trait pointillé | Distinct du dash linéaire et de la charge |
+| Surcharge Giga | Boule nettement agrandie, aura dorée et fissures rouges | Distincte par le changement de taille |
+| Prisme Réflecteur | Hexagone translucide autour de la boule, puis renvoi | Distinct du trou noir et des projectiles |
+| Division Cellulaire | Apparition de deux leurres autour de la boule d'origine | Distincte ; l'ambiguïté sur la vraie boule est volontaire |
+
+### Décision produit
+
+**Aucun doublon visuel majeur n'a été relevé dans les captures de ces 10 signatures.** Les corrections prioritaires issues de la revue ont été appliquées : traînée de lave continue, courbe de poursuite visible, explosion radiale explicite de la bombe et cadre 9:16 non déformé.
+
+Limite à conserver : la revue est une inspection visuelle interne de captures générées par navigateur, pas une étude auprès de spectateurs indépendants. La compréhension « en moins d'une seconde » et l'effet sur la rétention TikTok restent donc **à confirmer par un test utilisateur ou par les statistiques de vidéos publiées**. Aucun score d'audience ou de rétention n'est inventé.
