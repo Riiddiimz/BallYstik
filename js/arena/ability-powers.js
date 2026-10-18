@@ -1,13 +1,11 @@
-/* BallYstik v2-power — comportements des 24 pouvoirs. Effets dessinés en Canvas. */
+/* BallYstik v2-power — 10 pouvoirs à signatures visuelles uniques. Effets dessinés en Canvas. */
 (function () {
 'use strict';
 window.AbilityBehaviors = {};
 const TAU = Math.PI * 2;
 const IDS = [
-'judgment_ray','star_hunter','ghost_billiard','seismic_nova','titan_ram','zero_detonator',
-'magma_rift','ice_prison','toxic_mist','singularity','polarity_flip','time_distortion',
-'lightning_ghost','mirror_portal','crazy_orbit','multiplication','sentinel_turret','voracious_swarm',
-'colossus','electric_overload','blazing_comet','refractive_dome','revenge_mirror','last_breath'
+'judgment_ray','star_hunter','bomb_shrapnel','seismic_nova','magma_rift',
+'singularity','quantum_jump','colossus','prism_reflector','multiplication'
 ];
 function enemies(ball, world) { return world.balls.filter(b => b !== ball && b.alive && !b.isClone && b.team !== ball.team); }
 function nearest(ball, world, max) {
@@ -38,8 +36,16 @@ function projectile(world,ball,target,opts) {
   const dx=(target?target.x:ball.x+ball.vx)-ball.x,dy=(target?target.y:ball.y+ball.vy)-ball.y,len=Math.hypot(dx,dy)||1;
   const p={x:ball.x+dx/len*ball.radius,y:ball.y+dy/len*ball.radius,vx:dx/len*opts.speed,vy:dy/len*opts.speed,radius:opts.radius||6,life:opts.life||2.5,bounces:opts.bounces||0,ownerId:ball.id,color:opts.color||'#7ce7ff',damage:opts.damage||10,splashRadius:opts.splashRadius||0,type:opts.type||'power',trail:[],powerId:opts.powerId||'',target:opts.target||null};
   p.render=function(ctx,q){
-    ctx.save();ctx.globalCompositeOperation='lighter';ctx.strokeStyle=q.color;ctx.lineWidth=q.radius*1.1;ctx.shadowColor=q.color;ctx.shadowBlur=18;ctx.beginPath();ctx.moveTo(q.x-q.vx*.035,q.y-q.vy*.035);ctx.lineTo(q.x,q.y);ctx.stroke();
-    ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x,q.y,q.radius*.55,0,TAU);ctx.fill();ctx.restore();
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.shadowColor=q.color;ctx.shadowBlur=q.type==='bomb-shrapnel'?24:18;
+    if(q.type==='bomb-shrapnel'){
+      ctx.strokeStyle=q.color;ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(q.x,q.y,q.radius*1.65,q.radius*.78,Math.atan2(q.vy,q.vx),0,TAU);ctx.stroke();
+      ctx.fillStyle=q.color;ctx.beginPath();ctx.arc(q.x,q.y,q.radius,0,TAU);ctx.fill();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x-q.radius*.25,q.y-q.radius*.25,q.radius*.35,0,TAU);ctx.fill();
+    } else {
+      ctx.strokeStyle=q.color;ctx.lineWidth=q.radius*1.1;ctx.beginPath();ctx.moveTo(q.x-q.vx*.035,q.y-q.vy*.035);ctx.lineTo(q.x,q.y);ctx.stroke();
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(q.x,q.y,q.radius*.55,0,TAU);ctx.fill();
+    }
+    ctx.restore();
   };
   world.projectiles.push(p);return p;
 }
@@ -77,6 +83,8 @@ function updatePower(id,ball,world,slot,dt) {
  } else if(id==='star_hunter'){
    for(const p of world.projectiles){if(p.ownerId!==ball.id||p.powerId!==id||!p.target||!p.target.alive)continue;const dx=p.target.x-p.x,dy=p.target.y-p.y,l=Math.hypot(dx,dy)||1;p.vx+=(dx/l)*1300*dt;p.vy+=(dy/l)*1300*dt;const s=Math.hypot(p.vx,p.vy)||1;if(s>540){p.vx=p.vx/s*540;p.vy=p.vy/s*540;}}
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){projectile(world,ball,t,{powerId:id,target:t,speed:280,life:2.6,damage:20,splashRadius:90,radius:7,color:'#fb923c',type:'star-hunter'});d.cooldown=2.8;}}
+ } else if(id==='bomb_shrapnel'){
+   if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){projectile(world,ball,t,{powerId:id,speed:330,life:2.6,damage:15,splashRadius:92,radius:9,color:'#38bdf8',type:'bomb-shrapnel'});d.cooldown=3.2;}}
  } else if(id==='ghost_billiard'){
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const a=Math.atan2(t.y-ball.y,t.x-ball.x);for(let i=-1;i<=1;i++){const angle=a+i*.22;world.projectiles.push({x:ball.x+Math.cos(angle)*ball.radius,y:ball.y+Math.sin(angle)*ball.radius,vx:Math.cos(angle)*610,vy:Math.sin(angle)*610,radius:5,life:2.5,bounces:3,ownerId:ball.id,color:'#c084fc',damage:9,type:'ghost-billiard',trail:[],render:function(ctx,p){ctx.save();ctx.shadowColor='#c084fc';ctx.shadowBlur=20;ctx.fillStyle='#f5d0fe';ctx.beginPath();ctx.arc(p.x,p.y,p.radius,0,TAU);ctx.fill();ctx.restore();}});}d.cooldown=2.3;}}
  } else if(id==='seismic_nova'){
@@ -113,6 +121,8 @@ function updatePower(id,ball,world,slot,dt) {
    if(d.dash){d.dash.life-=dt;d.dash.invuln-=dt;if(d.dash.life<=0){d.dash=null;ball.speedMultiplier=1;}}
  } else if(id==='mirror_portal'){
    if(d.cooldown<=0){const t=nearest(ball,world,650);if(t){const a=Math.atan2(ball.y-t.y,ball.x-t.x);const ox=ball.x,oy=ball.y;const bounds=world.arena.getBounds();ball.x=Math.max(bounds.left+ball.radius,Math.min(bounds.right-ball.radius,ball.x+Math.cos(a)*190));ball.y=Math.max(bounds.top+ball.radius,Math.min(bounds.bottom-ball.radius,ball.y+Math.sin(a)*190));d.portal={x1:ox,y1:oy,x2:ball.x,y2:ball.y,life:1};world.addShockwave(ox,oy,{radius:70,color:'#c084fc',life:.3});world.addShockwave(ball.x,ball.y,{radius:70,color:'#c084fc',life:.3});d.cooldown=5;}}
+ } else if(id==='quantum_jump'){
+   if(d.cooldown<=0){const t=nearest(ball,world,700);if(t){const ox=ball.x,oy=ball.y,dx=ball.x-t.x,dy=ball.y-t.y,len=Math.hypot(dx,dy)||1;const bounds=world.arena.getBounds();const jump=230;ball.x=Math.max(bounds.left+ball.radius,Math.min(bounds.right-ball.radius,ball.x+dx/len*jump));ball.y=Math.max(bounds.top+ball.radius,Math.min(bounds.bottom-ball.radius,ball.y+dy/len*jump));d.portal={x1:ox,y1:oy,x2:ball.x,y2:ball.y,life:.7};world.spawnParticle(ox,oy,{color:'#fff',count:22,speed:230,life:.4,spread:TAU});world.spawnParticle(ball.x,ball.y,{color:'#38bdf8',count:22,speed:230,life:.4,spread:TAU});world.addShockwave(ox,oy,{radius:58,color:'#fff',life:.28});world.addShockwave(ball.x,ball.y,{radius:72,color:'#38bdf8',life:.32});d.cooldown=4.5;}}
  } else if(id==='crazy_orbit'){
    if(d.cooldown<=0){d.active=1.2;d.cooldown=4.5;d.angle=Math.atan2(ball.vy,ball.vx);}
    if(d.active>0){d.angle+=dt*7;const s=ball.baseMoveSpeed;ball.vx=Math.cos(d.angle)*s;ball.vy=Math.sin(d.angle)*s;}
@@ -139,6 +149,9 @@ function updatePower(id,ball,world,slot,dt) {
  } else if(id==='refractive_dome'){
    if(d.cooldown<=0){d.shield=true;d.cooldown=5.5;d.shieldLife=3.5;}
    if(d.shieldLife>0)d.shieldLife-=dt;else d.shield=false;
+ } else if(id==='prism_reflector'){
+   if(d.cooldown<=0){d.mirror=true;d.active=.62;d.cooldown=5.1;d.lastAttacker=null;}
+   if(d.active<=0)d.mirror=false;
  } else if(id==='revenge_mirror'){
    if(d.cooldown<=0){d.mirror=true;d.active=1.5;d.cooldown=5.2;}
    if(d.active<=0)d.mirror=false;
@@ -149,6 +162,8 @@ function renderPower(id,ctx,ball,world,slot) {
  if(id==='judgment_ray'){
    if(d.target&&d.charge>0){ring(ctx,d.target.x,d.target.y,22,'#7ce7ff',.4+d.charge,2);ctx.save();ctx.strokeStyle='#7ce7ff';ctx.globalAlpha=.25+d.charge*.7;ctx.setLineDash([10,8]);ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.lineTo(d.target.x,d.target.y);ctx.stroke();ctx.restore();}
    if(d.beam){ctx.save();ctx.strokeStyle='#fff';ctx.shadowColor=color;ctx.shadowBlur=26;ctx.lineWidth=12*d.beam.life/.22;ctx.beginPath();ctx.moveTo(d.beam.x1,d.beam.y1);ctx.lineTo(d.beam.x2,d.beam.y2);ctx.stroke();ctx.restore();}
+ } else if(id==='bomb_shrapnel'){
+   /* La bombe porte sa propre silhouette sphérique ; l’explosion est rendue par le moteur à l’impact. */
  } else if(id==='zero_detonator'){
    if(d.charge>0&&d.blastPoint){ring(ctx,d.blastPoint.x,d.blastPoint.y,170*(1-d.charge/.8), '#dbeafe',.85,3);glow(ctx,d.blastPoint.x,d.blastPoint.y,28,'#fff',1);}
    if(d.blastFlash)ring(ctx,d.blastFlash.x,d.blastFlash.y,160,'#7ce7ff',d.blastFlash.life/.3,6);
@@ -161,14 +176,20 @@ function renderPower(id,ctx,ball,world,slot) {
  else if(id==='polarity_flip'&&d.active>0&&d.target&&d.target.alive){ctx.save();ctx.strokeStyle='#f472b6';ctx.shadowColor='#f472b6';ctx.shadowBlur=20;ctx.lineWidth=4;ctx.setLineDash([8,7]);ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.lineTo(d.target.x,d.target.y);ctx.stroke();ctx.restore();ring(ctx,d.target.x,d.target.y,30,'#f472b6',.8,3);}
  else if(id==='time_distortion'&&d.active>0){ring(ctx,ball.x,ball.y,180,'#fbbf24',.8,3);ring(ctx,ball.x,ball.y,145,'#fff2b2',.4,2);}
  else if(id==='lightning_ghost'&&d.dash){for(let i=1;i<=3;i++){ctx.save();ctx.globalAlpha=.28/i;ctx.fillStyle='#67e8f9';ctx.beginPath();ctx.arc(d.dash.x-ball.vx*.02*i,d.dash.y-ball.vy*.02*i,ball.radius,0,TAU);ctx.fill();ctx.restore();}ring(ctx,ball.x,ball.y,ball.radius*1.8,'#67e8f9',.8,3);}
- else if(id==='mirror_portal'&&d.portal){ring(ctx,d.portal.x1,d.portal.y1,24,'#c084fc',d.portal.life,4);ring(ctx,d.portal.x2,d.portal.y2,24,'#7ce7ff',d.portal.life,4);}
+ else if((id==='mirror_portal'||id==='quantum_jump')&&d.portal){
+   ring(ctx,d.portal.x1,d.portal.y1,26,'#fff',d.portal.life,4);ring(ctx,d.portal.x2,d.portal.y2,30,'#38bdf8',d.portal.life,5);
+   ctx.save();ctx.globalAlpha=d.portal.life;ctx.strokeStyle='#7dd3fc';ctx.lineWidth=2;ctx.setLineDash([5,6]);ctx.beginPath();ctx.moveTo(d.portal.x1,d.portal.y1);ctx.lineTo(d.portal.x2,d.portal.y2);ctx.stroke();ctx.restore();
+ }
  else if(id==='crazy_orbit'&&d.active>0){for(let i=0;i<3;i++)ring(ctx,ball.x,ball.y,ball.radius+14+i*13,'#fbbf24',.6-i*.12,2);}
  else if(id==='sentinel_turret'&&d.turretLife>0){glow(ctx,d.turretX,d.turretY,48,'#67e8f9',.4);ring(ctx,d.turretX,d.turretY,20,'#67e8f9',.9,4);for(let i=0;i<4;i++){const a=d.phase+i*TAU/4;ctx.beginPath();ctx.moveTo(d.turretX,d.turretY);ctx.lineTo(d.turretX+Math.cos(a)*24,d.turretY+Math.sin(a)*24);ctx.strokeStyle='#cffafe';ctx.lineWidth=3;ctx.stroke();}}
  else if(id==='voracious_swarm'&&d.active>0){for(let i=0;i<6;i++){const a=d.angle+i*TAU/6,x=ball.x+Math.cos(a)*64,y=ball.y+Math.sin(a)*64;glow(ctx,x,y,22,'#a3e635',.5);ctx.fillStyle='#d9f99d';ctx.beginPath();ctx.arc(x,y,7,0,TAU);ctx.fill();}}
  else if(id==='colossus'&&d.active>0){glow(ctx,ball.x,ball.y,ball.radius*2,'#fbbf24',.4);ring(ctx,ball.x,ball.y,ball.radius+7,'#fde68a',.8,3);}
  else if(id==='electric_overload'&&d.active>0){for(let i=0;i<7;i++){const a=d.phase*4+i*TAU/7;ctx.save();ctx.strokeStyle='#7ce7ff';ctx.shadowColor='#7ce7ff';ctx.shadowBlur=16;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ball.x+Math.cos(a)*ball.radius,ball.y+Math.sin(a)*ball.radius);ctx.lineTo(ball.x+Math.cos(a+.4)*ball.radius*1.8,ball.y+Math.sin(a+.4)*ball.radius*1.8);ctx.lineTo(ball.x+Math.cos(a-.2)*ball.radius*2.5,ball.y+Math.sin(a-.2)*ball.radius*2.5);ctx.stroke();ctx.restore();}}
  else if(id==='blazing_comet'&&d.active>0){glow(ctx,ball.x,ball.y,ball.radius*2.5,'#ff6b35',.65);ring(ctx,ball.x,ball.y,ball.radius+6,'#fff2b2',.9,3);}
- else if(id==='refractive_dome'&&d.shield){glow(ctx,ball.x,ball.y,ball.radius*2,'#60a5fa',.35);ring(ctx,ball.x,ball.y,ball.radius+12,'#93c5fd',.9,3);ctx.save();ctx.strokeStyle='#93c5fd';ctx.beginPath();for(let i=0;i<=6;i++){const a=i*TAU/6;const x=ball.x+Math.cos(a)*(ball.radius+12),y=ball.y+Math.sin(a)*(ball.radius+12);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.stroke();ctx.restore();}
+ else if((id==='refractive_dome'||id==='prism_reflector')&&d.mirror){
+   const r=ball.radius+15;glow(ctx,ball.x,ball.y,r*2,'#93c5fd',.42);ctx.save();ctx.strokeStyle='#dbeafe';ctx.fillStyle='rgba(147,197,253,.16)';ctx.lineWidth=3;ctx.shadowColor='#93c5fd';ctx.shadowBlur=22;ctx.beginPath();for(let i=0;i<6;i++){const a=i*TAU/6+Math.PI/6;const x=ball.x+Math.cos(a)*r,y=ball.y+Math.sin(a)*r;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}ctx.closePath();ctx.fill();ctx.stroke();ctx.restore();
+   if(id==='prism_reflector'&&d.lastAttacker){ctx.save();ctx.strokeStyle='#fff';ctx.shadowColor='#93c5fd';ctx.shadowBlur=18;ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.lineTo(d.lastAttacker.x,d.lastAttacker.y);ctx.stroke();ctx.restore();}
+ }
  else if(id==='revenge_mirror'&&d.mirror){ring(ctx,ball.x,ball.y,ball.radius+13,'#e2e8f0',.9,3);for(let i=0;i<4;i++){const a=d.phase+i*TAU/4;ctx.beginPath();ctx.moveTo(ball.x+Math.cos(a)*(ball.radius+4),ball.y+Math.sin(a)*(ball.radius+4));ctx.lineTo(ball.x+Math.cos(a)*(ball.radius+20),ball.y+Math.sin(a)*(ball.radius+20));ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.stroke();}}
  else if(id==='multiplication'){/* doubles dessinés par le moteur comme leurres */}
 }
@@ -180,6 +201,14 @@ for(const id of IDS){
   onTakeDamage(ball,attacker,amount,world,slot){
    const d=slot.data;if(!d)return amount;
    if(id==='refractive_dome'&&d.shield&&amount>0){d.shield=false;d.shieldLife=0;world.spawnParticle(ball.x,ball.y,{color:'#93c5fd',count:24,speed:270,life:.5,spread:TAU});world.addShockwave(ball.x,ball.y,{radius:ball.radius*3,color:'#93c5fd',life:.35});return amount*.18;}
+   if(id==='prism_reflector'&&d.mirror&&d.active>0&&attacker&&attacker.alive){
+     d.mirror=false;d.active=0;d.lastAttacker={x:attacker.x,y:attacker.y};
+     world.damage(attacker,ball,amount*.9,'prism-reflector',{ignoreInvuln:true,noPowerReflect:true});
+     world.spawnParticle(ball.x,ball.y,{color:'#dbeafe',count:24,speed:260,life:.42,spread:TAU});
+     world.addShockwave(ball.x,ball.y,{radius:ball.radius*3.2,color:'#93c5fd',life:.32});
+     world.spawnParticle(attacker.x,attacker.y,{color:'#fff',count:16,speed:190,life:.32,spread:TAU});
+     return 0;
+   }
    if(id==='revenge_mirror'&&d.mirror&&d.active>0&&attacker&&attacker.alive){d.mirror=false;d.active=0;world.damage(attacker,ball,amount*.75,'revenge-mirror',{ignoreInvuln:true,noPowerReflect:true});world.spawnParticle(ball.x,ball.y,{color:'#e2e8f0',count:18,speed:210,life:.4,spread:TAU});return amount*.45;}
    if(id==='crazy_orbit'&&d.active>0)return amount*.5;
    if(id==='colossus'&&d.active>0)return amount*.72;
