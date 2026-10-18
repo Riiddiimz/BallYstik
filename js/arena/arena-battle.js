@@ -877,6 +877,27 @@
                                 else this._keepBaseSpeed(victim);
                             }
                         }
+                        // La bombe à fragmentation libère des éclats rectilignes après l’explosion.
+                        if (p.shrapnel) {
+                            for (let shard = 0; shard < 8; shard++) {
+                                const angle = shard * Math.PI * 2 / 8;
+                                const fragment = {
+                                    x: p.x, y: p.y,
+                                    vx: Math.cos(angle) * 420, vy: Math.sin(angle) * 420,
+                                    radius: 3, life: 0.62, bounces: 0,
+                                    ownerId: p.ownerId, color: '#7dd3fc', damage: 4,
+                                    type: 'shrapnel-fragment', trail: []
+                                };
+                                fragment.render = function (ctx, q) {
+                                    ctx.save();
+                                    ctx.strokeStyle = q.color; ctx.shadowColor = q.color; ctx.shadowBlur = 12;
+                                    ctx.lineWidth = 3; ctx.beginPath();
+                                    ctx.moveTo(q.x - q.vx * 0.025, q.y - q.vy * 0.025);
+                                    ctx.lineTo(q.x, q.y); ctx.stroke(); ctx.restore();
+                                };
+                                this.projectiles.push(fragment);
+                            }
+                        }
                     } else {
                         const victim = world.balls.find(ball => ball.alive && ball.id !== p.ownerId &&
                             (ball.x - p.x) ** 2 + (ball.y - p.y) ** 2 < (ball.radius + p.radius) ** 2);
