@@ -150,7 +150,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
         aspectRatio: bridge.canvas.width / bridge.canvas.height,
         active: slot.data.active, beam: !!slot.data.beam, projectileCount: world.projectiles.length,
         zoneCount: slot.data.zones.length, portal: !!slot.data.portal,
-        clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length, realImpactFragments,
+        clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length, realImpactFragments, bombBlastVisible: !!slot.data.blastFlash,
         radius: ball.radius, mirror: slot.data.mirror
       };
     }, id);
@@ -159,6 +159,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
     expect(setup.aspectRatio, id + ': le canvas vidéo doit rester en 9:16').toBeCloseTo(9 / 16, 2);
     if (id === 'bomb_shrapnel') {
       expect(setup.realImpactFragments, 'la bombe doit réellement produire 8 éclats à l’impact').toBe(8);
+      expect(setup.bombBlastVisible, 'l’impact doit déclencher son animation d’explosion').toBe(true);
     }
     // Capture les pixels du canvas lui-même, sans les boutons HTML superposés de l'interface.
     const dataUrl = await page.locator('#simCanvas').evaluate(canvas => canvas.toDataURL('image/png'));
