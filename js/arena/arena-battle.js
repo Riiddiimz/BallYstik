@@ -560,7 +560,14 @@
             }
             if (this.finished) return;
 
-            this.elapsedTime += dt;
+            // En jeu réel, l'horloge du match suit le temps mural, indépendamment
+            // de la vitesse de déplacement et du ralenti physique. La recherche de seed
+            // conserve le temps déterministe basé sur dt.
+            if (world.realClockMode && Number.isFinite(world.realElapsedTime)) {
+                this.elapsedTime = world.realElapsedTime;
+            } else {
+                this.elapsedTime += dt;
+            }
             const duration = Number(this.matchTime) || 65;
             if (Number.isFinite(duration) && duration > 0 && this.elapsedTime >= duration) {
                 this.elapsedTime = duration;
