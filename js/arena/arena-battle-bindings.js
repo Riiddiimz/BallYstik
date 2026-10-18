@@ -512,8 +512,11 @@
                     stream.getTracks().forEach(track => track.stop());
                     this.convertRecordingToMp4(mimeType);
                 };
-                this.mediaRecorder.start(250);
+                // Le clic sur Enregistrer relance immédiatement la seed sélectionnée
+                // depuis le début, pour que la vidéo capture le combat complet.
                 this.recording = true;
+                this.start();
+                this.mediaRecorder.start(250);
                 const text = document.getElementById('recordText');
                 const icon = document.getElementById('recordIcon');
                 const button = document.getElementById('recordBtn');
