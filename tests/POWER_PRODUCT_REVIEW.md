@@ -177,3 +177,49 @@ Une fois les 24 audits terminés, fournir :
 - une recommandation de catalogue : conserver, améliorer, fusionner ou supprimer chaque pouvoir.
 
 **État initial honnête :** aucun pouvoir n’a encore été évalué selon cette grille. Les résultats doivent être renseignés après observation et test, pas supposés à partir de cette fiche.
+
+
+## Première passe — revue statique du code (18 octobre 2026)
+
+**Portée :** lecture du registre et de `js/arena/ability-powers.js`. Ce n'est pas encore une validation visuelle en navigateur. Les notes de beauté, compréhension réelle sur téléphone et rétention restent **NON ÉVALUÉES** jusqu'à observation des effets.
+
+### Fiches initiales par pouvoir
+
+| Pouvoir | Ce que le code fait actuellement | Point à vérifier en priorité |
+|---|---|---|
+| Rayon du Jugement | Charge sur une cible proche puis tire un rayon très bref ; peut toucher jusqu'à deux ennemis alignés. | Le rayon reste-t-il visible assez longtemps sur mobile ? La charge est-elle évidente ? |
+| Chasseur Stellaire | Tire un projectile qui poursuit une cible et inflige des dégâts avec explosion. | L'effet de poursuite est-il visible, et l'explosion distingue-t-elle ce pouvoir des autres tirs ? |
+| Billard Fantôme | Tire trois projectiles violets avec rebonds muraux. | Les rebonds sont-ils assez lisibles pour qu'on comprenne qu'ils sont volontaires ? Vérifier le comportement aux murs. |
+| Nova Sismique | Onde circulaire immédiate, dégâts et forte poussée. | Bon potentiel de lecture immédiate ; vérifier que l'onde se distingue des autres explosions. |
+| Bélier Titan | Accélère vers la cible la plus proche et blesse au contact. | Vérifier qu'il touche réellement sa cible et que la vitesse revient toujours à la normale. |
+| Détonateur Zéro | Mémorise la position du lanceur au début d'une charge de 0,8 s, puis explose à cet endroit. | Le lanceur peut s'éloigner pendant la charge : vérifier que le spectateur comprend pourquoi l'explosion ne le suit pas. |
+| Faille Magmatique | Dépose une zone brûlante à intervalles réguliers pendant le déplacement. | Risque d'accumulation visuelle : vérifier que les fissures restent distinctes des boules et des autres zones. |
+| Prison de Givre | Place une zone sur la cible la plus proche ; applique un ralentissement et réduit ponctuellement sa vitesse. | Le code ne fige pas la cible : vérifier que l'animation et la description ne promettent pas une vraie prison. |
+| Brouillard Toxique | Laisse des zones vertes successives qui infligent des dégâts et posent un effet de poison. | Vérifier que le poison et les dégâts sont perceptibles sans audio, sans recouvrir les boules. |
+| Singularité | Crée un trou noir temporaire qui attire les ennemis et inflige de faibles dégâts périodiques. | Le mouvement d'aspiration doit être perceptible ; vérifier que l'effet n'est pas confondu avec une simple zone décorative. |
+| Polarité Inversée | Applique à la cible une traction vers le lanceur avec une composante latérale pendant une courte durée. | Le code évoque davantage une traction magnétique qu'une inversion de polarité ; vérifier si la cause et l'effet se lisent clairement. |
+| Distorsion Temporelle | Pendant 1,5 s, ralentit les ennemis à moins de 180 px ; anneaux dessinés autour du lanceur. | L'anneau doit communiquer la zone réellement affectée et le ralentissement doit être visible en mouvement. |
+| Fantôme Éclair | Fait un dash très court vers la cible, avec une brève fenêtre d'invulnérabilité. | Vérifier que le déplacement est assez visible ; les rémanences dessinées doivent correspondre à la trajectoire réelle. |
+| Portail Miroir | Téléporte la boule d'environ 190 px dans la direction opposée à la cible et affiche deux anneaux. | Vérifier que le saut de position et les deux points de sortie sont faciles à suivre dans une arène chargée. |
+| Orbite Folle | Fait tourner rapidement la direction de déplacement et réduit les dégâts reçus pendant l'effet. | Le mouvement peut sembler imprévisible plutôt qu'orbital ; vérifier si le nom correspond à ce que l'on voit. |
+| Multiplication | Crée deux leurres temporaires à faible PV qui imitent approximativement le mouvement. | Vérifier que les clones sont distincts de la vraie boule et que leur durée/disparition correspond à la description. |
+| Tourelle Sentinelle | Pose une tourelle fixe pendant 4 s qui tire des projectiles peu puissants. | Vérifier la lisibilité de la tourelle et de ses tirs ; mesurer si elle influence suffisamment le combat. |
+| Essaim Vorace | Six points tournent autour de la boule et blessent les ennemis proches à répétition. | Les six drones doivent être reconnaissables, pas seulement comme des particules ; vérifier la lisibilité à petite taille. |
+| Colosse | Augmente le rayon de la boule de 60 %, réduit sa vitesse et les dégâts reçus pendant 3 s. | Vérifier que la taille accrue est évidente et que la boule ne se coince pas ou ne traverse pas les limites. |
+| Surcharge Électrique | Déclenche des dégâts répétés à courte portée avec des éclairs dessinés autour du lanceur. | **Écart possible description/code :** le registre parle de décharges en chaîne, mais le rendu examiné dessine surtout des éclairs autour de la boule, pas de liaison électrique vers les cibles. À confirmer en simulation. |
+| Comète Ardente | Accélère la boule et laisse une succession de petites zones de feu derrière elle. | Risque de surcharge visuelle avec de nombreuses zones très rapprochées ; vérifier l'impact réel des flammes. |
+| Dôme Réfractaire | Réduit le prochain dégât reçu à 18 % de sa valeur, puis se brise. | Le bouclier doit être visiblement brisé au premier impact et la réduction doit être confirmée en combat. |
+| Miroir Vengeur | Pendant une fenêtre courte, renvoie 75 % des dégâts à l'attaquant et réduit les dégâts reçus. | Vérifier que le retour de dégâts est visible et que le spectateur comprend qui a renvoyé le coup. |
+| Dernier Souffle | À la mort, inflige une explosion autour de la boule éliminée. | **Disponibilité à confirmer :** son poids de registre vaut -1, donc il est exclu de la sélection aléatoire standard qui ignore les poids nuls ou négatifs. Vérifier s'il est volontairement réservé au spawn manuel ou s'il ne peut jamais apparaître en partie normale. |
+
+### Anomalie détectée dans le test de fumée
+
+Le test Playwright attend le texte **« 24 / 24 »**, mais le compteur de réglages ne compte que les pouvoirs activés avec un poids strictement supérieur à zéro. Comme **Dernier Souffle** est configuré avec un poids de **-1**, le compteur devrait afficher **23 / 24 actifs** au chargement. Il faut aligner le test sur la règle voulue : soit le pouvoir est exclu par conception et le test doit l'indiquer, soit son poids/comportement doit être revu. Cette incohérence est vérifiable par lecture du code ; le résultat du workflow actuel doit être relancé pour confirmer l'état CI actuel.
+
+### État de cette passe
+
+- Revue statique du comportement : **24/24 pouvoirs parcourus**.
+- Notes de beauté, compréhension observée, lisibilité mobile et rétention : **NON ÉVALUÉES**.
+- Tests visuels individuels Playwright : **pas encore présents**.
+- Première anomalie à résoudre : compteur/test « 24 / 24 » contre le poids négatif de Dernier Souffle.
+- Les observations ci-dessus sont des hypothèses de test fondées sur le code, pas des verdicts finaux sur le rendu.
