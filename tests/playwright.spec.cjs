@@ -167,6 +167,33 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
   }
 });
 
+test('les 10 boutons SPAWN créent le bon pickup dans le vrai moteur', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#rightSettingsContainer')).toBeVisible();
+  const playText = (await page.locator('#playPauseText').textContent().catch(() => '')).trim();
+  if (playText === 'Pause') await page.locator('#playPauseBtn').click();
+  const powers = [
+    ['judgment_ray', 'Rayon du Jugement'],
+    ['star_hunter', 'Chasseur Stellaire'],
+    ['bomb_shrapnel', 'Bombe à fragmentation'],
+    ['seismic_nova', 'Nova Sismique'],
+    ['magma_rift', 'Faille Magmatique'],
+    ['singularity', 'Singularité Violette'],
+    ['quantum_jump', 'Saut Quantique'],
+    ['colossus', 'Surcharge Giga'],
+    ['prism_reflector', 'Prisme Réflecteur'],
+    ['multiplication', 'Division Cellulaire']
+  ];
+  for (const [id, name] of powers) {
+    await page.locator('[data-power-spawn="' + id + '"]').click();
+    await expect.poll(() => page.evaluate(powerId =>
+      window.ArenaBattle.pickupSystem.items.some(p => p.meta && p.meta.id === powerId),
+    id), { message: id + ': le bouton doit créer un pickup dans le moteur' }).toBe(true);
+    await expect(page.locator('#powerSpawnStatus')).toContainText(name);
+  }
+});
+
 const POWER_CASES = [
   ['judgment_ray', 'Rayon du Jugement', 'ray'],
   ['star_hunter', 'Chasseur Stellaire', 'homing'],
