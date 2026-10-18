@@ -295,7 +295,8 @@
             this.deathSlowMoUntil = 0;
             this.world = {
                 canvas: this.canvas, ctx: this.ctx, prng, seed,
-                balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65
+                balls: [], projectiles: [], time: 0, elapsedTime: 0, matchTime: 65,
+                realClockMode: true, realElapsedTime: 0
             };
             // Même setup déterministe que pendant la recherche de seed.
             this._beginSimulation(seed, this.world);
@@ -622,14 +623,16 @@
         tick(now) {
             if (!this.running || !this.world) return;
             const realDt = Math.min(0.05, Math.max(0, (now - this.lastTime) / 1000));
-            const gameSpeed = Math.max(0.1, Number(window.ArenaBattle.getOptions().gameSpeed) || 1);
             this.lastTime = now;
+            if (this.world.realClockMode) this.world.realElapsedTime += realDt;
 
             // Vrai ralenti : la physique continue avec le dt fixe, mais le temps simulé
             // avance plus lentement pendant l'effet. Les trajectoires restent déterministes.
             const slowMoActive = now < (this.deathSlowMoUntil || 0);
             const slowMoFactor = slowMoActive ? 0.22 : 1;
-            this.accumulator = (this.accumulator || 0) + realDt * gameSpeed * slowMoFactor;
+            // La vitesse choisie agit sur les boules, pas sur l'horloge du match.
+            // Le ralenti de KO ralentit la physique, mais pas les secondes affichées.
+            this.accumulator = (this.accumulator || 0) + realDt * slowMoFactor;
             const fixedStep = 1 / 60;
             let steps = 0;
             try {
