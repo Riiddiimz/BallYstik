@@ -108,8 +108,20 @@ function updatePower(id,ball,world,slot,dt) {
    tickZones(ball,world,d,dt,'toxic');
  } else if(id==='singularity'){
    if(d.cooldown<=0){const t=nearest(ball,world,650);if(t){d.zones.push({x:t.x,y:t.y,r:155,life:2,maxLife:2,tick:.3});d.cooldown=5;}}
-   for(const z of d.zones){for(const t of enemies(ball,world)){const dx=z.x-t.x,dy=z.y-t.y,l=Math.hypot(dx,dy)||1;if(l<z.r*2){t.vx+=dx/l*230*dt;t.vy+=dy/l*230*dt;z.tick=(z.tick||0)-dt;if(l<z.r&&z.tick<=0){world.damage(t,ball,2,'singularity');z.tick=.3;}}}}
-   d.zones=d.zones.filter(z=>z.life>0);for(const z of d.zones)z.life-=dt;
+   for(let zi=d.zones.length-1;zi>=0;zi--){
+     const z=d.zones[zi];
+     for(const t of enemies(ball,world)){
+       const dx=z.x-t.x,dy=z.y-t.y,l=Math.hypot(dx,dy)||1;
+       if(l<z.r*2){t.vx+=dx/l*230*dt;t.vy+=dy/l*230*dt;z.tick=(z.tick||0)-dt;if(l<z.r&&z.tick<=0){world.damage(t,ball,2,'singularity');z.tick=.3;}}
+     }
+     z.life-=dt;
+     if(z.life<=0){
+       world.spawnParticle(z.x,z.y,{color:'#c084fc',count:36,speed:390,life:.65,spread:TAU,size:3});
+       world.addShockwave(z.x,z.y,{radius:210,color:'#a855f7',life:.5});
+       for(const t of enemies(ball,world)){const dx=t.x-z.x,dy=t.y-z.y,l=Math.hypot(dx,dy)||1;if(l<210){const fall=1-l/210;world.damage(t,ball,18*fall,'singularity-implosion');t.vx+=dx/l*260*fall;t.vy+=dy/l*260*fall;}}
+       d.zones.splice(zi,1);
+     }
+   }
  } else if(id==='polarity_flip'){
    if(d.cooldown<=0){d.target=nearest(ball,world,650);if(d.target){d.active=1;d.cooldown=4.1;}}
    if(d.active>0&&d.target&&d.target.alive){const dx=ball.x-d.target.x,dy=ball.y-d.target.y,l=Math.hypot(dx,dy)||1;d.target.vx+=dx/l*360*dt-dy/l*150*dt;d.target.vy+=dy/l*360*dt+dx/l*150*dt;}
