@@ -62,6 +62,8 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
     if (text.trim() === 'Pause') await pause.click();
   }
   await page.waitForTimeout(250);
+  const fs = require('fs');
+  fs.mkdirSync('test-results/power-visuals', { recursive: true });
   const ids = [
     'judgment_ray', 'star_hunter', 'bomb_shrapnel', 'seismic_nova', 'magma_rift',
     'singularity', 'quantum_jump', 'colossus', 'prism_reflector', 'multiplication'
@@ -152,7 +154,9 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
     if (id === 'bomb_shrapnel') {
       expect(setup.realImpactFragments, 'la bombe doit réellement produire 8 éclats à l’impact').toBe(8);
     }
-    await page.locator('#simCanvas').screenshot({ path: 'test-results/power-visuals/' + id + '.png' });
+    // Capture les pixels du canvas lui-même, sans les boutons HTML superposés de l'interface.
+    const dataUrl = await page.locator('#simCanvas').evaluate(canvas => canvas.toDataURL('image/png'));
+    fs.writeFileSync('test-results/power-visuals/' + id + '.png', Buffer.from(dataUrl.split(',')[1], 'base64'));
   }
 });
 
