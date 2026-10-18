@@ -52,6 +52,14 @@ jobs:
       - name: Run browser smoke tests
         run: npx playwright test tests/playwright.spec.cjs --reporter=list
 
+      - name: Upload visual captures of the 10 powers
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ballystik-v2-power-visuals
+          path: test-results/power-visuals/*.png
+          if-no-files-found: warn
+
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
