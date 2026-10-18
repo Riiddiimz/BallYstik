@@ -113,7 +113,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
         const p = world.projectiles.find(projectile => projectile.powerId === powerId);
         if (p) for (let i = 0; i < 20; i++) {
           p.trail.push({ x: p.x, y: p.y });
-          if (p.trail.length > 10) p.trail.shift();
+          if (p.trail.length > 18) p.trail.shift();
           p.x += p.vx * dt; p.y += p.vy * dt;
           behavior.update(ball, world, slot, dt);
         }
