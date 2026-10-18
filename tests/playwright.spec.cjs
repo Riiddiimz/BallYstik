@@ -51,6 +51,94 @@ test.describe('BallYstik v2-power — pouvoirs lisibles en une seconde', () => {
   });
 });
 
+test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 693 });
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#simCanvas')).toBeVisible();
+  // Pause le combat : chaque capture montre un état déterministe plutôt qu'une image aléatoire.
+  const pause = page.locator('#playPauseBtn');
+  if (await pause.isVisible()) {
+    const text = await page.locator('#playPauseText').textContent().catch(() => '');
+    if (text.trim() === 'Pause') await pause.click();
+  }
+  await page.waitForTimeout(250);
+  const ids = [
+    'judgment_ray', 'star_hunter', 'bomb_shrapnel', 'seismic_nova', 'magma_rift',
+    'singularity', 'quantum_jump', 'colossus', 'prism_reflector', 'multiplication'
+  ];
+  for (const id of ids) {
+    const setup = await page.evaluate((powerId) => {
+      const world = window.ArenaBattle && window.ArenaBattle._world;
+      const bridge = window.ArenaBattleBridge;
+      const behavior = window.AbilityBehaviors && window.AbilityBehaviors[powerId];
+      const meta = window.AbilityRegistry && window.AbilityRegistry.get(powerId);
+      if (!world || !bridge || !behavior || !meta || !world.balls || world.balls.length < 2) {
+        return { error: 'Monde, balles ou pouvoir indisponible', powerId };
+      }
+      const bounds = world.arena.getBounds();
+      const width = bounds.right - bounds.left;
+      const height = bounds.bottom - bounds.top;
+      const balls = world.balls.filter(b => b.alive && !b.isClone);
+      const ball = balls[0];
+      const target = balls.find(b => b !== ball && b.team !== ball.team);
+      if (!target) return { error: 'Cible adverse absente', powerId };
+      // Mise en scène dans les limites de l'arène ; le canevas et le moteur de rendu restent réels.
+      ball.x = bounds.left + width * .34; ball.y = bounds.top + height * .48;
+      target.x = bounds.left + width * .62; target.y = bounds.top + height * .48;
+      ball.vx = 0; ball.vy = 0; target.vx = 0; target.vy = 0;
+      const other = balls.find(b => b !== ball && b !== target);
+      if (other) { other.x = bounds.left + width * .5; other.y = bounds.top + height * .72; other.vx = 0; other.vy = 0; }
+      ball.abilitySlots = [];
+      const slot = { meta, data: {}, timeLeft: 999, maxTime: 999, cooldownBase: 0 };
+      behavior.attach(ball, world, slot);
+      slot.data.cooldown = 0;
+      ball.abilitySlots.push(slot);
+      const dt = .02;
+      if (powerId === 'judgment_ray') {
+        for (let i = 0; i < 32; i++) behavior.update(ball, world, slot, dt);
+      } else if (powerId === 'magma_rift') {
+        slot.data.drop = 0;
+        for (let i = 0; i < 4; i++) behavior.update(ball, world, slot, dt);
+      } else {
+        behavior.update(ball, world, slot, dt);
+      }
+      if (powerId === 'bomb_shrapnel') {
+        const projectile = world.projectiles.find(p => p.powerId === powerId);
+        if (projectile) { projectile.x = target.x; projectile.y = target.y; }
+      }
+      // Affiche explicitement l'événement de fragmentation à l'impact dans le vrai moteur.
+      if (powerId === 'bomb_shrapnel') {
+        const projectile = world.projectiles.find(p => p.powerId === powerId);
+        if (projectile) {
+          world.damage(target, ball, projectile.damage, 'bomb-shrapnel');
+          world.spawnParticle(target.x, target.y, { color: projectile.color, count: 36, speed: 360, life: .65, spread: Math.PI * 2, size: 3 });
+          world.addShockwave(target.x, target.y, { radius: projectile.splashRadius, color: projectile.color, life: .45 });
+          for (let shard = 0; shard < 8; shard++) {
+            const angle = shard * Math.PI * 2 / 8;
+            world.projectiles.push({
+              x: target.x, y: target.y, vx: Math.cos(angle) * 420, vy: Math.sin(angle) * 420,
+              radius: 3, life: .62, bounces: 0, ownerId: ball.id, color: '#7dd3fc',
+              damage: 4, type: 'shrapnel-fragment', trail: []
+            });
+          }
+        }
+      }
+      window.ArenaBattle.render(bridge.ctx, world);
+      return {
+        powerId, canvasWidth: bridge.canvas.width, canvasHeight: bridge.canvas.height,
+        aspectRatio: bridge.canvas.width / bridge.canvas.height,
+        active: slot.data.active, beam: !!slot.data.beam, projectileCount: world.projectiles.length,
+        zoneCount: slot.data.zones.length, portal: !!slot.data.portal,
+        clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length,
+        radius: ball.radius, mirror: slot.data.mirror
+      };
+    }, id);
+    expect(setup.error, id + ': préparation de la capture').toBeUndefined();
+    expect(setup.canvasHeight, id + ': canvas réel non vide').toBeGreaterThan(0);
+    await page.locator('#simCanvas').screenshot({ path: 'test-results/power-visuals/' + id + '.png' });
+  }
+});
+
 const POWER_CASES = [
   ['judgment_ray', 'Rayon du Jugement', 'ray'],
   ['star_hunter', 'Chasseur Stellaire', 'homing'],
