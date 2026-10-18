@@ -67,6 +67,36 @@ function tickZones(ball,world,d,dt,kind) {
 function renderZones(ctx,d,color,fillAlpha) {
   for(const z of d.zones){const a=Math.min(1,z.life/(z.maxLife||z.life));glow(ctx,z.x,z.y,z.r*1.4,color,.18*a);ctx.save();ctx.globalAlpha=(fillAlpha||.12)*a;ctx.fillStyle=color;ctx.beginPath();ctx.arc(z.x,z.y,z.r,0,TAU);ctx.fill();ctx.restore();ring(ctx,z.x,z.y,z.r,color,.65*a,2);}
 }
+function renderMagmaTrail(ctx,d) {
+  const zones=d.zones||[];
+  if(!zones.length)return;
+  ctx.save();
+  ctx.lineCap='round';ctx.lineJoin='round';ctx.globalCompositeOperation='lighter';
+  // Relie les impacts successifs pour que le spectateur lise une vraie fissure, pas des cercles isolés.
+  for(let i=1;i<zones.length;i++){
+    const a=zones[i-1],b=zones[i],alpha=Math.max(.12,Math.min(a.life,b.life)/3);
+    ctx.globalAlpha=alpha;ctx.strokeStyle='#ff4b12';ctx.shadowColor='#ff5a1f';ctx.shadowBlur=26;ctx.lineWidth=27;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    ctx.strokeStyle='#ffb347';ctx.shadowColor='#ffd166';ctx.shadowBlur=12;ctx.lineWidth=10;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+  }
+  for(const z of zones){
+    const a=Math.max(.12,Math.min(1,z.life/3));
+    glow(ctx,z.x,z.y,z.r*1.7,'#ff4b12',.34*a);
+    ctx.globalAlpha=a;ctx.fillStyle='#ff5a1f';ctx.shadowColor='#ff4b12';ctx.shadowBlur=20;
+    ctx.beginPath();ctx.arc(z.x,z.y,z.r*.78,0,TAU);ctx.fill();
+    ctx.globalAlpha=a*.95;ctx.fillStyle='#ffd166';ctx.shadowColor='#fff1a8';ctx.shadowBlur=12;
+    ctx.beginPath();ctx.arc(z.x,z.y,z.r*.34,0,TAU);ctx.fill();
+    // Petites pointes irrégulières évoquant la lave qui jaillit de la fissure.
+    for(let k=0;k<4;k++){
+      const angle=(k/4)*TAU+z.x*.013;
+      const x1=z.x+Math.cos(angle)*z.r*.55,y1=z.y+Math.sin(angle)*z.r*.55;
+      const x2=z.x+Math.cos(angle+.16)*z.r*1.12,y2=z.y+Math.sin(angle+.16)*z.r*1.12;
+      ctx.strokeStyle='#ffb347';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
 function active(ball,d,seconds){d.active=seconds;d.cooldown=seconds;}
 function updatePower(id,ball,world,slot,dt) {
  const d=slot.data;if(!d)return;
@@ -184,7 +214,7 @@ function renderPower(id,ctx,ball,world,slot) {
    if(d.blastFlash)ring(ctx,d.blastFlash.x,d.blastFlash.y,160,'#7ce7ff',d.blastFlash.life/.3,6);
  } else if(id==='seismic_nova'){if(d.flash>0)ring(ctx,ball.x,ball.y,175*(1-d.flash/.35),'#fb4d5d',d.flash/.35,7);}
  else if(id==='titan_ram'&&d.active>0){glow(ctx,ball.x,ball.y,ball.radius*3,'#fbbf24',.7);ring(ctx,ball.x,ball.y,ball.radius*1.8,'#fff',.7,3);}
- else if(id==='magma_rift')renderZones(ctx,d,'#ff6b35',.22);
+ else if(id==='magma_rift')renderMagmaTrail(ctx,d);
  else if(id==='ice_prison')renderZones(ctx,d,'#7ce7ff',.12);
  else if(id==='toxic_mist')renderZones(ctx,d,'#84cc16',.12);
  else if(id==='singularity'){for(const z of d.zones){glow(ctx,z.x,z.y,z.r*1.7,'#a855f7',.25);ctx.save();ctx.fillStyle='#03020a';ctx.beginPath();ctx.arc(z.x,z.y,Math.min(48,z.r*.42),0,TAU);ctx.fill();for(let i=0;i<3;i++)ring(ctx,z.x,z.y,35+i*16,'#c084fc',.8-i*.2,3);ctx.restore();}}
@@ -198,7 +228,18 @@ function renderPower(id,ctx,ball,world,slot) {
  else if(id==='crazy_orbit'&&d.active>0){for(let i=0;i<3;i++)ring(ctx,ball.x,ball.y,ball.radius+14+i*13,'#fbbf24',.6-i*.12,2);}
  else if(id==='sentinel_turret'&&d.turretLife>0){glow(ctx,d.turretX,d.turretY,48,'#67e8f9',.4);ring(ctx,d.turretX,d.turretY,20,'#67e8f9',.9,4);for(let i=0;i<4;i++){const a=d.phase+i*TAU/4;ctx.beginPath();ctx.moveTo(d.turretX,d.turretY);ctx.lineTo(d.turretX+Math.cos(a)*24,d.turretY+Math.sin(a)*24);ctx.strokeStyle='#cffafe';ctx.lineWidth=3;ctx.stroke();}}
  else if(id==='voracious_swarm'&&d.active>0){for(let i=0;i<6;i++){const a=d.angle+i*TAU/6,x=ball.x+Math.cos(a)*64,y=ball.y+Math.sin(a)*64;glow(ctx,x,y,22,'#a3e635',.5);ctx.fillStyle='#d9f99d';ctx.beginPath();ctx.arc(x,y,7,0,TAU);ctx.fill();}}
- else if(id==='colossus'&&d.active>0){glow(ctx,ball.x,ball.y,ball.radius*2,'#fbbf24',.4);ring(ctx,ball.x,ball.y,ball.radius+7,'#fde68a',.8,3);}
+ else if(id==='colossus'&&d.active>0){
+   glow(ctx,ball.x,ball.y,ball.radius*2.2,'#fbbf24',.48);
+   ring(ctx,ball.x,ball.y,ball.radius+7,'#fde68a',.9,3);
+   // Fissures rouges sur la boule géante : silhouette de boss immédiatement identifiable.
+   for(let i=0;i<8;i++){
+     const a=d.phase*.8+i*TAU/8, r1=ball.radius*.48, r2=ball.radius*.78, r3=ball.radius*1.03;
+     ctx.save();ctx.strokeStyle='#fb3c3c';ctx.shadowColor='#ef4444';ctx.shadowBlur=13;ctx.lineWidth=3.5;
+     ctx.beginPath();ctx.moveTo(ball.x+Math.cos(a)*r1,ball.y+Math.sin(a)*r1);
+     ctx.lineTo(ball.x+Math.cos(a+.12)*r2,ball.y+Math.sin(a+.12)*r2);
+     ctx.lineTo(ball.x+Math.cos(a-.08)*r3,ball.y+Math.sin(a-.08)*r3);ctx.stroke();ctx.restore();
+   }
+ }
  else if(id==='electric_overload'&&d.active>0){for(let i=0;i<7;i++){const a=d.phase*4+i*TAU/7;ctx.save();ctx.strokeStyle='#7ce7ff';ctx.shadowColor='#7ce7ff';ctx.shadowBlur=16;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(ball.x+Math.cos(a)*ball.radius,ball.y+Math.sin(a)*ball.radius);ctx.lineTo(ball.x+Math.cos(a+.4)*ball.radius*1.8,ball.y+Math.sin(a+.4)*ball.radius*1.8);ctx.lineTo(ball.x+Math.cos(a-.2)*ball.radius*2.5,ball.y+Math.sin(a-.2)*ball.radius*2.5);ctx.stroke();ctx.restore();}}
  else if(id==='blazing_comet'&&d.active>0){glow(ctx,ball.x,ball.y,ball.radius*2.5,'#ff6b35',.65);ring(ctx,ball.x,ball.y,ball.radius+6,'#fff2b2',.9,3);}
  else if((id==='refractive_dome'||id==='prism_reflector')&&d.mirror){
