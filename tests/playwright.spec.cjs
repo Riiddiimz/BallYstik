@@ -106,21 +106,17 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
         const projectile = world.projectiles.find(p => p.powerId === powerId);
         if (projectile) { projectile.x = target.x; projectile.y = target.y; }
       }
-      // Affiche explicitement l'événement de fragmentation à l'impact dans le vrai moteur.
+      // Force l'impact et laisse le moteur réel traiter explosion + éclats.
+      let realImpactFragments = 0;
       if (powerId === 'bomb_shrapnel') {
         const projectile = world.projectiles.find(p => p.powerId === powerId);
         if (projectile) {
-          world.damage(target, ball, projectile.damage, 'bomb-shrapnel');
-          world.spawnParticle(target.x, target.y, { color: projectile.color, count: 36, speed: 360, life: .65, spread: Math.PI * 2, size: 3 });
-          world.addShockwave(target.x, target.y, { radius: projectile.splashRadius, color: projectile.color, life: .45 });
-          for (let shard = 0; shard < 8; shard++) {
-            const angle = shard * Math.PI * 2 / 8;
-            world.projectiles.push({
-              x: target.x, y: target.y, vx: Math.cos(angle) * 420, vy: Math.sin(angle) * 420,
-              radius: 3, life: .62, bounces: 0, ownerId: ball.id, color: '#7dd3fc',
-              damage: 4, type: 'shrapnel-fragment', trail: []
-            });
-          }
+          projectile.x = target.x;
+          projectile.y = target.y;
+          projectile.vx = 0;
+          projectile.vy = 0;
+          window.ArenaBattle.update(.016, world);
+          realImpactFragments = world.projectiles.filter(p => p.type === 'shrapnel-fragment').length;
         }
       }
       window.ArenaBattle.render(bridge.ctx, world);
@@ -129,7 +125,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
         aspectRatio: bridge.canvas.width / bridge.canvas.height,
         active: slot.data.active, beam: !!slot.data.beam, projectileCount: world.projectiles.length,
         zoneCount: slot.data.zones.length, portal: !!slot.data.portal,
-        clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length,
+        clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length, realImpactFragments,
         radius: ball.radius, mirror: slot.data.mirror
       };
     }, id);
