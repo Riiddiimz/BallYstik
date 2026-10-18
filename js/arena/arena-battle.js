@@ -640,7 +640,14 @@
 
                 // Multiplicateur de vitesse (dash, freeze)
                 const statusMult = ball.status.getSpeedMultiplier();
-                const speedMult = (ball.speedMultiplier ?? 1) * statusMult;
+                if (ball._powerSlowTimer > 0) ball._powerSlowTimer = Math.max(0, ball._powerSlowTimer - dt);
+                const powerSlowMult = ball._powerSlowTimer > 0 ? 0.4 : 1;
+                if (ball._powerPoisonTimer > 0) {
+                    ball._powerPoisonTimer = Math.max(0, ball._powerPoisonTimer - dt);
+                    ball._powerPoisonTick = (ball._powerPoisonTick || 0) - dt;
+                    if (ball._powerPoisonTick <= 0 && ball.alive) { ball._powerPoisonTick = 0.45; world.damage(ball, null, 1.5, "toxic-mist"); }
+                }
+                const speedMult = (ball.speedMultiplier ?? 1) * statusMult * powerSlowMult;
 
                 // Physique Vortex uniquement : attraction centrale et dérive tangentielle horaire.
                 if (isVortexMap(world.arena.mapStyle) && !ball.status.isStunned()) {
