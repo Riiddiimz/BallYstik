@@ -879,6 +879,11 @@
                         }
                         // La bombe à fragmentation libère des éclats rectilignes après l’explosion.
                         if (p.shrapnel) {
+                            // État visuel persistant côté pouvoir : l'explosion doit être lisible, pas seulement des particules.
+                            if (owner && owner.abilitySlots) {
+                                const bombSlot = owner.abilitySlots.find(slot => slot.meta && slot.meta.id === 'bomb_shrapnel');
+                                if (bombSlot && bombSlot.data) bombSlot.data.blastFlash = { x: p.x, y: p.y, life: 0.48, maxLife: 0.48 };
+                            }
                             for (let shard = 0; shard < 8; shard++) {
                                 const angle = shard * Math.PI * 2 / 8;
                                 const fragment = {
