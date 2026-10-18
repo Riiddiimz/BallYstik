@@ -210,18 +210,18 @@ Une fois les 24 audits terminés, fournir :
 | Comète Ardente | Accélère la boule et laisse une succession de petites zones de feu derrière elle. | Risque de surcharge visuelle avec de nombreuses zones très rapprochées ; vérifier l'impact réel des flammes. |
 | Dôme Réfractaire | Réduit le prochain dégât reçu à 18 % de sa valeur, puis se brise. | Le bouclier doit être visiblement brisé au premier impact et la réduction doit être confirmée en combat. |
 | Miroir Vengeur | Pendant une fenêtre courte, renvoie 75 % des dégâts à l'attaquant et réduit les dégâts reçus. | Vérifier que le retour de dégâts est visible et que le spectateur comprend qui a renvoyé le coup. |
-| Dernier Souffle | À la mort, inflige une explosion autour de la boule éliminée. | **Disponibilité à confirmer :** son poids de registre vaut -1, donc il est exclu de la sélection aléatoire standard qui ignore les poids nuls ou négatifs. Vérifier s'il est volontairement réservé au spawn manuel ou s'il ne peut jamais apparaître en partie normale. |
+| Dernier Souffle | À la mort, inflige une explosion autour de la boule éliminée. | **Vérification corrigée :** le tuple du registre est ordonné `duration, weight`. Pour Dernier Souffle, la durée vaut `-1` (effet déclenché à la mort) et le poids vaut `4` ; il n'est donc pas exclu de la sélection aléatoire par son poids. |
 
 ### Anomalie détectée dans le test de fumée
 
-Le test Playwright attend le texte **« 24 / 24 »**, mais le compteur de réglages ne compte que les pouvoirs activés avec un poids strictement supérieur à zéro. Comme **Dernier Souffle** est configuré avec un poids de **-1**, le compteur devrait afficher **23 / 24 actifs** au chargement. Il faut aligner le test sur la règle voulue : soit le pouvoir est exclu par conception et le test doit l'indiquer, soit son poids/comportement doit être revu. Cette incohérence est vérifiable par lecture du code ; le résultat du workflow actuel doit être relancé pour confirmer l'état CI actuel.
+**Faux positif corrigé :** le registre stocke `duration` avant `weight`. Dernier Souffle a une durée de `-1` (cohérente avec un déclenchement posthume) et un poids de `4`. Le compteur peut donc afficher `24 / 24 actifs` par défaut ; le test smoke existant est cohérent sur ce point. Aucun défaut de disponibilité n'est démontré par cette valeur.
 
 ### État de cette passe
 
 - Revue statique du comportement : **24/24 pouvoirs parcourus**.
 - Notes de beauté, compréhension observée, lisibilité mobile et rétention : **NON ÉVALUÉES**.
 - Tests visuels individuels Playwright : **pas encore présents**.
-- Première anomalie à résoudre : compteur/test « 24 / 24 » contre le poids négatif de Dernier Souffle.
+- Ancienne alerte sur Dernier Souffle retirée : elle provenait d'une lecture erronée de l'ordre des champs `duration, weight`.
 - Les observations ci-dessus sont des hypothèses de test fondées sur le code, pas des verdicts finaux sur le rendu.
 
 
