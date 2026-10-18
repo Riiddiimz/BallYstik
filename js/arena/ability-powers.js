@@ -127,7 +127,7 @@ function updatePower(id,ball,world,slot,dt) {
    if(d.beam){d.beam.life-=dt;if(d.beam.life<=0)d.beam=null;}
  } else if(id==='star_hunter'){
    for(const p of world.projectiles){if(p.ownerId!==ball.id||p.powerId!==id||!p.target||!p.target.alive)continue;const dx=p.target.x-p.x,dy=p.target.y-p.y,l=Math.hypot(dx,dy)||1;p.vx+=(dx/l)*1300*dt;p.vy+=(dy/l)*1300*dt;const s=Math.hypot(p.vx,p.vy)||1;if(s>540){p.vx=p.vx/s*540;p.vy=p.vy/s*540;}}
-   if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){projectile(world,ball,t,{powerId:id,target:t,speed:280,life:2.6,damage:20,splashRadius:0,radius:7,color:'#fb923c',type:'star-hunter'});d.cooldown=2.8;}}
+   if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const p=projectile(world,ball,t,{powerId:id,target:t,speed:280,life:2.6,damage:20,splashRadius:0,radius:7,color:'#fb923c',type:'star-hunter'});const speed=Math.hypot(p.vx,p.vy)||280;const launchAngle=Math.atan2(p.vy,p.vx)+(ball.id%2?-.48:.48);p.vx=Math.cos(launchAngle)*speed;p.vy=Math.sin(launchAngle)*speed;d.cooldown=2.8;}}
  } else if(id==='bomb_shrapnel'){
    if(d.cooldown<=0){const t=nearest(ball,world,750);if(t){const p=projectile(world,ball,t,{powerId:id,speed:330,life:2.6,damage:15,splashRadius:92,radius:9,color:'#38bdf8',type:'bomb-shrapnel'});p.shrapnel=true;d.cooldown=3.2;}}
  } else if(id==='ghost_billiard'){
