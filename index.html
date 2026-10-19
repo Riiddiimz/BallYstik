@@ -218,6 +218,9 @@
                         <label for="arenaMapSelect" class="text-[11px] text-zinc-400 block mb-1">Carte</label>
                         <select id="arenaMapSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-cyan-500">
                             <option value="neon">Défaut</option>
+                            <option value="neon_grid">Néon Grid</option>
+                            <option value="volcan">Volcan — Faille de Magma</option>
+                            <option value="nexus">Nexus Spatial — Portails</option>
                             <option value="vortex">Vortex Spirale</option>
                             <option value="vortex_test">Vortex Test (WebGL)</option>
                             <option value="sanctuaire">Sanctuaire du Chaos</option>
@@ -235,6 +238,7 @@
                         <p class="text-[10px] text-zinc-500 leading-snug">De 0 à 10 obstacles, cœur central inclus. À 0, aucun obstacle n’apparaît.</p>
                     </div>
                     <div id="sanctuaireMapSettings" hidden class="space-y-2 rounded-xl border border-amber-500/30 bg-zinc-950/50 p-2.5"><p class="text-[10px] font-bold uppercase tracking-wider text-amber-300">Sanctuaire du Chaos</p><p class="text-[10px] text-zinc-400 leading-snug">Arène mystique : murs solides, piliers de cristal, portails décoratifs et sol gravé. Les éléments restent contenus dans les limites jouables.</p></div>
+                    <div id="newMapSettings" hidden class="space-y-2 rounded-xl border border-cyan-500/30 bg-zinc-950/50 p-2.5"><p id="newMapTitle" class="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Néon Grid</p><p id="newMapDescription" class="text-[10px] text-zinc-400 leading-snug">Trois bumpers à collisions réelles et une ligne de danger lumineuse décorative.</p></div>
                     <div id="defaultMapSettings" class="space-y-2.5 rounded-xl border border-zinc-800 bg-zinc-950/50 p-2.5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-zinc-400">Map Défaut</p>
                         <div>

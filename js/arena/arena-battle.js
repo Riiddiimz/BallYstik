@@ -35,7 +35,7 @@
     };
 
     const isVortexMap = map => map === 'vortex' || map === 'vortex_test';
-    const obstacleCountForMap = (map, options) => map === 'sanctuaire' ? 8 : (isVortexMap(map) ? options.vortexObstacles : options.obstacles);
+    const obstacleCountForMap = (map, options) => map === 'sanctuaire' ? 8 : (['neon_grid', 'volcan', 'nexus'].includes(map) ? 3 : (isVortexMap(map) ? options.vortexObstacles : options.obstacles));
 
     class ArenaBattleMode {
         constructor() {

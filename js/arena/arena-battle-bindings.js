@@ -114,11 +114,29 @@
                     if (status) status.textContent = message;
                 }
             });
-            const mapSelect = document.getElementById('arenaMapSelect');
+            this.syncMapSettings();
+        },
+
+        syncMapSettings() {
+            const map = document.getElementById('arenaMapSelect')?.value || 'neon';
             const defaultSettings = document.getElementById('defaultMapSettings');
             const vortexSettings = document.getElementById('vortexMapSettings');
-            if (defaultSettings) defaultSettings.hidden = (mapSelect?.value || 'neon') !== 'neon';
-            if (vortexSettings) vortexSettings.hidden = !['vortex', 'vortex_test'].includes(mapSelect?.value);
+            const sanctuaireSettings = document.getElementById('sanctuaireMapSettings');
+            const newSettings = document.getElementById('newMapSettings');
+            if (defaultSettings) defaultSettings.hidden = map !== 'neon';
+            if (vortexSettings) vortexSettings.hidden = !['vortex', 'vortex_test'].includes(map);
+            if (sanctuaireSettings) sanctuaireSettings.hidden = map !== 'sanctuaire';
+            if (newSettings) newSettings.hidden = !['neon_grid', 'volcan', 'nexus'].includes(map);
+            const title = document.getElementById('newMapTitle');
+            const description = document.getElementById('newMapDescription');
+            const copy = {
+                neon_grid: ['Néon Grid', 'Trois bumpers à collisions réelles et une ligne de danger lumineuse décorative. Style arcade cyan et magenta.'],
+                volcan: ['Volcan — Faille de Magma', 'Trois rochers à collisions réelles et une fissure lumineuse décorative. Palette roche sombre et lave orange.'],
+                nexus: ['Nexus Spatial — Portails', 'Trois astéroïdes à collisions réelles et deux anneaux de portail décoratifs. La téléportation n’est pas activée dans cette version.']
+            }[map];
+            if (title) title.textContent = copy ? copy[0] : '';
+            if (description) description.textContent = copy ? copy[1] : '';
+        },
         },
 
         getOptions() {
@@ -222,10 +240,7 @@
             const mapSelect = document.getElementById('arenaMapSelect');
             if (mapSelect) mapSelect.addEventListener('change', () => {
                 this.saveOptions();
-                const mapSettings = document.getElementById('defaultMapSettings');
-                const vortexSettings = document.getElementById('vortexMapSettings');
-                if (mapSettings) mapSettings.hidden = mapSelect.value !== 'neon';
-                if (vortexSettings) vortexSettings.hidden = !['vortex', 'vortex_test'].includes(mapSelect.value);
+                this.syncMapSettings();
                 try { localStorage.removeItem('ballystik.arena.obstaclePositions.v1'); } catch (_) {}
                 if (window.ArenaBattle) window.ArenaBattle.applyOptions({ ...this.getOptions(), obstaclePositions: null });
                 this.start();

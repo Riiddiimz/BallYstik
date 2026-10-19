@@ -295,6 +295,28 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
 }
 
 
+test('les panneaux de cartes suivent la sélection et les trois nouvelles maps sont instanciées', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  const select = page.locator('#arenaMapSelect');
+  for (const [map, panel] of [
+    ['sanctuaire', '#sanctuaireMapSettings'],
+    ['neon_grid', '#newMapSettings'],
+    ['volcan', '#newMapSettings'],
+    ['nexus', '#newMapSettings'],
+    ['neon', '#defaultMapSettings']
+  ]) {
+    await select.selectOption(map);
+    await expect(page.locator(panel)).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.ArenaBattle?._world?.arena?.mapStyle)).toBe(map);
+    if (['neon_grid', 'volcan', 'nexus'].includes(map)) {
+      await expect.poll(() => page.evaluate(() => window.ArenaBattle?._world?.arena?.obstacles?.length)).toBe(3);
+    }
+  }
+  expect(pageErrors, 'Aucune exception JavaScript non gérée pendant les changements de carte').toEqual([]);
+});
+
 test('la map Sanctuaire du Chaos est sélectionnable et reste dans les limites de l’arène', async ({ page }) => {
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));

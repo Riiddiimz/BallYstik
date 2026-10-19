@@ -178,6 +178,17 @@
                 this.obstacles.push(...spiralPoints.slice(0, requested - 1));
                 return;
             }
+            if (['neon_grid', 'volcan', 'nexus'].includes(this.mapStyle)) {
+                const fx = this.frameX, fy = this.frameY, fw = this.frameW, fh = this.frameH;
+                const layouts = {
+                    neon_grid: [{x:.28,y:.34,r:24},{x:.72,y:.50,r:27},{x:.32,y:.70,r:24}],
+                    volcan: [{x:.30,y:.30,r:27},{x:.68,y:.52,r:24},{x:.34,y:.74,r:27}],
+                    nexus: [{x:.30,y:.36,r:23},{x:.70,y:.64,r:23},{x:.50,y:.50,r:27}]
+                };
+                layouts[this.mapStyle].slice(0, Math.max(0, Math.min(3, Math.floor(Number(count) || 0))))
+                    .forEach(p => this.obstacles.push({x:fx+fw*p.x,y:fy+fh*p.y,r:p.r}));
+                return;
+            }
             if (this.mapStyle === 'sanctuaire') {
                 const fx = this.frameX, fy = this.frameY, fw = this.frameW, fh = this.frameH;
                 const layout = [
@@ -820,7 +831,36 @@ void main() {
                     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
                 }
             }
-            else if (this.mapStyle === 'sanctuaire') {
+            else if (this.mapStyle === 'neon_grid') {
+                const pulse = 0.5 + 0.5 * Math.sin(this.time * 3.2);
+                const y = frameY + frameH * (0.42 + 0.12 * Math.sin(this.time * 0.7));
+                ctx.globalAlpha = 0.2 + pulse * 0.35;
+                ctx.strokeStyle = '#ff3df2'; ctx.lineWidth = 2 + pulse * 2;
+                ctx.shadowColor = '#ff3df2'; ctx.shadowBlur = 16;
+                ctx.beginPath(); ctx.moveTo(frameX + 8, y); ctx.lineTo(frameX + frameW - 8, y); ctx.stroke();
+                ctx.globalAlpha = 0.9; ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 2; ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 12;
+                this._roundRectPath(ctx, frameX + 4, frameY + 4, frameW - 8, frameH - 8, Math.max(8, cornerRadius - 8)); ctx.stroke();
+            } else if (this.mapStyle === 'volcan') {
+                const pulse = 0.5 + 0.5 * Math.sin(this.time * 2.5);
+                const x = frameX + frameW * (0.5 + 0.13 * Math.sin(this.time * 0.35));
+                ctx.globalAlpha = 0.35 + pulse * 0.5; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 5 + pulse * 4;
+                ctx.shadowColor = '#f97316'; ctx.shadowBlur = 20;
+                ctx.beginPath(); ctx.moveTo(x, frameY + frameH * 0.16); ctx.lineTo(x - frameW * 0.09, frameY + frameH * 0.32); ctx.lineTo(x + frameW * 0.07, frameY + frameH * 0.48); ctx.lineTo(x - frameW * 0.06, frameY + frameH * 0.68); ctx.lineTo(x + frameW * 0.03, frameY + frameH * 0.84); ctx.stroke();
+                ctx.globalAlpha = 0.18 + pulse * 0.15; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 14; ctx.shadowBlur = 24;
+                ctx.beginPath(); ctx.moveTo(x, frameY + frameH * 0.16); ctx.lineTo(x - frameW * 0.09, frameY + frameH * 0.32); ctx.lineTo(x + frameW * 0.07, frameY + frameH * 0.48); ctx.lineTo(x - frameW * 0.06, frameY + frameH * 0.68); ctx.lineTo(x + frameW * 0.03, frameY + frameH * 0.84); ctx.stroke();
+            } else if (this.mapStyle === 'nexus') {
+                for (let i = 0; i < 2; i++) {
+                    const px = frameX + frameW * (i === 0 ? 0.25 : 0.75);
+                    const py = frameY + frameH * (i === 0 ? 0.24 : 0.78);
+                    const pulse = 0.5 + 0.5 * Math.sin(this.time * 2.8 + i);
+                    ctx.save(); ctx.globalAlpha = 0.45 + pulse * 0.4;
+                    ctx.strokeStyle = i === 0 ? '#00f2fe' : '#c084fc'; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18;
+                    for (let ring = 0; ring < 3; ring++) {
+                        ctx.beginPath(); ctx.ellipse(px, py, 13 + ring * 7 + pulse * 3, 19 + ring * 9 + pulse * 4, this.time * (i ? -0.4 : 0.4), 0, Math.PI * 2); ctx.stroke();
+                    }
+                    ctx.restore();
+                }
+            } else if (this.mapStyle === 'sanctuaire') {
                 const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
                 const pulse = 0.82 + 0.18 * Math.sin(this.time * 2.2);
                 // Pavés sombres, gravures et fissures d'énergie : tout est clippé à l'arène.
