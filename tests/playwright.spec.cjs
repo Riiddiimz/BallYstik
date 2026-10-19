@@ -293,3 +293,35 @@ for (const [powerId, powerName, expectation] of POWER_CASES) {
     expect(result.passed, powerName + ': déclenchement et conséquence attendue. Résultat: ' + JSON.stringify(result)).toBe(true);
   });
 }
+
+
+test('la map Sanctuaire du Chaos est sélectionnable et reste dans les limites de l’arène', async ({ page }) => {
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.setViewportSize({ width: 390, height: 693 });
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#arenaMapSelect')).toBeVisible();
+  await page.locator('#arenaMapSelect').selectOption('sanctuaire');
+  await expect(page.locator('#sanctuaireMapSettings')).toBeVisible();
+  await expect.poll(() => page.evaluate(() => {
+    const world = window.ArenaBattle && window.ArenaBattle._world;
+    return world && world.arena && world.arena.mapStyle;
+  })).toBe('sanctuaire');
+  const bounds = await page.evaluate(() => {
+    const arena = window.ArenaBattle._world.arena;
+    const b = arena.getBounds();
+    const obstacles = arena.obstacles || [];
+    return {
+      left: b.left, top: b.top, right: b.right, bottom: b.bottom,
+      obstacles: obstacles.map(o => ({ x: o.x, y: o.y, r: o.r }))
+    };
+  });
+  expect(bounds.obstacles.length).toBeGreaterThan(0);
+  for (const obstacle of bounds.obstacles) {
+    expect(obstacle.x - obstacle.r).toBeGreaterThanOrEqual(bounds.left);
+    expect(obstacle.x + obstacle.r).toBeLessThanOrEqual(bounds.right);
+    expect(obstacle.y - obstacle.r).toBeGreaterThanOrEqual(bounds.top);
+    expect(obstacle.y + obstacle.r).toBeLessThanOrEqual(bounds.bottom);
+  }
+  expect(pageErrors).toEqual([]);
+});
