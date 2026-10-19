@@ -833,33 +833,125 @@ void main() {
             }
             else if (this.mapStyle === 'neon_grid') {
                 const pulse = 0.5 + 0.5 * Math.sin(this.time * 3.2);
-                const y = frameY + frameH * (0.42 + 0.12 * Math.sin(this.time * 0.7));
-                ctx.globalAlpha = 0.2 + pulse * 0.35;
-                ctx.strokeStyle = '#ff3df2'; ctx.lineWidth = 2 + pulse * 2;
-                ctx.shadowColor = '#ff3df2'; ctx.shadowBlur = 16;
-                ctx.beginPath(); ctx.moveTo(frameX + 8, y); ctx.lineTo(frameX + frameW - 8, y); ctx.stroke();
-                ctx.globalAlpha = 0.9; ctx.strokeStyle = '#00f2fe'; ctx.lineWidth = 2; ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 12;
-                this._roundRectPath(ctx, frameX + 4, frameY + 4, frameW - 8, frameH - 8, Math.max(8, cornerRadius - 8)); ctx.stroke();
+                const glow = ctx.createLinearGradient(frameX, frameY, frameX + frameW, frameY + frameH);
+                glow.addColorStop(0, 'rgba(0,242,254,0.08)'); glow.addColorStop(0.5, 'rgba(24,36,86,0.02)'); glow.addColorStop(1, 'rgba(255,45,214,0.10)');
+                ctx.fillStyle = glow; ctx.fillRect(frameX, frameY, frameW, frameH);
+                // Perspective floor grid with luminous intersections.
+                ctx.save(); ctx.globalAlpha = 0.5; ctx.strokeStyle = '#126b91'; ctx.lineWidth = 1;
+                for (let i = 0; i <= 12; i++) {
+                    const yy = frameY + frameH * i / 12;
+                    ctx.globalAlpha = 0.12 + i / 12 * 0.24;
+                    ctx.beginPath(); ctx.moveTo(frameX, yy); ctx.lineTo(frameX + frameW, yy); ctx.stroke();
+                }
+                for (let i = 0; i <= 8; i++) {
+                    const xx = frameX + frameW * i / 8;
+                    ctx.globalAlpha = 0.16;
+                    ctx.beginPath(); ctx.moveTo(frameX + frameW * 0.5, frameY + frameH * 0.48); ctx.lineTo(xx, frameY + frameH); ctx.stroke();
+                }
+                ctx.restore();
+                // Circuit rails, corner brackets and animated scanline.
+                ctx.save(); ctx.globalAlpha = 0.45 + pulse * 0.25; ctx.strokeStyle = '#ff3df2'; ctx.lineWidth = 2;
+                ctx.shadowColor = '#ff3df2'; ctx.shadowBlur = 15;
+                for (let side = 0; side < 2; side++) {
+                    const xx = frameX + frameW * (side ? 0.94 : 0.06);
+                    ctx.beginPath(); ctx.moveTo(xx, frameY + frameH * 0.13); ctx.lineTo(xx, frameY + frameH * 0.26);
+                    ctx.lineTo(xx + (side ? -1 : 1) * frameW * 0.055, frameY + frameH * 0.30);
+                    ctx.lineTo(xx + (side ? -1 : 1) * frameW * 0.055, frameY + frameH * 0.42); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(xx, frameY + frameH * 0.60); ctx.lineTo(xx, frameY + frameH * 0.75);
+                    ctx.lineTo(xx + (side ? -1 : 1) * frameW * 0.04, frameY + frameH * 0.79); ctx.stroke();
+                }
+                const scanY = frameY + frameH * (0.18 + 0.64 * (0.5 + 0.5 * Math.sin(this.time * 0.7)));
+                const scan = ctx.createLinearGradient(frameX, scanY - 18, frameX, scanY + 18);
+                scan.addColorStop(0, 'rgba(255,61,242,0)'); scan.addColorStop(0.5, 'rgba(255,61,242,0.18)'); scan.addColorStop(1, 'rgba(255,61,242,0)');
+                ctx.fillStyle = scan; ctx.fillRect(frameX, scanY - 18, frameW, 36);
+                ctx.strokeStyle = '#00f2fe'; ctx.globalAlpha = 0.9; ctx.lineWidth = 2; ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 15;
+                this._roundRectPath(ctx, frameX + 5, frameY + 5, frameW - 10, frameH - 10, Math.max(8, cornerRadius - 8)); ctx.stroke();
+                // Small luminous data ticks along the inner frame.
+                for (let i = 0; i < 12; i++) {
+                    const yy = frameY + frameH * (0.12 + i * 0.069);
+                    ctx.globalAlpha = i % 3 === 0 ? 0.8 : 0.32;
+                    ctx.beginPath(); ctx.moveTo(frameX + 8, yy); ctx.lineTo(frameX + (i % 3 === 0 ? 23 : 14), yy); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(frameX + frameW - 8, yy); ctx.lineTo(frameX + frameW - (i % 3 === 0 ? 23 : 14), yy); ctx.stroke();
+                }
+                ctx.restore();
             } else if (this.mapStyle === 'volcan') {
                 const pulse = 0.5 + 0.5 * Math.sin(this.time * 2.5);
                 const x = frameX + frameW * (0.5 + 0.13 * Math.sin(this.time * 0.35));
-                ctx.globalAlpha = 0.35 + pulse * 0.5; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 5 + pulse * 4;
-                ctx.shadowColor = '#f97316'; ctx.shadowBlur = 20;
-                ctx.beginPath(); ctx.moveTo(x, frameY + frameH * 0.16); ctx.lineTo(x - frameW * 0.09, frameY + frameH * 0.32); ctx.lineTo(x + frameW * 0.07, frameY + frameH * 0.48); ctx.lineTo(x - frameW * 0.06, frameY + frameH * 0.68); ctx.lineTo(x + frameW * 0.03, frameY + frameH * 0.84); ctx.stroke();
-                ctx.globalAlpha = 0.18 + pulse * 0.15; ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 14; ctx.shadowBlur = 24;
-                ctx.beginPath(); ctx.moveTo(x, frameY + frameH * 0.16); ctx.lineTo(x - frameW * 0.09, frameY + frameH * 0.32); ctx.lineTo(x + frameW * 0.07, frameY + frameH * 0.48); ctx.lineTo(x - frameW * 0.06, frameY + frameH * 0.68); ctx.lineTo(x + frameW * 0.03, frameY + frameH * 0.84); ctx.stroke();
+                const fissure = [[0.48,0.10],[0.57,0.19],[0.43,0.28],[0.54,0.38],[0.40,0.49],[0.51,0.59],[0.44,0.71],[0.55,0.82],[0.49,0.93]];
+                // Basalt plates, beveled edges and scattered magma seams.
+                ctx.save();
+                for (let i = 0; i < 18; i++) {
+                    const side = i % 2 ? 1 : -1, yy = frameY + frameH * (0.08 + (i % 9) * 0.105);
+                    const xx = frameX + frameW * (i % 2 ? 0.82 : 0.18);
+                    ctx.globalAlpha = 0.2 + (i % 3) * 0.05;
+                    ctx.fillStyle = i % 2 ? '#311a25' : '#241622';
+                    ctx.beginPath(); ctx.moveTo(xx, yy); ctx.lineTo(xx + side * frameW * 0.10, yy + frameH * 0.025);
+                    ctx.lineTo(xx + side * frameW * 0.07, yy + frameH * 0.07); ctx.lineTo(xx - side * frameW * 0.02, yy + frameH * 0.055); ctx.closePath(); ctx.fill();
+                    ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 1; ctx.stroke();
+                }
+                // A broad molten crack with hot core and dark crust.
+                ctx.beginPath();
+                fissure.forEach(([px,py],i)=>{const xx=frameX+frameW*px + (x-(frameX+frameW*.5))*0.25, yy=frameY+frameH*py;if(!i)ctx.moveTo(xx,yy);else ctx.lineTo(xx,yy);});
+                ctx.lineJoin = 'round'; ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 18; ctx.shadowBlur = 0; ctx.stroke();
+                ctx.globalAlpha = 0.6 + pulse * 0.25; ctx.strokeStyle = '#f97316'; ctx.lineWidth = 9; ctx.shadowColor = '#f97316'; ctx.shadowBlur = 22; ctx.stroke();
+                ctx.globalAlpha = 0.65 + pulse * 0.3; ctx.strokeStyle = '#fff1a6'; ctx.lineWidth = 2.5; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 14; ctx.stroke();
+                // Side vents glow like furnace grates.
+                for (let side = 0; side < 2; side++) {
+                    const vx = frameX + frameW * (side ? 0.87 : 0.13);
+                    for (let j = 0; j < 4; j++) {
+                        const vy = frameY + frameH * (0.22 + j * 0.19);
+                        ctx.globalAlpha = 0.35 + pulse * 0.35; ctx.strokeStyle = '#fb923c'; ctx.lineWidth = 2; ctx.shadowBlur = 10;
+                        ctx.beginPath(); ctx.moveTo(vx - 7, vy - 9); ctx.lineTo(vx + 7, vy - 9); ctx.lineTo(vx + 4, vy + 9); ctx.lineTo(vx - 4, vy + 9); ctx.closePath(); ctx.stroke();
+                    }
+                }
+                // Floating sparks are decorative only; they do not affect physics.
+                for (let i = 0; i < 22; i++) {
+                    const seed = i * 12.9898;
+                    const px = frameX + frameW * (0.12 + ((Math.sin(seed) + 1) * 0.5) * 0.76);
+                    const py = frameY + frameH * (0.08 + ((Math.sin(seed * 2.1 + this.time * (0.35 + (i % 4) * 0.08)) + 1) * 0.5) * 0.84);
+                    ctx.globalAlpha = 0.25 + 0.6 * (0.5 + 0.5 * Math.sin(this.time * 4 + i));
+                    ctx.fillStyle = i % 4 === 0 ? '#fff1a6' : '#fb923c'; ctx.shadowColor = '#f97316'; ctx.shadowBlur = 8;
+                    ctx.beginPath(); ctx.arc(px, py, i % 5 === 0 ? 2.2 : 1.2, 0, Math.PI * 2); ctx.fill();
+                }
+                ctx.restore();
             } else if (this.mapStyle === 'nexus') {
+                // Dim starfield and orbital traces add depth without filling the play space.
+                ctx.save();
+                for (let i = 0; i < 46; i++) {
+                    const seed = i * 78.233;
+                    const px = frameX + frameW * (0.05 + ((Math.sin(seed) + 1) * 0.5) * 0.90);
+                    const py = frameY + frameH * (0.04 + ((Math.sin(seed * 1.71) + 1) * 0.5) * 0.92);
+                    const twinkle = 0.25 + 0.55 * (0.5 + 0.5 * Math.sin(this.time * 1.8 + seed));
+                    ctx.globalAlpha = twinkle; ctx.fillStyle = i % 3 === 0 ? '#c4b5fd' : '#67e8f9';
+                    ctx.beginPath(); ctx.arc(px, py, i % 9 === 0 ? 1.8 : 0.8, 0, Math.PI * 2); ctx.fill();
+                }
+                // Fine orbital ellipses frame the arena diagonally.
+                ctx.globalAlpha = 0.25; ctx.strokeStyle = '#7c3aed'; ctx.lineWidth = 1.5; ctx.shadowColor = '#8b5cf6'; ctx.shadowBlur = 12;
+                ctx.beginPath(); ctx.ellipse(frameX + frameW * 0.5, frameY + frameH * 0.5, frameW * 0.43, frameH * 0.17, -0.72, 0, Math.PI * 2); ctx.stroke();
+                ctx.beginPath(); ctx.ellipse(frameX + frameW * 0.5, frameY + frameH * 0.5, frameW * 0.43, frameH * 0.17, 0.72, 0, Math.PI * 2); ctx.stroke();
                 for (let i = 0; i < 2; i++) {
                     const px = frameX + frameW * (i === 0 ? 0.25 : 0.75);
                     const py = frameY + frameH * (i === 0 ? 0.24 : 0.78);
                     const pulse = 0.5 + 0.5 * Math.sin(this.time * 2.8 + i);
-                    ctx.save(); ctx.globalAlpha = 0.45 + pulse * 0.4;
-                    ctx.strokeStyle = i === 0 ? '#00f2fe' : '#c084fc'; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 18;
-                    for (let ring = 0; ring < 3; ring++) {
-                        ctx.beginPath(); ctx.ellipse(px, py, 13 + ring * 7 + pulse * 3, 19 + ring * 9 + pulse * 4, this.time * (i ? -0.4 : 0.4), 0, Math.PI * 2); ctx.stroke();
+                    const color = i === 0 ? '#00f2fe' : '#c084fc';
+                    ctx.save(); ctx.translate(px, py); ctx.rotate(this.time * (i ? -0.4 : 0.4));
+                    ctx.globalAlpha = 0.42 + pulse * 0.38; ctx.strokeStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 20;
+                    for (let ring = 0; ring < 4; ring++) {
+                        ctx.beginPath(); ctx.ellipse(0, 0, 13 + ring * 8 + pulse * 3, 20 + ring * 10 + pulse * 4, 0, 0, Math.PI * 2); ctx.lineWidth = ring === 0 ? 2.5 : 1.2; ctx.stroke();
+                    }
+                    ctx.globalAlpha = 0.9; ctx.fillStyle = color; ctx.beginPath(); ctx.arc(0, 0, 3 + pulse * 2, 0, Math.PI * 2); ctx.fill();
+                    for (let n = 0; n < 4; n++) {
+                        const a = n * Math.PI / 2 + this.time * (i ? -0.7 : 0.7), rr = 31 + pulse * 4;
+                        ctx.beginPath(); ctx.arc(Math.cos(a) * rr, Math.sin(a) * rr, 1.8, 0, Math.PI * 2); ctx.fill();
                     }
                     ctx.restore();
                 }
+                // A faint central star, deliberately behind the moving balls.
+                const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
+                const core = ctx.createRadialGradient(cx, cy, 2, cx, cy, frameW * 0.32);
+                core.addColorStop(0, 'rgba(0,242,254,0.11)'); core.addColorStop(0.5, 'rgba(139,92,246,0.06)'); core.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = core; ctx.fillRect(frameX, frameY, frameW, frameH);
+                ctx.restore();
             } else if (this.mapStyle === 'sanctuaire') {
                 const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
                 const pulse = 0.82 + 0.18 * Math.sin(this.time * 2.2);
@@ -932,38 +1024,52 @@ void main() {
             for (const o of this.obstacles) {
                 const pulse = o.hitPulse || 0;
                 const beat = 0.5 + 0.5 * Math.sin(this.time * 5 + o.x * 0.03);
+                const style = this.mapStyle;
+                const color = style === 'volcan' ? '#fb923c' : style === 'nexus' ? '#67e8f9' : '#00f2fe';
                 ctx.save();
-                // Halo qui s'intensifie nettement lors d'une collision.
-                ctx.globalAlpha = 0.55 + pulse * 0.45;
-                ctx.shadowColor = pulse > 0 ? '#fff176' : 'rgba(140,90,255,0.9)';
-                ctx.shadowBlur = 16 + pulse * 30 + beat * 5;
-                ctx.beginPath();
-                ctx.arc(o.x, o.y, o.r + 3 + pulse * 7 + beat * 1.5, 0, Math.PI * 2);
-                ctx.strokeStyle = pulse > 0 ? '#fff176' : 'rgba(160,120,255,0.55)';
-                ctx.lineWidth = 2 + pulse * 3;
-                ctx.stroke();
+                // Impact halo remains tied to the actual circular collision hitbox.
+                ctx.globalAlpha = 0.48 + pulse * 0.52;
+                ctx.shadowColor = pulse > 0 ? '#fff7ae' : color;
+                ctx.shadowBlur = 14 + pulse * 30 + beat * 6;
+                ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 4 + pulse * 7 + beat * 1.5, 0, Math.PI * 2);
+                ctx.strokeStyle = pulse > 0 ? '#fff7ae' : color; ctx.lineWidth = 2 + pulse * 2.5; ctx.stroke();
                 ctx.globalAlpha = 1;
-                ctx.beginPath();
-                ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2);
-                ctx.fillStyle = PALETTE.obstacle;
-                ctx.fill();
-                ctx.strokeStyle = pulse > 0 ? '#ffffff' : PALETTE.obstacleEdge;
-                ctx.lineWidth = 1.8 + pulse * 2.2;
-                ctx.stroke();
-                // Noyau lumineux fixe : aucun élément ne gravite autour de l'obstacle.
-                ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a78bfa';
-                ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 8 + pulse * 22 + beat * 3;
-                ctx.beginPath();
-                ctx.arc(o.x, o.y, 5 + beat * 2 + pulse * 5, 0, Math.PI * 2);
-                ctx.fill();
+                if (style === 'volcan') {
+                    // Faceted basalt boulder with molten cracks; hitbox remains circular.
+                    const grad = ctx.createRadialGradient(o.x - o.r * .32, o.y - o.r * .4, 1, o.x, o.y, o.r * 1.2);
+                    grad.addColorStop(0, '#7c4533'); grad.addColorStop(.55, '#3b252b'); grad.addColorStop(1, '#160f1b');
+                    ctx.fillStyle = grad; ctx.beginPath();
+                    for (let i = 0; i < 9; i++) { const a = -Math.PI / 2 + i * Math.PI * 2 / 9; const rr = o.r * (i % 2 ? .84 : 1); const px = o.x + Math.cos(a) * rr, py = o.y + Math.sin(a) * rr; if (!i) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+                    ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#a33b20'; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.strokeStyle = '#fb923c'; ctx.shadowColor = '#f97316'; ctx.shadowBlur = 10;
+                    ctx.lineWidth = 2.4; ctx.beginPath(); ctx.moveTo(o.x - o.r * .55, o.y - o.r * .08); ctx.lineTo(o.x - o.r * .12, o.y + o.r * .12); ctx.lineTo(o.x + o.r * .02, o.y - o.r * .30); ctx.lineTo(o.x + o.r * .42, o.y - o.r * .46); ctx.stroke();
+                    ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o.x - o.r * .08, o.y + o.r * .12); ctx.lineTo(o.x + o.r * .28, o.y + o.r * .5); ctx.stroke();
+                } else if (style === 'nexus') {
+                    // Crystalline portal anchor: layered hexagonal facets.
+                    const grad = ctx.createRadialGradient(o.x - o.r * .35, o.y - o.r * .4, 1, o.x, o.y, o.r * 1.2);
+                    grad.addColorStop(0, '#dbeafe'); grad.addColorStop(.22, '#2563eb'); grad.addColorStop(.65, '#312e81'); grad.addColorStop(1, '#0b1028');
+                    ctx.fillStyle = grad; ctx.beginPath();
+                    for (let i = 0; i < 6; i++) { const a = -Math.PI / 2 + i * Math.PI / 3; const px = o.x + Math.cos(a) * o.r * .94, py = o.y + Math.sin(a) * o.r * .94; if (!i) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+                    ctx.closePath(); ctx.fill(); ctx.strokeStyle = '#a5f3fc'; ctx.lineWidth = 1.8; ctx.stroke();
+                    ctx.strokeStyle = '#c4b5fd'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(o.x, o.y - o.r * .72); ctx.lineTo(o.x + o.r * .48, o.y); ctx.lineTo(o.x, o.y + o.r * .72); ctx.lineTo(o.x - o.r * .48, o.y); ctx.closePath(); ctx.stroke();
+                    ctx.fillStyle = '#e0f2fe'; ctx.shadowColor = '#67e8f9'; ctx.shadowBlur = 14; ctx.beginPath(); ctx.arc(o.x, o.y, 4 + beat * 2 + pulse * 4, 0, Math.PI * 2); ctx.fill();
+                } else {
+                    // Neon Grid bumper: beveled octagonal shell, inner rings and bright core.
+                    const grad = ctx.createRadialGradient(o.x - o.r * .35, o.y - o.r * .4, 1, o.x, o.y, o.r * 1.15);
+                    grad.addColorStop(0, '#27566b'); grad.addColorStop(.45, '#14263c'); grad.addColorStop(1, '#080d20');
+                    ctx.fillStyle = grad; ctx.beginPath();
+                    for (let i = 0; i < 8; i++) { const a = -Math.PI / 8 + i * Math.PI / 4; const px = o.x + Math.cos(a) * o.r * .92, py = o.y + Math.sin(a) * o.r * .92; if (!i) ctx.moveTo(px, py); else ctx.lineTo(px, py); }
+                    ctx.closePath(); ctx.fill(); ctx.strokeStyle = pulse > 0 ? '#ffffff' : '#00f2fe'; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.strokeStyle = '#ff3df2'; ctx.globalAlpha = .7; ctx.lineWidth = 1.4;
+                    ctx.beginPath(); ctx.arc(o.x, o.y, o.r * .57, 0, Math.PI * 2); ctx.stroke();
+                    ctx.globalAlpha = 1; ctx.strokeStyle = '#67e8f9'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.arc(o.x, o.y, o.r * .34, 0, Math.PI * 2); ctx.stroke();
+                    ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#e0fcff'; ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 12 + pulse * 18;
+                    ctx.beginPath(); ctx.arc(o.x, o.y, 3.5 + beat * 2 + pulse * 4, 0, Math.PI * 2); ctx.fill();
+                }
                 if (pulse > 0) {
-                    ctx.globalAlpha = pulse;
-                    ctx.strokeStyle = '#ffffff';
-                    ctx.lineWidth = 3;
-                    ctx.beginPath();
-                    ctx.arc(o.x, o.y, o.r + (1 - pulse) * 28, 0, Math.PI * 2);
-                    ctx.stroke();
+                    ctx.globalAlpha = pulse; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(o.x, o.y, o.r + (1 - pulse) * 28, 0, Math.PI * 2); ctx.stroke();
                 }
                 ctx.restore();
             }
