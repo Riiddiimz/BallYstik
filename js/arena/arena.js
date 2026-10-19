@@ -178,6 +178,18 @@
                 this.obstacles.push(...spiralPoints.slice(0, requested - 1));
                 return;
             }
+            if (this.mapStyle === 'sanctuaire') {
+                const fx = this.frameX, fy = this.frameY, fw = this.frameW, fh = this.frameH;
+                const layout = [
+                    {x:0.50,y:0.36,r:27},{x:0.50,y:0.64,r:27},
+                    {x:0.35,y:0.50,r:22},{x:0.65,y:0.50,r:22},
+                    {x:0.28,y:0.28,r:17},{x:0.72,y:0.72,r:17},
+                    {x:0.72,y:0.28,r:17},{x:0.28,y:0.72,r:17}
+                ];
+                const requested = Math.max(0, Math.min(8, Math.floor(Number(count) || 0)));
+                layout.slice(0, requested).forEach(p => this.obstacles.push({x:fx+fw*p.x,y:fy+fh*p.y,r:p.r}));
+                return;
+            }
             if (Array.isArray(customPositions)) {
                 customPositions.slice(0, Math.max(0, Math.min(10, Number(count) || 0))).forEach(pos => {
                     if (!pos || !Number.isFinite(Number(pos.x)) || !Number.isFinite(Number(pos.y))) return;
@@ -807,6 +819,56 @@ void main() {
                     }
                     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
                 }
+            }
+            else if (this.mapStyle === 'sanctuaire') {
+                const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
+                const pulse = 0.82 + 0.18 * Math.sin(this.time * 2.2);
+                // Pavés sombres, gravures et fissures d'énergie : tout est clippé à l'arène.
+                ctx.fillStyle = 'rgba(20, 24, 52, 0.36)';
+                const tile = Math.max(18, Math.min(30, frameW / 12));
+                for (let yy = frameY + 8; yy < frameY + frameH; yy += tile) {
+                    for (let xx = frameX + 8; xx < frameX + frameW; xx += tile) {
+                        ctx.strokeStyle = 'rgba(115, 133, 190, 0.12)';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(xx, yy, tile - 2, tile - 2);
+                    }
+                }
+                // Courants d'énergie bleue et violette.
+                for (let k = 0; k < 4; k++) {
+                    const yy = frameY + frameH * (0.18 + k * 0.21);
+                    ctx.beginPath();
+                    for (let i = 0; i <= 24; i++) {
+                        const p = i / 24, xx = frameX + p * frameW;
+                        const py = yy + Math.sin(p * Math.PI * 3 + k * 1.7 + this.time * 0.18) * frameH * 0.025;
+                        if (!i) ctx.moveTo(xx, py); else ctx.lineTo(xx, py);
+                    }
+                    ctx.strokeStyle = k % 2 ? 'rgba(168,85,247,0.38)' : 'rgba(0,190,255,0.34)';
+                    ctx.lineWidth = 5; ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 14; ctx.stroke(); ctx.shadowBlur = 0;
+                }
+                // Sigil central doré.
+                ctx.save(); ctx.translate(cx, cy);
+                ctx.strokeStyle = 'rgba(255,190,70,' + (0.7 * pulse) + ')'; ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 18;
+                [0.08,0.13,0.18].forEach((f,i) => { ctx.beginPath(); ctx.arc(0,0,Math.min(frameW,frameH)*f,0,Math.PI*2); ctx.lineWidth=i===1?3:1.5; ctx.stroke(); });
+                ctx.rotate(this.time * 0.12);
+                ctx.beginPath(); for(let i=0;i<8;i++){const a=i*Math.PI/4,r=Math.min(frameW,frameH)*(i%2?0.09:0.16);if(!i)ctx.moveTo(Math.cos(a)*r,Math.sin(a)*r);else ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r);} ctx.closePath();ctx.stroke();
+                ctx.fillStyle = '#ffd166'; ctx.shadowBlur = 22; ctx.beginPath();ctx.arc(0,0,4+2*pulse,0,Math.PI*2);ctx.fill();ctx.restore();
+                // Portails visuels aux quatre coins internes.
+                const portals = [[0.17,0.18,'#a855f7'],[0.83,0.18,'#a855f7'],[0.17,0.82,'#00d9ff'],[0.83,0.82,'#00d9ff']];
+                portals.forEach(([px,py,color],i) => {
+                    const x=frameX+frameW*px,y=frameY+frameH*py,rot=this.time*(i%2?-.45:.45);
+                    ctx.save();ctx.translate(x,y);ctx.rotate(rot);ctx.strokeStyle=color;ctx.shadowColor=color;ctx.shadowBlur=18;
+                    for(let n=0;n<3;n++){ctx.beginPath();ctx.ellipse(0,0,9+n*5,13+n*5,0,0,Math.PI*2);ctx.globalAlpha=.72-n*.14;ctx.lineWidth=2;ctx.stroke();}
+                    ctx.globalAlpha=1;ctx.fillStyle='rgba(5,10,30,.8)';ctx.beginPath();ctx.arc(0,0,7,0,Math.PI*2);ctx.fill();ctx.restore();
+                });
+                // Zones de pics : chevrons bleus clairement visibles, en dehors du centre.
+                const spikeZones=[[.25,.34],[.75,.66]];
+                spikeZones.forEach(([px,py],zone)=>{
+                    const active=Math.sin(this.time*2.4+zone*Math.PI)>.35;
+                    ctx.save();ctx.translate(frameX+frameW*px,frameY+frameH*py);
+                    ctx.globalAlpha=active?.95:.34;ctx.fillStyle=active?'#67e8f9':'#164e63';ctx.strokeStyle='#a5f3fc';ctx.shadowColor='#22d3ee';ctx.shadowBlur=active?16:4;
+                    for(let n=0;n<4;n++){const ox=(n-1.5)*8;ctx.beginPath();ctx.moveTo(ox,-11);ctx.lineTo(ox+5,7);ctx.lineTo(ox-5,7);ctx.closePath();ctx.fill();ctx.stroke();}
+                    ctx.restore();
+                });
             }
             ctx.restore();
 
