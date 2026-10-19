@@ -35,6 +35,7 @@
     };
 
     const isVortexMap = map => map === 'vortex' || map === 'vortex_test';
+    const obstacleCountForMap = (map, options) => map === 'sanctuaire' ? 8 : (isVortexMap(map) ? options.vortexObstacles : options.obstacles);
 
     class ArenaBattleMode {
         constructor() {
@@ -74,7 +75,7 @@
                 };
                 arena.mapStyle = nextMap;
                 if (mapChanged || opts?.arenaTop != null || opts?.arenaBottom != null || opts?.arenaLeft != null || opts?.arenaRight != null) arena._recompute();
-                const obstacleCount = isVortexMap(nextMap) ? this.options.vortexObstacles : this.options.obstacles;
+                const obstacleCount = obstacleCountForMap(nextMap, this.options);
                 if (mapChanged || opts?.obstacles != null || opts?.vortexObstacles != null || opts?.obstaclePositions != null) arena._buildObstacles(obstacleCount, isVortexMap(nextMap) ? null : this.options.obstaclePositions);
                 if (isVortexMap(nextMap) && !arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) arena.suckParticles.push(arena._newSuckParticle(i, true));
@@ -118,7 +119,7 @@
                 world.arena = new window.Arena(world.canvas, {
                     padding: 16,
                     cornerRadius: 44,
-                    obstacles: isVortexMap(this.options.arenaMap || 'neon') ? this.options.vortexObstacles : this.options.obstacles,
+                    obstacles: obstacleCountForMap(this.options.arenaMap || 'neon', this.options),
                     obstaclePositions: isVortexMap(this.options.arenaMap || 'neon') ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
                     shrink: false,
@@ -145,7 +146,7 @@
                 world.arena.shrinkOffset = 0;
                 world.arena.elapsed = 0;
                 world.arena._recompute();
-                world.arena._buildObstacles(isVortexMap(world.arena.mapStyle) ? this.options.vortexObstacles : this.options.obstacles,
+                world.arena._buildObstacles(obstacleCountForMap(world.arena.mapStyle, this.options),
                     isVortexMap(world.arena.mapStyle) ? null : this.options.obstaclePositions);
                 if (isVortexMap(world.arena.mapStyle) && !world.arena.suckParticles.length) {
                     for (let i = 0; i < 40; i++) world.arena.suckParticles.push(world.arena._newSuckParticle(i, true));
