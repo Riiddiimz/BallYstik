@@ -137,7 +137,6 @@
             if (title) title.textContent = copy ? copy[0] : '';
             if (description) description.textContent = copy ? copy[1] : '';
         },
-        },
 
         getOptions() {
             const options = {};
