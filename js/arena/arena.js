@@ -460,22 +460,13 @@
                     ball.y += ny * overlap;
                     const dot = ball.vx * nx + ball.vy * ny;
                     if (dot < 0) {
-                        // Effet bumper de flipper : renvoi franc vers l'extérieur, avec une
-                        // légère conservation de la trajectoire pour rendre chaque rebond vivant.
-                        const incomingX = ball.vx;
-                        const incomingY = ball.vy;
-                        const reflectedX = incomingX - 2 * dot * nx;
-                        const reflectedY = incomingY - 2 * dot * ny;
-                        const reflectedSpeed = Math.hypot(reflectedX, reflectedY) || 1;
-                        const dirX = nx * 0.72 + (reflectedX / reflectedSpeed) * 0.28;
-                        const dirY = ny * 0.72 + (reflectedY / reflectedSpeed) * 0.28;
-                        const dirLength = Math.hypot(dirX, dirY) || 1;
-                        const baseSpeed = Number(ball.baseMoveSpeed) || 180;
-                        const launchSpeed = baseSpeed * 3.2;
-                        ball.vx = (dirX / dirLength) * launchSpeed;
-                        ball.vy = (dirY / dirLength) * launchSpeed;
-                        ball._obstacleBoostTimer = 0.75;
-                        o.hitPulse = 1;
+                        // Rebond amorti : l'obstacle change la direction, pas la vitesse.
+                        // La vitesse de base est réappliquée par ArenaBattle après la collision,
+                        // ce qui évite les catapultages et garde les boules dans le champ.
+                        const restitution = 0.82;
+                        ball.vx -= (1 + restitution) * dot * nx;
+                        ball.vy -= (1 + restitution) * dot * ny;
+                        o.hitPulse = 0.55;
                         hit = { nx, ny, x: o.x + nx * o.r, y: o.y + ny * o.r, obstacle: true };
                     }
                 }
@@ -532,8 +523,11 @@
                 const obstacleVy = Math.cos(o.baseAngle || 0) * (o.rotateSpeed || 0) * (o.orbitRadius || 0);
                 const relNormal = (ball.vx - obstacleVx) * onx + (ball.vy - obstacleVy) * ony;
                 if (relNormal < 0) {
-                    ball.vx -= 1.65 * relNormal * onx;
-                    ball.vy -= 1.65 * relNormal * ony;
+                    // Les obstacles orbitaux transmettent une impulsion amortie,
+                    // sans catapulter la boule hors de la petite arène.
+                    const restitution = 0.72;
+                    ball.vx -= (1 + restitution) * relNormal * onx;
+                    ball.vy -= (1 + restitution) * relNormal * ony;
                 }
                 o.hitPulse = 1;
                 hit = { nx: onx, ny: ony, x: o.x + onx * o.r, y: o.y + ony * o.r, obstacle: true };
