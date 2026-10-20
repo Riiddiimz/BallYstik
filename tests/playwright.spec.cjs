@@ -134,6 +134,9 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
       // Force l'impact et laisse le moteur réel traiter explosion + éclats.
       let realImpactFragments = 0;
       if (powerId === 'bomb_shrapnel') {
+        // Isoler l'impact de la bombe du décor : le test vérifie ses éclats, pas le blocage par obstacle.
+        // En combat réel, un obstacle peut légitimement intercepter le projectile avant la cible.
+        world.arena.obstacles = [];
         const projectile = world.projectiles.find(p => p.powerId === powerId);
         if (projectile) {
           projectile.x = target.x;
