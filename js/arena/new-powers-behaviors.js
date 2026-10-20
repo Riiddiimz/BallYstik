@@ -1960,7 +1960,7 @@ function syncWorld(w){realWorld=w;state.time=world.time||state.time;}
 Object.keys(POWERS).forEach(id=>{
  const original=POWERS[id];
  window.AbilityBehaviors[id]={
-  attach(ball,w,slot){syncWorld(w);slot.data={cooldown:.2,originalId:id};try{original.cast(proxyBall(ball));}catch(e){console.warn('[Powers Final cast]',id,e);}},
+  attach(ball,w,slot){syncWorld(w);slot.data={cooldown:cooldowns[id]||4,originalId:id};try{original.cast(proxyBall(ball));}catch(e){console.warn('[Powers Final cast]',id,e);}},
   update(ball,w,slot,dt){
    syncWorld(w);
    const frame=world.time;
@@ -1975,7 +1975,7 @@ Object.keys(POWERS).forEach(id=>{
      updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
     }catch(e){console.warn('[Powers Final effects update]',e);}
    }
-   const d=slot.data||(slot.data={cooldown:.2});
+   const d=slot.data||(slot.data={cooldown:cooldowns[id]||4,originalId:id});
    d.cooldown-=dt;
    if(d.cooldown<=0){d.cooldown=cooldowns[id]||4;try{original.cast(proxyBall(ball));}catch(e){console.warn('[Powers Final recast]',id,e);}}
   },
