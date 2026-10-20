@@ -63,6 +63,7 @@
               '<div><div class="pname">' + escapeHtml(power.name) + '<span class="new-tag">NEW</span></div>' +
                 '<div class="pdesc">' + escapeHtml(power.desc) + '</div></div>' +
               '<div class="picon" aria-hidden="true">' + escapeHtml(power.icon) + '</div>' +
+              '<button type="button" class="power-final-spawn" data-power-spawn="' + escapeHtml(power.id) + '" style="grid-column:1/-1;width:100%;padding:6px 8px;border:1px solid ' + power.color + '66;border-radius:6px;background:' + power.color + '18;color:' + power.color + ';font-size:9px;font-weight:900;cursor:pointer">＋ SPAWN DANS L’ARÈNE</button>' +
             '</article>'
           ).join('') +
         '</section>'
@@ -76,6 +77,16 @@
   }
 
   window.BallYstikNewPowers = { render, groups };
+  document.addEventListener('click', function (event) {
+    const button = event.target.closest('[data-power-spawn]');
+    if (!button) return;
+    const id = button.getAttribute('data-power-spawn');
+    const ok = !!(window.ArenaBattle && window.ArenaBattle.spawnPickup && window.ArenaBattle.spawnPickup(id));
+    const previous = button.textContent;
+    button.textContent = ok ? '✓ AJOUTÉ À L’ARÈNE' : 'LANCE UNE PARTIE PUIS RÉESSAIE';
+    button.disabled = ok;
+    if (!ok) window.setTimeout(function () { button.textContent = previous; }, 1800);
+  });
   document.addEventListener('DOMContentLoaded', function () {
     setTab();
   });
