@@ -622,6 +622,30 @@
                 }
             }
 
+            // Aimantation très légère des pouvoirs : aide à ramasser sans téléguider les boules.
+            // La correction de direction est plafonnée et n'augmente pas la vitesse.
+            const activePickups = this.pickupSystem.items || [];
+            for (const ball of world.balls) {
+                if (!ball.alive || ball.status?.isStunned?.()) continue;
+                let nearest = null, nearestDist = 92;
+                for (const pickup of activePickups) {
+                    const dx = pickup.x - ball.x, dy = pickup.y - ball.y;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist > 1 && dist < nearestDist) { nearest = { dx, dy, dist }; nearestDist = dist; }
+                }
+                if (nearest) {
+                    const speed = Math.hypot(ball.vx || 0, ball.vy || 0) || 1;
+                    const nx = nearest.dx / nearest.dist, ny = nearest.dy / nearest.dist;
+                    // Petit mélange directionnel de 4 à 10 % selon la proximité.
+                    const steer = 0.04 + 0.06 * (1 - nearest.dist / 92);
+                    const vx = (ball.vx / speed) * (1 - steer) + nx * steer;
+                    const vy = (ball.vy / speed) * (1 - steer) + ny * steer;
+                    const len = Math.hypot(vx, vy) || 1;
+                    ball.vx = vx / len * speed;
+                    ball.vy = vy / len * speed;
+                }
+            }
+
             // Boules
             for (const ball of world.balls) {
                 if (!ball.alive) continue;
@@ -845,6 +869,30 @@
                         }
                     }
                 }
+
+                // Les obstacles bloquent les projectiles, sauf si le projectile possède encore un rebond.
+                // Cela rend le décor tactique sans créer de dégâts cachés à travers les obstacles.
+                let blockedByObstacle = false;
+                for (const obstacle of (world.arena.obstacles || [])) {
+                    const dx = p.x - obstacle.x, dy = p.y - obstacle.y;
+                    const minDist = (obstacle.r || 0) + (p.radius || 0);
+                    const dist = Math.hypot(dx, dy);
+                    if (dist >= minDist || dist < 0.001) continue;
+                    const nx = dx / dist, ny = dy / dist;
+                    if (p.bounces > 0) {
+                        const dot = p.vx * nx + p.vy * ny;
+                        if (dot < 0) { p.vx -= 2 * dot * nx; p.vy -= 2 * dot * ny; }
+                        p.x = obstacle.x + nx * minDist;
+                        p.y = obstacle.y + ny * minDist;
+                        p.bounces--;
+                    } else {
+                        world.spawnParticle(p.x, p.y, { color: p.color || '#7dd3fc', count: 6, speed: 90, life: 0.22, spread: Math.PI * 2, size: 2 });
+                        this.projectiles.splice(i, 1);
+                        blockedByObstacle = true;
+                    }
+                    break;
+                }
+                if (blockedByObstacle) continue;
 
                 // Collision directe ou explosion à impact (les armes explosives ont une vraie zone de dégâts).
                 let impact = false;
