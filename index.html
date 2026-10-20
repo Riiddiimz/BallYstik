@@ -373,6 +373,9 @@
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
                     <i class="fa-solid fa-volume-high"></i> Audio
                 </button>
+                <button id="openNewPowersBtn" type="button" aria-label="Ouvrir les nouveaux pouvoirs" class="px-2.5 py-1 text-xs bg-pink-500/20 border border-pink-500/50 text-pink-300 rounded-lg hover:bg-pink-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Nouveaux pouvoirs
+                </button>
                 <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -382,6 +385,43 @@
         <!-- Scrollable Settings -->
         <div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto"><p class="text-xs text-zinc-400 leading-relaxed">Chargement des pouvoirs…</p></div>
     </aside>
+
+    <!-- Nouveau menu isolé : le showcase conserve le rendu et les effets de powers_final.html. -->
+    <div id="newPowersOverlay" class="fixed inset-0 z-[100] hidden bg-[#06070c]" role="dialog" aria-modal="true" aria-label="Nouveaux pouvoirs">
+        <div class="absolute top-0 left-0 right-0 z-[2] flex items-center justify-between gap-3 px-4 py-2 bg-zinc-950/95 border-b border-zinc-800">
+            <div class="min-w-0">
+                <div class="text-sm font-black tracking-wide text-pink-300">NOUVEAUX POUVOIRS</div>
+                <div class="text-[10px] text-zinc-400">14 pouvoirs · classés par thème · visuels d’origine conservés</div>
+            </div>
+            <button id="closeNewPowersBtn" type="button" class="shrink-0 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-bold text-white">
+                <i class="fa-solid fa-xmark mr-1"></i> Retour à l’arène
+            </button>
+        </div>
+        <iframe id="newPowersFrame" title="Démonstration interactive des nouveaux pouvoirs" src="idees/powers_final.html?embedded=1" class="absolute inset-0 w-full h-full border-0 pt-[48px]" style="padding-top:48px"></iframe>
+    </div>
+
+    <script>
+    (() => {
+        const overlay = document.getElementById('newPowersOverlay');
+        const openBtn = document.getElementById('openNewPowersBtn');
+        const closeBtn = document.getElementById('closeNewPowersBtn');
+        const frame = document.getElementById('newPowersFrame');
+        const open = () => {
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            if (frame && !frame.dataset.loaded) frame.dataset.loaded = '1';
+        };
+        const close = () => {
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+        };
+        openBtn?.addEventListener('click', open);
+        closeBtn?.addEventListener('click', close);
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) close();
+        });
+    })();
+    </script>
 
     <!-- ====================================================================
          Modular Application Scripts (in execution order)
