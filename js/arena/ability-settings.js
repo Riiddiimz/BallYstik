@@ -33,7 +33,23 @@ const groups=[
 {id:'magnet',icon:'⌂',name:'Aimant',weight:6,params:[['range','Rayon d’attraction',50,300,5,120,' px'],['force','Force d’attraction',50,600,10,220],['attractPickups','Attire les pickups','toggle',true],['attractBalls','Attire les boules','toggle',true],['pulse','Pulse périodique','toggle',false],['fieldColor','Couleur du champ','select',['Rose','Cyan','Violet'],'Rose']]},
 {id:'blackhole',icon:'◯',name:'Trou noir ⭐',weight:2,params:[['effectRadius','Rayon d’effet',150,500,10,300,' px'],['pull','Force d’aspiration',200,1000,25,500],['duration','Durée',1,5,.1,2,'s'],['dps','Dégâts par seconde',0,20,1,5],['finalDamage','Explosion finale',0,100,5,40,' dmg'],['immuneCreator','Immunise le créateur','toggle',true],['absorbProjectiles','Aspire les projectiles','toggle',true]]},
 {id:'deathbomb',icon:'☢',name:'Bombe posthume',weight:4,params:[['damage','Dégâts',10,100,5,50],['blastRadius','Rayon',50,300,10,150,' px'],['knockback','Knockback',0,800,20,400],['delay','Délai après la mort',0,2,.1,0,'s'],['effect','Effet','select',['Aucun','Brûlure','Étourdissement'],'Aucun'],['warning','Warning visuel','toggle',true]]}
-]}];
+]}{id:'powers_final',title:'POWERS FINAL',color:'#67e8f9',items:[
+{id:'judgment_ray',icon:'⚡',name:'Rayon du Jugement',weight:4,params:[]},
+{id:'star_hunter',icon:'➤',name:'Chasseur Stellaire',weight:4,params:[]},
+{id:'bomb_shrapnel',icon:'✦',name:'Bombe à fragmentation',weight:4,params:[]},
+{id:'seismic_nova',icon:'◎',name:'Nova Sismique',weight:4,params:[]},
+{id:'magma_rift',icon:'🔥',name:'Faille Magmatique',weight:4,params:[]},
+{id:'colossus',icon:'⬢',name:'Surcharge Giga',weight:4,params:[]},
+{id:'chain_lightning',icon:'ϟ',name:'Éclair en chaîne',weight:4,params:[]},
+{id:'explosive_flower',icon:'✿',name:'Fleur Explosive',weight:4,params:[]},
+{id:'crystal_prison',icon:'❄',name:'Prison de Cristal',weight:4,params:[]},
+{id:'imprisonment_seal',icon:'⌘',name:'Sceau d’Emprisonnement',weight:4,params:[]},
+{id:'singularity',icon:'◯',name:'Singularité Violette',weight:4,params:[]},
+{id:'prism_reflector',icon:'◇',name:'Prisme Réflecteur',weight:4,params:[]},
+{id:'quantum_jump',icon:'◈',name:'Saut Quantique',weight:4,params:[]},
+{id:'multiplication',icon:'✧',name:'Division Cellulaire',weight:4,params:[]}
+]}
+]; 
 const defaults={},globalDefaults={durationMultiplier:1,maxStacks:1,canAppearAtStart:true,disabledInMode:false};
 groups.forEach(g=>g.items.forEach(a=>{const params={};a.params.forEach(p=>params[p[0]]=p[2]==='select'?p[4]:p[2]==='toggle'?p[3]:p[5]);defaults[a.id]={enabled:true,weight:a.weight,durationMultiplier:1,maxStacks:1,canAppearAtStart:true,disabledInMode:false,params};}));
 let state={abilities:copy(defaults),global:Object.assign({},globalDefaults)};
