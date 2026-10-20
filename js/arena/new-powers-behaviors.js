@@ -53,8 +53,8 @@ const world={
  damage(target,attacker,amount,source,opts){const t=realBall(target),a=realBall(attacker);return realWorld?.damage?realWorld.damage(t,a,amount,source,{ignoreInvuln:!!opts?.ignoreInvuln}):0;},
 };
 function spawnDamageText(x,y,val,source){state.damageTexts.push({x,y,val:String(val),color:'#ffffff',life:.9,maxLife:.9,vx:rand(-20,20),vy:-110,scale:.4});}
-function damageBall(b,amount,source,ignoreInvuln){if(!b?.alive)return 0;return world.damage(b,b,amount,source,{ignoreInvuln:!!ignoreInvuln});}
-function killBall(b){const rb=realBall(b);if(rb&&rb.health&&realWorld?.damage)realWorld.damage(rb,rb,rb.health.current+1,'powers_final',{ignoreInvuln:true});}
+function damageBall(b,amount,source,ignoreInvuln){if(!b?.alive)return 0;return world.damage(b,null,amount,source,{ignoreInvuln:!!ignoreInvuln});}
+function killBall(b){const rb=realBall(b);if(rb&&rb.health&&realWorld?.damage)realWorld.damage(rb,null,rb.health.current+1,'powers_final',{ignoreInvuln:true});}
 function burstParticles(x,y,color,count,speed,life){for(let i=0;i<count;i++){const a=Math.random()*TAU,s=speed*rand(.35,1);state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:life*rand(.6,1),maxLife:life,color,size:rand(1.5,3.5),drag:.94});}}
 function trailParticle(x,y,color,speed,life,angle,spread){const a=angle+rand(-spread,spread),s=speed*rand(.5,1);state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:life*rand(.7,1),maxLife:life,color,size:rand(1.5,3),drag:.93});}
 function nearestEnemy(ball,maxDist){const limit=maxDist==null?Infinity:maxDist;let best=null,bestD=limit*limit;for(const b of world.balls){if(b===ball||!b.alive)continue;const d=(b.x-ball.x)**2+(b.y-ball.y)**2;if(d<bestD){bestD=d;best=b;}}return best;}
