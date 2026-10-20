@@ -46,7 +46,7 @@ const world={
  get dpr(){return 1;},
  get projectiles(){return state.projectiles;},get particles(){return state.particles;},
  get shockwaves(){return state.shockwaves;},get decoys(){return state.decoys;},
- get beams(){return state.beams;},get zones(){return state.zones;},
+ get beams(){return state.beams;},get zones(){return state.zones;},set zones(v){state.zones=v;},
  get damageTexts(){return state.damageTexts;},get shrapnels(){return state.shrapnels;},get novas(){return state.novas;},
  set shake(v){state.shake=v;},get shake(){return state.shake;},
  damage(target,attacker,amount,source,opts){const t=realBall(target),a=realBall(attacker);return realWorld?.damage?realWorld.damage(t,a,amount,source,{ignoreInvuln:!!opts?.ignoreInvuln}):0;},
