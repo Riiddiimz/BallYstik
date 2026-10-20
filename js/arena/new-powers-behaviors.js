@@ -1954,7 +1954,7 @@ let lastT = 0;
 
 
 const cooldowns={judgment_ray:2.4,star_hunter:2.8,bomb_shrapnel:3.2,seismic_nova:3.0,magma_rift:4.5,singularity:5.0,quantum_jump:4.2,colossus:5.0,prism_reflector:3.8,multiplication:5.5,chain_lightning:3.8,crystal_prison:4.6,explosive_flower:4.0,imprisonment_seal:4.5};
-const lastUpdate=new WeakMap();
+const lastUpdate=new WeakMap();let lastSystemUpdate=null;
 function syncWorld(w){realWorld=w;state.time=world.time||state.time;}
 Object.keys(POWERS).forEach(id=>{
  const original=POWERS[id];
@@ -1965,11 +1965,14 @@ Object.keys(POWERS).forEach(id=>{
    const frame=world.time;
    if(lastUpdate.get(original)!==frame){
     lastUpdate.set(original,frame);
+    try{if(original.update)original.update(dt);}catch(e){console.warn('[Powers Final update]',id,e);}
+   }
+   if(lastSystemUpdate!==frame){
+    lastSystemUpdate=frame;
     try{
-     if(original.update)original.update(dt);
      if(frame!==undefined&&frame!==null)state.time=frame;
      updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
-    }catch(e){console.warn('[Powers Final update]',id,e);}
+    }catch(e){console.warn('[Powers Final effects update]',e);}
    }
    const d=slot.data||(slot.data={cooldown:.2});
    d.cooldown-=dt;
