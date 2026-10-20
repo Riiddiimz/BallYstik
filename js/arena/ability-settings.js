@@ -33,7 +33,7 @@ const groups=[
 {id:'magnet',icon:'⌂',name:'Aimant',weight:6,params:[['range','Rayon d’attraction',50,300,5,120,' px'],['force','Force d’attraction',50,600,10,220],['attractPickups','Attire les pickups','toggle',true],['attractBalls','Attire les boules','toggle',true],['pulse','Pulse périodique','toggle',false],['fieldColor','Couleur du champ','select',['Rose','Cyan','Violet'],'Rose']]},
 {id:'blackhole',icon:'◯',name:'Trou noir ⭐',weight:2,params:[['effectRadius','Rayon d’effet',150,500,10,300,' px'],['pull','Force d’aspiration',200,1000,25,500],['duration','Durée',1,5,.1,2,'s'],['dps','Dégâts par seconde',0,20,1,5],['finalDamage','Explosion finale',0,100,5,40,' dmg'],['immuneCreator','Immunise le créateur','toggle',true],['absorbProjectiles','Aspire les projectiles','toggle',true]]},
 {id:'deathbomb',icon:'☢',name:'Bombe posthume',weight:4,params:[['damage','Dégâts',10,100,5,50],['blastRadius','Rayon',50,300,10,150,' px'],['knockback','Knockback',0,800,20,400],['delay','Délai après la mort',0,2,.1,0,'s'],['effect','Effet','select',['Aucun','Brûlure','Étourdissement'],'Aucun'],['warning','Warning visuel','toggle',true]]}
-]}{id:'powers_final',title:'POWERS FINAL',color:'#67e8f9',items:[
+ ]},{id:'powers_final',title:'POWERS FINAL',color:'#67e8f9',items:[
 {id:'judgment_ray',icon:'⚡',name:'Rayon du Jugement',weight:4,params:[]},
 {id:'star_hunter',icon:'➤',name:'Chasseur Stellaire',weight:4,params:[]},
 {id:'bomb_shrapnel',icon:'✦',name:'Bombe à fragmentation',weight:4,params:[]},
