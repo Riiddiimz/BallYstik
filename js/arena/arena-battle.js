@@ -63,7 +63,7 @@
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
                 const mapChanged = arena.mapStyle !== nextMap;
-                arena.shrinkEnabled = false;
+                arena.shrinkEnabled = this.options.shrinkEnabled !== false;
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
@@ -122,7 +122,7 @@
                     obstacles: obstacleCountForMap(this.options.arenaMap || 'neon', this.options),
                     obstaclePositions: isVortexMap(this.options.arenaMap || 'neon') ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
-                    shrink: false,
+                    shrink: this.options.shrinkEnabled !== false,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
                     shrinkMax: this.options.shrinkMax,
@@ -133,7 +133,7 @@
                 });
             } else {
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
-                world.arena.shrinkEnabled = false;
+                world.arena.shrinkEnabled = this.options.shrinkEnabled !== false;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
