@@ -155,8 +155,8 @@
             const mapSelect = document.getElementById('arenaMapSelect');
             options.arenaMap = mapSelect ? mapSelect.value : 'neon';
             try { options.obstaclePositions = JSON.parse(localStorage.getItem('ballystik.arena.obstaclePositions.v1') || 'null'); } catch (_) { options.obstaclePositions = null; }
-            // L'arène reste fixe : le rétrécissement est désactivé sur toutes les cartes.
-            options.shrinkEnabled = false;
+            // Le rétrécissement est activé par défaut et contrôlable depuis le menu.
+            options.shrinkEnabled = shrink ? !!shrink.checked : true;
             return options;
         },
 
@@ -190,7 +190,14 @@
             });
             // Le contrôle est conservé visuellement pour expliquer le réglage, mais l'arène reste fixe.
             const shrinkToggle = document.getElementById('abShrinkToggle');
-            if (shrinkToggle) { shrinkToggle.checked = false; shrinkToggle.disabled = true; }
+            if (shrinkToggle) {
+                shrinkToggle.disabled = false;
+                shrinkToggle.addEventListener('change', () => {
+                    this.syncShrinkOptions();
+                    this.saveOptions();
+                    if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
+                });
+            }
             this.syncShrinkOptions();
             const seed = document.getElementById('manualSeedInput');
             if (seed) {
