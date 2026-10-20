@@ -47,7 +47,7 @@ const world={
  get projectiles(){return state.projectiles;},get particles(){return state.particles;},
  get shockwaves(){return state.shockwaves;},get decoys(){return state.decoys;},
  get beams(){return state.beams;},get zones(){return state.zones;},
- get damageTexts(){return state.damageTexts;},
+ get damageTexts(){return state.damageTexts;},get shrapnels(){return state.shrapnels;},get novas(){return state.novas;},
  set shake(v){state.shake=v;},get shake(){return state.shake;},
  damage(target,attacker,amount,source,opts){const t=realBall(target),a=realBall(attacker);return realWorld?.damage?realWorld.damage(t,a,amount,source,{ignoreInvuln:!!opts?.ignoreInvuln}):0;},
 };
@@ -1963,19 +1963,20 @@ Object.keys(POWERS).forEach(id=>{
   update(ball,w,slot,dt){
    syncWorld(w);
    const frame=world.time;
-   if(lastUpdate.get(original)===frame)return;
-   lastUpdate.set(original,frame);
-   try{
-    if(original.update)original.update(dt);
-    if(frame!==undefined&&frame!==null)state.time=frame;
-    updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
-   }catch(e){console.warn('[Powers Final update]',id,e);}
+   if(lastUpdate.get(original)!==frame){
+    lastUpdate.set(original,frame);
+    try{
+     if(original.update)original.update(dt);
+     if(frame!==undefined&&frame!==null)state.time=frame;
+     updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
+    }catch(e){console.warn('[Powers Final update]',id,e);}
+   }
    const d=slot.data||(slot.data={cooldown:.2});
    d.cooldown-=dt;
    if(d.cooldown<=0){d.cooldown=cooldowns[id]||4;try{original.cast(proxyBall(ball));}catch(e){console.warn('[Powers Final recast]',id,e);}}
   },
   onTakeDamage(target,attacker,amount,w,slot){
-   if(id==='prism_reflector'&&slot.data&&slot.data.prismUntil>world.time){
+   if(id==='prism_reflector'&&target&&target.prism>0){
     if(attacker&&attacker.alive)world.damage(attacker,target,amount*.65,'prism_reflector',{ignoreInvuln:true,noPowerReflect:true});
     return amount*.25;
    }
@@ -1986,11 +1987,11 @@ Object.keys(POWERS).forEach(id=>{
    try{
     const frame=world.time;
     if(lastRenderFrame!==frame){lastRenderFrame=frame;renderParticles(ctx);renderShockwaves(ctx);renderDamageTexts(ctx);renderProjectiles(ctx);}
-    original.render(ctx);
+    if(lastPowerRender.get(original)!==frame){lastPowerRender.set(original,frame);original.render(ctx);}
    }catch(e){console.warn('[Powers Final render]',id,e);}
   }
  };
 });
-let lastRenderFrame=null;
+let lastRenderFrame=null;const lastPowerRender=new WeakMap();
 window.PowersFinalOriginal=POWERS;
 })();
