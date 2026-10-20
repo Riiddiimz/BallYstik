@@ -61,7 +61,7 @@
     const ok = !!(window.ArenaBattle && window.ArenaBattle.spawnPickup && window.ArenaBattle.spawnPickup(id));
     const previous = button.dataset.label || button.textContent;
     button.dataset.label = previous;
-    button.textContent = ok ? '✓ AJOUTÉ — ENCORE ?' : 'LANCE UNE PARTIE PUIS RÉESSAIE';
+    button.textContent = ok ? '✓ AJOUTÉ' : 'DÉJÀ PRÉSENT / PARTIE À LANCER';
     button.classList.toggle('spawn-error', !ok);
     // Ne jamais désactiver le bouton : un même pouvoir peut être spawn plusieurs fois.
     window.setTimeout(function () { if (button.isConnected) { button.textContent = previous; button.classList.remove('spawn-error'); } }, 1400);
