@@ -16,6 +16,7 @@
   h1{font-size:13px;font-weight:900;letter-spacing:.06em;background:linear-gradient(90deg,#00f2fe,#ff2a85);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:4px}
   .sect{font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#67e8f9;margin:8px 0 3px;display:flex;gap:6px;align-items:center}
   .sect::after{content:'';flex:1;height:1px;background:rgba(103,232,249,.18)}
+  .power-theme{position:sticky;top:0;z-index:2;padding:5px 0;background:rgba(12,14,22,.96);margin-top:10px}
   .row{display:flex;gap:5px;margin-bottom:5px}
   .row>*{flex:1}
   button,select{padding:7px 9px;border-radius:7px;background:#14161f;border:1px solid #2e303a;color:#e4e4e7;font-size:10px;font-weight:600;cursor:pointer;transition:.12s}
@@ -2047,20 +2048,52 @@ const NEW_POWERS = new Set(['chain_lightning','crystal_prison','explosive_flower
 function buildPowersList(){
   const el = document.getElementById('powers');
   el.innerHTML = '';
-  for(const id in POWERS){
-    const p = POWERS[id];
-    const div = document.createElement('div');
-    div.className = 'power' + (NEW_POWERS.has(id) ? ' new' : '');
-    div.style.setProperty('--c', p.color);
-    div.innerHTML = `
-      <div>
-        <div class="pname">${p.name}</div>
-        <div class="pdesc">${p.desc}</div>
-      </div>
-      <div class="picon">${p.icon}</div>
-    `;
-    div.onclick = () => triggerPower(id);
-    el.appendChild(div);
+  const themes = [
+    { title: 'Attaque & destruction', ids: ['judgment_ray','star_hunter','bomb_shrapnel','seismic_nova','magmatic_rift','giga_overload','chain_lightning','explosive_flower'] },
+    { title: 'Contrôle & emprisonnement', ids: ['crystal_prison','imprisonment_seal','singularity'] },
+    { title: 'Défense & réflexion', ids: ['prism_reflector'] },
+    { title: 'Mobilité & duplication', ids: ['quantum_jump','multiplication'] }
+  ];
+  const used = new Set();
+  for(const theme of themes){
+    const ids = theme.ids.filter(id => POWERS[id]);
+    if(!ids.length) continue;
+    const heading = document.createElement('div');
+    heading.className = 'sect power-theme';
+    heading.textContent = theme.title;
+    el.appendChild(heading);
+    for(const id of ids){
+      const p = POWERS[id];
+      const div = document.createElement('div');
+      div.className = 'power' + (NEW_POWERS.has(id) ? ' new' : '');
+      div.style.setProperty('--c', p.color);
+      div.innerHTML = `
+        <div>
+          <div class="pname">${p.name}</div>
+          <div class="pdesc">${p.desc}</div>
+        </div>
+        <div class="picon">${p.icon}</div>
+      `;
+      div.onclick = () => triggerPower(id);
+      el.appendChild(div);
+      used.add(id);
+    }
+  }
+  const remaining = Object.keys(POWERS).filter(id => !used.has(id));
+  if(remaining.length){
+    const heading = document.createElement('div');
+    heading.className = 'sect power-theme';
+    heading.textContent = 'Autres pouvoirs';
+    el.appendChild(heading);
+    for(const id of remaining){
+      const p = POWERS[id];
+      const div = document.createElement('div');
+      div.className = 'power' + (NEW_POWERS.has(id) ? ' new' : '');
+      div.style.setProperty('--c', p.color);
+      div.innerHTML = `<div><div class="pname">${p.name}</div><div class="pdesc">${p.desc}</div></div><div class="picon">${p.icon}</div>`;
+      div.onclick = () => triggerPower(id);
+      el.appendChild(div);
+    }
   }
 }
 
