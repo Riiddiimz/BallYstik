@@ -343,11 +343,16 @@
             };
 
             world.pickAbilityMeta = function () {
-                // Filtre : pas plus de maxStacks par capacité déjà posée
+                // Tirage automatique : uniquement les nouveaux pouvoirs et jamais
+                // deux exemplaires du même pouvoir déjà au sol ou actif dans ce combat.
                 return window.AbilityRegistry.pickRandom(world.prng, (meta) => {
-                    const count = world.balls.reduce((s, b) =>
-                        s + b.abilitySlots.filter(sl => sl.meta.id === meta.id).length, 0);
-                    return count < 4;
+                    if (!window.AbilityRegistry.isNewPower(meta.id)) return false;
+                    const active = world.balls.some(b =>
+                        b.abilitySlots.some(slot => slot.meta && slot.meta.id === meta.id));
+                    if (active) return false;
+                    const waiting = self.pickupSystem && self.pickupSystem.items.some(p =>
+                        p.meta && p.meta.id === meta.id);
+                    return !waiting;
                 });
             };
 
