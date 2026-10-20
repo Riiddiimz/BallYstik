@@ -388,14 +388,26 @@
 
     <!-- Styles repris du showcase powers_final.html pour préserver son identité visuelle. -->
     <style>
-      .power-theme{position:sticky;top:-1px;z-index:2;padding:5px 0;background:rgba(12,14,22,.96);margin-top:10px;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+      .power-panel-head{padding:2px 1px 10px}
+      .power-panel-head p,.power-catalog-note{font-size:10px;line-height:1.45;color:#a1a1aa;margin:4px 0 9px}
+      .power-catalog-tabs{display:grid;grid-template-columns:1fr 1fr;gap:5px;position:sticky;top:-12px;z-index:5;padding:7px 0;background:rgba(11,11,13,.97);border-bottom:1px solid #272936;margin-bottom:8px}
+      .power-catalog-tabs button{min-width:0;border:1px solid #343746;border-radius:9px;background:#151720;color:#a1a1aa;padding:9px 5px;font-size:10px;font-weight:800;line-height:1.25;cursor:pointer}
+      .power-catalog-tabs button.active{border-color:#22d3ee99;background:linear-gradient(120deg,rgba(8,145,178,.24),rgba(219,39,119,.12));color:#f4f4f5;box-shadow:inset 0 0 0 1px #22d3ee22}
+      .power-catalog-tabs button span{display:inline-block;margin-left:3px;padding:1px 4px;border-radius:4px;background:#0891b233;color:#67e8f9;font-size:8px}
+      .power-catalog-group{margin-bottom:11px}
+      .power-theme{display:flex;align-items:center;justify-content:space-between;position:sticky;top:45px;z-index:2;padding:7px 2px;background:rgba(12,14,22,.97);margin-top:8px;font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+      .power-theme span{font-size:8px;letter-spacing:0;color:#71717a;border:1px solid #343746;border-radius:5px;padding:2px 5px}
       .power-theme:after{content:'';display:block;height:1px;margin-top:4px;background:rgba(103,232,249,.18)}
-      .power-final-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:4px;align-items:center;padding:8px 9px;border-radius:8px;background:#0f1118;border:1px solid #262836;cursor:default;transition:.12s;margin-bottom:3px}
-      .power-final-card:hover{border-color:var(--power-color,#67e8f9);transform:translateY(-1px);box-shadow:0 4px 14px -4px var(--power-color,#67e8f9)}
-      .power-final-card .pname{font-weight:700;font-size:11px;color:#f4f4f5}
-      .power-final-card .pdesc{font-size:9px;color:#71717a;margin-top:2px;line-height:1.25}
+      .power-final-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 32px;gap:5px;align-items:center;padding:8px 9px;border-radius:9px;background:#0f1118;border:1px solid #262836;transition:border-color .12s,box-shadow .12s;margin-bottom:5px}
+      .power-final-card:hover{border-color:var(--power-color,#67e8f9);box-shadow:0 3px 12px -5px var(--power-color,#67e8f9)}
+      .power-final-card .pname{font-weight:800;font-size:11px;color:#f4f4f5}
+      .power-final-card .pdesc{font-size:9px;color:#92929e;margin-top:3px;line-height:1.35}
       .power-final-card .picon{font-size:18px;color:var(--power-color,#67e8f9);text-align:center;text-shadow:0 0 8px var(--power-color,#67e8f9)}
-      .power-final-card .new-tag{display:inline-block;margin-left:5px;padding:1px 4px;border-radius:4px;background:#ff2a85;color:#fff;font-size:7px;font-weight:900;letter-spacing:.05em;vertical-align:middle}
+      .power-final-card .new-tag{display:inline-block;margin-left:5px;padding:2px 4px;border-radius:4px;background:#164e63;color:#a5f3fc;font-size:7px;font-weight:900;letter-spacing:.05em;vertical-align:middle}
+      .power-card-action{grid-column:1/-1;margin-top:3px}
+      .power-final-spawn:hover{filter:brightness(1.2)}
+      .power-final-spawn.spawn-error{border-color:#fb7185!important;color:#fda4af!important}
+      .power-original-card{background:#111217}
       .power-final-heading{font-size:13px;font-weight:900;letter-spacing:.06em;background:linear-gradient(90deg,#00f2fe,#ff2a85);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:4px}
     </style>
 
@@ -416,7 +428,7 @@
     <script src="js/arena/ability-utility.js"></script>
     <script src="js/arena/new-powers-behaviors.js?v=powers-final-original-20261020-r3"></script>
     <script src="js/arena/ability-settings.js"></script>
-    <script src="js/arena/new-powers-panel.js"></script>
+    <script src="js/arena/new-powers-panel.js?v=clean-two-catalogues-20261020-r1"></script>
     <script src="js/arena/pickups.js"></script>
     <script src="js/arena/arena-hud.js"></script>
     <script src="js/arena/arena-battle.js?v=v2-power-slow-effects-20261018"></script>
