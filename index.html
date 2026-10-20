@@ -373,14 +373,9 @@
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
                     <i class="fa-solid fa-volume-high"></i> Audio
                 </button>
-                <div class="flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-950/70 p-1" role="group" aria-label="Catégorie de pouvoirs">
-                    <button id="originPowersTab" data-catalog="origin" type="button" aria-pressed="true" class="power-catalog-tab active px-2 py-1.5 text-[10px] sm:text-xs rounded-md font-bold transition">
-                        <i class="fa-solid fa-sliders mr-1"></i> Pouvoirs d'origine
-                    </button>
-                    <button id="newPowersTab" data-catalog="new" type="button" aria-pressed="false" class="power-catalog-tab px-2 py-1.5 text-[10px] sm:text-xs rounded-md font-bold transition">
-                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nouveau pouvoir
-                    </button>
-                </div>
+                <span class="px-2 py-1.5 text-[10px] sm:text-xs rounded-md font-bold text-pink-300 border border-pink-400/30 bg-pink-400/10">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Powers Final
+                </span>
                 <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -391,20 +386,17 @@
         <div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto"><p class="text-xs text-zinc-400 leading-relaxed">Chargement des pouvoirs…</p></div>
     </aside>
 
-    <!-- Catalogue intégré au panneau de pouvoirs : aucune navigation ni page séparée. -->
+    <!-- Styles repris du showcase powers_final.html pour préserver son identité visuelle. -->
     <style>
-      .power-catalog-tab{color:#a1a1aa;border:1px solid transparent;white-space:nowrap}
-      .power-catalog-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
-      .power-catalog-tab.active[data-catalog="origin"]{color:#67e8f9;background:rgba(6,182,212,.13);border-color:rgba(6,182,212,.35)}
-      .power-catalog-tab.active[data-catalog="new"]{color:#f9a8d4;background:rgba(236,72,153,.13);border-color:rgba(236,72,153,.35)}
-      .new-power-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 38px;gap:8px;align-items:center;width:100%;padding:10px;text-align:left;border:1px solid #30303b;border-radius:10px;background:linear-gradient(120deg,rgba(24,24,35,.96),rgba(13,13,20,.96));transition:border-color .15s,transform .15s}
-      .new-power-card:hover{transform:translateY(-1px);border-color:var(--power-color,#f472b6)}
-      .new-power-card .new-power-name{font-weight:800;color:#f4f4f5;font-size:12px}
-      .new-power-card .new-power-desc{margin-top:3px;color:#a1a1aa;font-size:10px;line-height:1.4}
-      .new-power-card .new-power-icon{font-size:23px;text-align:center;color:var(--power-color,#f472b6);text-shadow:0 0 13px var(--power-color,#f472b6)}
-      .new-power-theme{position:sticky;top:-1px;z-index:2;margin:10px 0 5px;padding:7px 3px;background:rgba(11,11,13,.96);border-bottom:1px solid rgba(244,114,182,.2);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#f9a8d4}
-      .new-power-tag{display:inline-block;margin-left:6px;padding:2px 5px;border-radius:4px;background:rgba(236,72,153,.16);color:#f9a8d4;font-size:8px;letter-spacing:.06em}
-      .new-power-intro{padding:10px;border:1px solid rgba(236,72,153,.25);border-radius:10px;background:linear-gradient(120deg,rgba(131,24,67,.13),rgba(24,24,35,.4));color:#d4d4d8;font-size:10px;line-height:1.5}
+      .power-theme{position:sticky;top:-1px;z-index:2;padding:5px 0;background:rgba(12,14,22,.96);margin-top:10px;font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+      .power-theme:after{content:'';display:block;height:1px;margin-top:4px;background:rgba(103,232,249,.18)}
+      .power-final-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 40px;gap:4px;align-items:center;padding:8px 9px;border-radius:8px;background:#0f1118;border:1px solid #262836;cursor:default;transition:.12s;margin-bottom:3px}
+      .power-final-card:hover{border-color:var(--power-color,#67e8f9);transform:translateY(-1px);box-shadow:0 4px 14px -4px var(--power-color,#67e8f9)}
+      .power-final-card .pname{font-weight:700;font-size:11px;color:#f4f4f5}
+      .power-final-card .pdesc{font-size:9px;color:#71717a;margin-top:2px;line-height:1.25}
+      .power-final-card .picon{font-size:18px;color:var(--power-color,#67e8f9);text-align:center;text-shadow:0 0 8px var(--power-color,#67e8f9)}
+      .power-final-card .new-tag{display:inline-block;margin-left:5px;padding:1px 4px;border-radius:4px;background:#ff2a85;color:#fff;font-size:7px;font-weight:900;letter-spacing:.05em;vertical-align:middle}
+      .power-final-heading{font-size:13px;font-weight:900;letter-spacing:.06em;background:linear-gradient(90deg,#00f2fe,#ff2a85);-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:4px}
     </style>
 
     <!-- ====================================================================
