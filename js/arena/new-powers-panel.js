@@ -1,6 +1,5 @@
-/* BallYstik — catalogue intégré des nouveaux pouvoirs.
- * Les descriptions et identités visuelles sont reprises du showcase validé.
- * Ce module ne charge pas powers_final.html et ne crée aucune navigation.
+/* BallYstik — pouvoirs remplacés par le catalogue powers_final.html.
+ * Les cartes reprennent les règles visuelles du showcase validé, sans iframe/page séparée.
  */
 (function () {
   'use strict';
@@ -53,46 +52,31 @@
   function render() {
     const root = document.getElementById('rightSettingsContainer');
     if (!root) return;
-
-    root.innerHTML = '<div class="space-y-2">' +
-      '<div class="new-power-intro"><strong style="color:#f9a8d4">NOUVEAUX POUVOIRS</strong><br>' +
-      '14 concepts répartis par thème. Cette vue est intégrée au panneau de pouvoirs : l’arène et les réglages restent en place.<br>' +
-      '<span style="color:#a1a1aa">Catalogue visuel uniquement : le branchement de ces capacités au moteur de combat reste une étape distincte.</span></div>' +
+    root.innerHTML = '<div class="space-y-1">' +
+      '<div class="power-final-heading">BALLYSTIK · POWERS FINAL</div>' +
+      '<div style="font-size:9px;color:#a1a1aa;margin:0 0 8px">14 pouvoirs · visuel du showcase conservé</div>' +
       groups.map(group =>
         '<section aria-label="' + escapeHtml(group.title) + '">' +
-          '<h3 class="new-power-theme" style="color:' + group.color + '">' + escapeHtml(group.title) + '</h3>' +
-          '<div class="space-y-1.5">' + group.items.map(power =>
-            '<article class="new-power-card" style="--power-color:' + power.color + '">' +
-              '<div><div class="new-power-name">' + escapeHtml(power.name) +
-                '<span class="new-power-tag">NOUVEAU</span></div>' +
-                '<div class="new-power-desc">' + escapeHtml(power.desc) + '</div></div>' +
-              '<div class="new-power-icon" aria-hidden="true">' + escapeHtml(power.icon) + '</div>' +
+          '<h3 class="power-theme" style="color:' + group.color + '">' + escapeHtml(group.title) + '</h3>' +
+          group.items.map(power =>
+            '<article class="power-final-card" style="--power-color:' + power.color + '">' +
+              '<div><div class="pname">' + escapeHtml(power.name) + '<span class="new-tag">NEW</span></div>' +
+                '<div class="pdesc">' + escapeHtml(power.desc) + '</div></div>' +
+              '<div class="picon" aria-hidden="true">' + escapeHtml(power.icon) + '</div>' +
             '</article>'
-          ).join('') + '</div></section>'
+          ).join('') +
+        '</section>'
       ).join('') +
       '</div>';
   }
 
-  function setTab(tab) {
-    window.BallYstikPowerCatalog = tab;
-    const origin = document.getElementById('originPowersTab');
-    const fresh = document.getElementById('newPowersTab');
-    if (origin) {
-      origin.classList.toggle('active', tab === 'origin');
-      origin.setAttribute('aria-pressed', String(tab === 'origin'));
-    }
-    if (fresh) {
-      fresh.classList.toggle('active', tab === 'new');
-      fresh.setAttribute('aria-pressed', String(tab === 'new'));
-    }
-    if (tab === 'new') render();
-    else if (window.AbilitySettings && typeof window.AbilitySettings.render === 'function') window.AbilitySettings.render();
+  function setTab() {
+    window.BallYstikPowerCatalog = 'new';
+    render();
   }
 
   window.BallYstikNewPowers = { render, groups };
   document.addEventListener('DOMContentLoaded', function () {
-    document.getElementById('originPowersTab')?.addEventListener('click', () => setTab('origin'));
-    document.getElementById('newPowersTab')?.addEventListener('click', () => setTab('new'));
-    setTab('origin');
+    setTab();
   });
 })();
