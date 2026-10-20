@@ -92,7 +92,16 @@
             const world = this._world;
             if (!world || !this.pickupSystem || !window.AbilityRegistry) return false;
             const meta = window.AbilityRegistry.get(id);
-            if (!meta) return false;
+            if (!meta || !window.AbilityRegistry.isNewPower(id)) return false;
+
+            // Même règle pour le spawn manuel et le tirage automatique :
+            // un seul exemplaire de chaque pouvoir au sol ou actif par combat.
+            const alreadyOnGround = this.pickupSystem.items.some(p =>
+                p.state !== 'taken' && p.meta && p.meta.id === id);
+            const alreadyActive = world.balls.some(ball =>
+                ball.abilitySlots.some(slot => slot.meta && slot.meta.id === id));
+            if (alreadyOnGround || alreadyActive) return false;
+
             return this.pickupSystem.spawnAbility(meta, world);
         }
 
