@@ -373,9 +373,14 @@
                 <button id="audioInitBtn" aria-label="Activer ou couper le son" class="px-2.5 py-1 text-xs bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 rounded-lg hover:bg-emerald-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
                     <i class="fa-solid fa-volume-high"></i> Audio
                 </button>
-                <button id="openNewPowersBtn" type="button" aria-label="Ouvrir les nouveaux pouvoirs" class="px-2.5 py-1 text-xs bg-pink-500/20 border border-pink-500/50 text-pink-300 rounded-lg hover:bg-pink-500/30 transition flex items-center gap-1 font-semibold active:scale-95">
-                    <i class="fa-solid fa-wand-magic-sparkles"></i> Nouveaux pouvoirs
-                </button>
+                <div class="flex items-center gap-1 rounded-lg border border-zinc-700 bg-zinc-950/70 p-1" role="group" aria-label="Catégorie de pouvoirs">
+                    <button id="originPowersTab" data-catalog="origin" type="button" aria-pressed="true" class="power-catalog-tab active px-2 py-1.5 text-[10px] sm:text-xs rounded-md font-bold transition">
+                        <i class="fa-solid fa-sliders mr-1"></i> Pouvoirs d'origine
+                    </button>
+                    <button id="newPowersTab" data-catalog="new" type="button" aria-pressed="false" class="power-catalog-tab px-2 py-1.5 text-[10px] sm:text-xs rounded-md font-bold transition">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Nouveau pouvoir
+                    </button>
+                </div>
                 <button id="closeRightSidebarBtn" aria-label="Fermer le menu droit" class="md:hidden w-7 h-7 rounded-lg bg-zinc-800 text-zinc-300 flex items-center justify-center hover:bg-zinc-700">
                     <i class="fa-solid fa-xmark text-xs"></i>
                 </button>
@@ -386,42 +391,21 @@
         <div id="rightSettingsContainer" class="p-3 flex-1 text-sm overflow-y-auto"><p class="text-xs text-zinc-400 leading-relaxed">Chargement des pouvoirs…</p></div>
     </aside>
 
-    <!-- Nouveau menu isolé : le showcase conserve le rendu et les effets de powers_final.html. -->
-    <div id="newPowersOverlay" class="fixed inset-0 z-[100] hidden bg-[#06070c]" role="dialog" aria-modal="true" aria-label="Nouveaux pouvoirs">
-        <div class="absolute top-0 left-0 right-0 z-[2] flex items-center justify-between gap-3 px-4 py-2 bg-zinc-950/95 border-b border-zinc-800">
-            <div class="min-w-0">
-                <div class="text-sm font-black tracking-wide text-pink-300">NOUVEAUX POUVOIRS</div>
-                <div class="text-[10px] text-zinc-400">14 pouvoirs · classés par thème · visuels d’origine conservés</div>
-            </div>
-            <button id="closeNewPowersBtn" type="button" class="shrink-0 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-xs font-bold text-white">
-                <i class="fa-solid fa-xmark mr-1"></i> Retour à l’arène
-            </button>
-        </div>
-        <iframe id="newPowersFrame" title="Démonstration interactive des nouveaux pouvoirs" src="idees/powers_final.html?embedded=1" class="absolute inset-0 w-full h-full border-0 pt-[48px]" style="padding-top:48px"></iframe>
-    </div>
-
-    <script>
-    (() => {
-        const overlay = document.getElementById('newPowersOverlay');
-        const openBtn = document.getElementById('openNewPowersBtn');
-        const closeBtn = document.getElementById('closeNewPowersBtn');
-        const frame = document.getElementById('newPowersFrame');
-        const open = () => {
-            overlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            if (frame && !frame.dataset.loaded) frame.dataset.loaded = '1';
-        };
-        const close = () => {
-            overlay.classList.add('hidden');
-            document.body.style.overflow = '';
-        };
-        openBtn?.addEventListener('click', open);
-        closeBtn?.addEventListener('click', close);
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && overlay && !overlay.classList.contains('hidden')) close();
-        });
-    })();
-    </script>
+    <!-- Catalogue intégré au panneau de pouvoirs : aucune navigation ni page séparée. -->
+    <style>
+      .power-catalog-tab{color:#a1a1aa;border:1px solid transparent;white-space:nowrap}
+      .power-catalog-tab:hover{color:#fff;background:rgba(255,255,255,.06)}
+      .power-catalog-tab.active[data-catalog="origin"]{color:#67e8f9;background:rgba(6,182,212,.13);border-color:rgba(6,182,212,.35)}
+      .power-catalog-tab.active[data-catalog="new"]{color:#f9a8d4;background:rgba(236,72,153,.13);border-color:rgba(236,72,153,.35)}
+      .new-power-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 38px;gap:8px;align-items:center;width:100%;padding:10px;text-align:left;border:1px solid #30303b;border-radius:10px;background:linear-gradient(120deg,rgba(24,24,35,.96),rgba(13,13,20,.96));transition:border-color .15s,transform .15s}
+      .new-power-card:hover{transform:translateY(-1px);border-color:var(--power-color,#f472b6)}
+      .new-power-card .new-power-name{font-weight:800;color:#f4f4f5;font-size:12px}
+      .new-power-card .new-power-desc{margin-top:3px;color:#a1a1aa;font-size:10px;line-height:1.4}
+      .new-power-card .new-power-icon{font-size:23px;text-align:center;color:var(--power-color,#f472b6);text-shadow:0 0 13px var(--power-color,#f472b6)}
+      .new-power-theme{position:sticky;top:-1px;z-index:2;margin:10px 0 5px;padding:7px 3px;background:rgba(11,11,13,.96);border-bottom:1px solid rgba(244,114,182,.2);font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:#f9a8d4}
+      .new-power-tag{display:inline-block;margin-left:6px;padding:2px 5px;border-radius:4px;background:rgba(236,72,153,.16);color:#f9a8d4;font-size:8px;letter-spacing:.06em}
+      .new-power-intro{padding:10px;border:1px solid rgba(236,72,153,.25);border-radius:10px;background:linear-gradient(120deg,rgba(131,24,67,.13),rgba(24,24,35,.4));color:#d4d4d8;font-size:10px;line-height:1.5}
+    </style>
 
     <!-- ====================================================================
          Modular Application Scripts (in execution order)
@@ -439,6 +423,7 @@
     <script src="js/arena/ability-defensive.js"></script>
     <script src="js/arena/ability-utility.js"></script>
     <script src="js/arena/ability-settings.js"></script>
+    <script src="js/arena/new-powers-panel.js"></script>
     <script src="js/arena/pickups.js"></script>
     <script src="js/arena/arena-hud.js"></script>
     <script src="js/arena/arena-battle.js?v=v2-power-slow-effects-20261018"></script>
