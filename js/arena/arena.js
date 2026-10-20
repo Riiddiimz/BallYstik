@@ -463,7 +463,7 @@
                         // Rebond amorti : l'obstacle change la direction, pas la vitesse.
                         // La vitesse de base est réappliquée par ArenaBattle après la collision,
                         // ce qui évite les catapultages et garde les boules dans le champ.
-                        const restitution = 0.82;
+                        const restitution = 0.90; // léger supplément de rebond, sans accélération brutale
                         ball.vx -= (1 + restitution) * dot * nx;
                         ball.vy -= (1 + restitution) * dot * ny;
                         o.hitPulse = 0.55;
@@ -525,7 +525,7 @@
                 if (relNormal < 0) {
                     // Les obstacles orbitaux transmettent une impulsion amortie,
                     // sans catapulter la boule hors de la petite arène.
-                    const restitution = 0.72;
+                    const restitution = 0.82; // rebond orbital un peu plus marqué, toujours amorti
                     ball.vx -= (1 + restitution) * relNormal * onx;
                     ball.vy -= (1 + restitution) * relNormal * ony;
                 }
