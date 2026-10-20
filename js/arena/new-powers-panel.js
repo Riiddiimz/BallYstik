@@ -29,7 +29,6 @@
     ]}
   ];
   const newIds = new Set(groups.flatMap(g => g.items.map(p => p.id)));
-  let activeTab = 'new';
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 
   function spawnButton(id, color) {
@@ -48,37 +47,14 @@
       ).join('') + '</section>'
     ).join('') + '</div>';
   }
-  function renderOriginal() {
-    const registry = window.AbilityRegistry && window.AbilityRegistry.all || {};
-    const labels = { offensive:'Attaque', defensive:'Défense', utility:'Utilitaires', weapons:'Armes' };
-    const order = ['offensive','defensive','utility','weapons'];
-    return '<div class="power-catalog-list"><p class="power-catalog-note">Catalogue historique conservé à part. Ces capacités peuvent être ajoutées manuellement ; elles ne sont plus mélangées au tirage automatique des 14 nouveaux pouvoirs.</p>' +
-      order.map(category => {
-        const items = Object.values(registry).filter(p => !newIds.has(p.id) && p.category === category);
-        if (!items.length) return '';
-        return '<section class="power-catalog-group"><h3 class="power-theme" style="color:#a1a1aa">' + labels[category] + '<span>' + items.length + '</span></h3>' +
-          items.map(p => '<article class="power-final-card power-original-card" style="--power-color:' + esc(p.color || '#a1a1aa') + '">' +
-            '<div><div class="pname">' + esc(p.name) + '</div><div class="pdesc">' + esc(p.desc || 'Pouvoir d’origine') + '</div></div>' +
-            '<div class="picon" aria-hidden="true">' + esc(p.icon || '✦') + '</div>' +
-            '<div class="power-card-action">' + spawnButton(p.id, p.color || '#a1a1aa') + '</div></article>'
-        ).join('') + '</section>';
-      }).join('') + '</div>';
-  }
   function render() {
     const root = document.getElementById('rightSettingsContainer');
     if (!root) return;
     root.innerHTML =
-      '<div class="power-panel-head"><div class="power-final-heading">BALLYSTIK · POUVOIRS</div><p>Choisis un catalogue, puis fais apparaître autant de pouvoirs que nécessaire.</p></div>' +
-      '<div class="power-catalog-tabs" role="tablist" aria-label="Catalogues de pouvoirs">' +
-        '<button type="button" role="tab" data-power-tab="new" aria-selected="' + (activeTab === 'new') + '" class="' + (activeTab === 'new' ? 'active' : '') + '">✦ Nouveaux pouvoirs <span>14</span></button>' +
-        '<button type="button" role="tab" data-power-tab="original" aria-selected="' + (activeTab === 'original') + '" class="' + (activeTab === 'original' ? 'active' : '') + '">◈ Pouvoirs d’origine</button>' +
-      '</div>' + (activeTab === 'new' ? renderNew() : renderOriginal());
+      '<div class="power-panel-head"><div class="power-final-heading">BALLYSTIK · 14 POUVOIRS</div><p>Uniquement les pouvoirs de powers_final.html. Clique autant de fois que nécessaire pour ajouter des pickups.</p></div>' + renderNew();
   }
-  function setTab(tab) { activeTab = tab === 'original' ? 'original' : 'new'; render(); }
   window.BallYstikNewPowers = { render, groups, isNewPower: id => newIds.has(id) };
   document.addEventListener('click', function (event) {
-    const tab = event.target.closest('[data-power-tab]');
-    if (tab) { setTab(tab.getAttribute('data-power-tab')); return; }
     const button = event.target.closest('[data-power-spawn]');
     if (!button) return;
     const id = button.getAttribute('data-power-spawn');
