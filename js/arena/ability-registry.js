@@ -184,6 +184,15 @@
         multiplication: { id: 'multiplication', name: 'Division Cellulaire', desc: 'Crée un effet de duplication et une onde offensive.', category: 'utility', rarity: 'epic', color: '#ff2a85', glow: '#ff2a85', icon: '✧', duration: 8, weight: 4, maxStacks: 1 }
     };
 
+    // Seuls ces 14 pouvoirs entrent dans le tirage automatique. Les anciens restent
+    // disponibles dans l’onglet « Pouvoirs d’origine » pour un spawn manuel.
+    const NEW_POWER_IDS = new Set([
+        'judgment_ray', 'star_hunter', 'bomb_shrapnel', 'seismic_nova',
+        'magma_rift', 'singularity', 'quantum_jump', 'colossus',
+        'prism_reflector', 'multiplication', 'chain_lightning',
+        'crystal_prison', 'explosive_flower', 'imprisonment_seal'
+    ]);
+
     const RARITY_GLOW = {
         common: null,
         rare: 'rgba(0, 242, 254, 0.7)',
@@ -198,7 +207,7 @@
         },
 
         pickRandom(prng, filterFn) {
-            const list = Object.values(REGISTRY).filter(a => (!window.AbilitySettings || (window.AbilitySettings.isEnabled(a.id) && window.AbilitySettings.getWeight(a.id, a.weight) > 0)) && (!filterFn || filterFn(a)));
+            const list = Object.values(REGISTRY).filter(a => NEW_POWER_IDS.has(a.id) && (!window.AbilitySettings || (window.AbilitySettings.isEnabled(a.id) && window.AbilitySettings.getWeight(a.id, a.weight) > 0)) && (!filterFn || filterFn(a)));
             if (!list.length) return null;
             const total = list.reduce((s, a) => s + (window.AbilitySettings ? window.AbilitySettings.getWeight(a.id, a.weight) : (a.weight || 1)), 0);
             let r = (prng && prng.next ? prng.next() : Math.random()) * total;
@@ -208,6 +217,8 @@
             }
             return list[list.length - 1];
         },
+
+        isNewPower(id) { return NEW_POWER_IDS.has(id); },
 
         getRarityGlow(rarity) {
             return RARITY_GLOW[rarity] || null;
