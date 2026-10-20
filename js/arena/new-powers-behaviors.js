@@ -13,13 +13,14 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const easeOut=t=>1-Math.pow(1-t,3);
 let realWorld=null;
 const state={projectiles:[],particles:[],shockwaves:[],decoys:[],beams:[],zones:[],damageTexts:[],shrapnels:[],novas:[],time:0,shake:0,dpr:1};
-const proxyCache=new WeakMap(), reverseProxy=new WeakMap();
+const proxyCache=new WeakMap(), reverseProxy=new WeakMap(), baseRadiusCache=new WeakMap();
 function proxyBall(ball){
  if(!ball||typeof ball!=='object')return ball;
  if(proxyCache.has(ball))return proxyCache.get(ball);
+ if(!baseRadiusCache.has(ball))baseRadiusCache.set(ball,ball.baseRadius??ball.radius??ball.r??16);
  const p=new Proxy(ball,{get(t,k){
   if(k==='r')return t.radius??t.r??16;
-  if(k==='baseR')return t.baseRadius??t.radius??t.r??16;
+  if(k==='baseR')return baseRadiusCache.get(t)??t.baseRadius??t.radius??t.r??16;
   if(k==='hp')return t.health?.current??t.hp??0;
   if(k==='maxHp')return t.health?.max??t.maxHp??100;
   if(k==='invuln')return t.health?.invuln??t.invuln??0;
@@ -28,7 +29,7 @@ function proxyBall(ball){
   return t[k];
  },set(t,k,v){
   if(k==='r'){if('radius'in t)t.radius=v;else t.r=v;return true;}
-  if(k==='baseR'){t.baseRadius=v;return true;}
+  if(k==='baseR'){baseRadiusCache.set(t,v);t.baseRadius=v;return true;}
   if(k==='hp'){if(t.health)t.health.current=Math.max(0,Math.min(t.health.max,v));else t.hp=v;return true;}
   if(k==='maxHp'){if(t.health)t.health.max=v;else t.maxHp=v;return true;}
   if(k==='invuln'){if(t.health)t.health.invuln=v;else t.invuln=v;return true;}
