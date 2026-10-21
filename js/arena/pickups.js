@@ -300,6 +300,7 @@
             for (let attempt = 0; attempt < 18; attempt++) {
                 const x = a.x + 36 + this.prng.next() * Math.max(1, a.w - 72);
                 const y = a.y + 36 + this.prng.next() * Math.max(1, a.h - 72);
+                if (typeof a.isPointInside === 'function' && !a.isPointInside(x, y, 18)) continue;
                 let minD = Infinity;
                 for (const b of world.balls) {
                     if (!b.alive) continue;
@@ -329,6 +330,7 @@
             for (let attempt = 0; attempt < 8; attempt++) {
                 const x = a.x + 40 + this.prng.next() * (a.w - 80);
                 const y = a.y + 40 + this.prng.next() * (a.h - 80);
+                if (typeof a.isPointInside === 'function' && !a.isPointInside(x, y, 18)) continue;
 
                 let minD = Infinity;
                 for (const b of world.balls) {
