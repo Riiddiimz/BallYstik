@@ -1323,45 +1323,6 @@ POWERS.imprisonment_seal = {
 // PROJECTILES
 // ══════════════════════════════════════════════════════════════════
 
-function drawCrystals(ctx, x, y, baseR, growP, alpha){
-  const N = 6;
-  for(let i=0;i<N;i++){
-    const ang = (i/N)*TAU - Math.PI/2;
-    const len = (24 + 8*Math.sin(world.time*4 + i*2)) * world.dpr * growP;
-    const w = 13*world.dpr * growP;
-    const cx = x + Math.cos(ang) * (baseR + 12*world.dpr);
-    const cy = y + Math.sin(ang) * (baseR + 12*world.dpr);
-    ctx.save();
-    ctx.globalAlpha = alpha;
-    ctx.translate(cx, cy);
-    ctx.rotate(ang + Math.PI/2);
-    const grad = ctx.createLinearGradient(0, -len, 0, len*0.4);
-    grad.addColorStop(0, '#ffffff');
-    grad.addColorStop(0.4, '#a5e8ff');
-    grad.addColorStop(1, '#3b82f6');
-    ctx.fillStyle = grad;
-    ctx.shadowColor = '#7dd3fc';
-    ctx.shadowBlur = 22*world.dpr;
-    ctx.beginPath();
-    ctx.moveTo(0, -len);
-    ctx.lineTo(w, -len*0.35);
-    ctx.lineTo(w*0.5, len*0.4);
-    ctx.lineTo(-w*0.5, len*0.4);
-    ctx.lineTo(-w, -len*0.35);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5*world.dpr;
-    ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
-    ctx.lineWidth = 1*world.dpr;
-    ctx.beginPath();
-    ctx.moveTo(0, -len*0.85);
-    ctx.lineTo(0, len*0.35);
-    ctx.stroke();
-    ctx.restore();
-  }
-}
 
 function updateProjectiles(dt){
   for(let i = world.projectiles.length-1; i>=0; i--){
@@ -1717,7 +1678,7 @@ let lastT = 0;
 
 
 const cooldowns={judgment_ray:2.4,star_hunter:2.8,bomb_shrapnel:3.2,seismic_nova:3.0,magma_rift:4.5,singularity:5.0,quantum_jump:4.2,colossus:5.0,prism_reflector:3.8,multiplication:5.5,chain_lightning:3.8,crystal_prison:4.6,explosive_flower:4.0,imprisonment_seal:4.5};
-const lastUpdate=new WeakMap();let lastSystemUpdate=null;
+let lastUpdate=new WeakMap();let lastPowerRender=new WeakMap();let lastSystemUpdate=null;
 function syncWorld(w){realWorld=w;state.time=world.time||state.time;}
 Object.keys(POWERS).forEach(id=>{
  const original=POWERS[id];
@@ -1758,6 +1719,13 @@ Object.keys(POWERS).forEach(id=>{
   }
  };
 });
-let lastRenderFrame=null;const lastPowerRender=new WeakMap();
+let lastRenderFrame=null;
+window.AbilityBehaviors.resetAll=function(){
+ const keys=['projectiles','particles','shockwaves','decoys','beams','zones','damageTexts','shrapnels','novas'];
+ for(const key of keys) state[key].length=0;
+ state.time=0;state.shake=0;realWorld=null;
+ for(const power of Object.values(POWERS)){if(Array.isArray(power.entities))power.entities.length=0;}
+ lastUpdate=new WeakMap();lastPowerRender=new WeakMap();lastSystemUpdate=null;lastRenderFrame=null;
+};
 window.PowersFinalOriginal=POWERS;
 })();

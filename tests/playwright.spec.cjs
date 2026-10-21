@@ -1,47 +1,65 @@
 const { test, expect } = require('@playwright/test');
 
-test.describe('BallYstik v2-power — pouvoirs lisibles en une seconde', () => {
-  test('charge la simulation et présente exactement 10 pouvoirs', async ({ page }) => {
+test.describe('BallYstik — pouvoirs d’origine fidèles à powers_final.html', () => {
+  test('charge la simulation et présente les 14 pouvoirs validés', async ({ page }) => {
     const pageErrors = [];
     page.on('pageerror', error => pageErrors.push(error.message));
     await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveTitle(/BallYstik/i);
     await expect(page.locator('#simCanvas')).toBeVisible();
-    await expect(page.locator('#rightSettingsContainer')).toContainText('10 pouvoirs');
-    await expect(page.locator('#manualSpawnAbility option')).toHaveCount(10);
-    await expect(page.locator('[data-power-enabled]')).toHaveCount(10);
-    await expect(page.locator('[data-power-group]')).toHaveCount(8);
-    await expect(page.locator('#powerEnabledCount')).toContainText('10 / 10');
-    for (const name of ['Rayon du Jugement', 'Chasseur Stellaire', 'Bombe à fragmentation',
-      'Nova Sismique', 'Faille Magmatique', 'Singularité Violette', 'Saut Quantique',
-      'Surcharge Giga', 'Prisme Réflecteur', 'Division Cellulaire']) {
+    await expect(page.locator('#rightSettingsContainer')).toContainText('14 POUVOIRS');
+    await expect(page.locator('[data-power-spawn]')).toHaveCount(14);
+    await expect(page.locator('.power-catalog-group')).toHaveCount(4);
+    for (const name of [
+      'Rayon du Jugement', 'Chasseur Stellaire', 'Bombe à fragmentation',
+      'Nova Sismique', 'Faille Magmatique', 'Singularité Violette',
+      'Saut Quantique', 'Surcharge Giga', 'Prisme Réflecteur',
+      'Division Cellulaire', 'Éclair en chaîne', 'Prison de Cristal',
+      'Fleur Explosive', 'Sceau d’Emprisonnement'
+    ]) {
       await expect(page.locator('#rightSettingsContainer')).toContainText(name);
     }
     expect(pageErrors, 'Aucune exception JavaScript non gérée au chargement').toEqual([]);
   });
 
-  test('les réglages des pouvoirs sont interactifs et persistés', async ({ page }) => {
+  test('le panneau de spawn correspond au moteur et ne propose pas les anciens réglages fantômes', async ({ page }) => {
     await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
-    const firstToggle = page.locator('[data-power-enabled="judgment_ray"]');
-    await expect(firstToggle).toBeChecked();
-    await firstToggle.uncheck();
-    await expect(page.locator('#powerEnabledCount')).toContainText('9 / 10');
-    await expect.poll(async () => page.evaluate(() => {
-      const state = JSON.parse(localStorage.getItem('ballystik.v2-power.settings.v1') || '{}');
-      return state.judgment_ray && state.judgment_ray.enabled;
-    })).toBe(false);
-    const groupButton = page.locator('[data-power-group="distance"]');
-    await groupButton.click();
-    await expect(groupButton).toHaveAttribute('aria-expanded', 'false');
-    await expect(page.locator('#power-group-distance')).toBeHidden();
-    await groupButton.click();
-    await expect(page.locator('#power-group-distance')).toBeVisible();
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-power-enabled="judgment_ray"]')).not.toBeChecked();
-    await expect(page.locator('#powerEnabledCount')).toContainText('9 / 10');
+    await expect(page.locator('[data-power-spawn]')).toHaveCount(14);
+    await expect(page.locator('#manualSpawnAbility')).toHaveCount(0);
+    await expect(page.locator('#powerEnabledCount')).toHaveCount(0);
+    await expect(page.locator('[data-power-enabled]')).toHaveCount(0);
+    await expect(page.locator('[data-power-group]')).toHaveCount(0);
+    const ids = await page.locator('[data-power-spawn]').evaluateAll(nodes =>
+      nodes.map(node => node.getAttribute('data-power-spawn'))
+    );
+    expect(new Set(ids).size).toBe(14);
+    expect(ids).toContain('crystal_prison');
+    expect(ids).toContain('imprisonment_seal');
   });
 
-  test('les contrôles principaux du combat sont présents', async ({ page }) => {
+  test('les effets globaux sont réinitialisés entre deux matchs', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    const result = await page.evaluate(() => {
+      const powers = window.PowersFinalOriginal;
+      const behaviors = window.AbilityBehaviors;
+      if (!powers || !behaviors || typeof behaviors.resetAll !== 'function') return { available: false };
+      for (const power of Object.values(powers)) {
+        if (Array.isArray(power.entities)) power.entities.push({ __auditResetProbe: true });
+      }
+      behaviors.resetAll();
+      return {
+        available: true,
+        entityLeaks: Object.values(powers).some(power => Array.isArray(power.entities) && power.entities.some(entity => entity.__auditResetProbe)),
+        probeEntities: Object.values(powers).reduce((n, power) => n + (Array.isArray(power.entities) ? power.entities.filter(entity => entity.__auditResetProbe).length : 0), 0)
+      };
+    });
+    expect(result.available).toBe(true);
+    expect(result.entityLeaks).toBe(false);
+    expect(result.probeEntities).toBe(0);
+  });
+});
+
+test('les contrôles principaux du combat sont présents', async ({ page }) => {
     await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('#newGameBtn')).toBeVisible();
     await expect(page.locator('#resetBtn')).toBeVisible();

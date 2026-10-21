@@ -109,6 +109,10 @@
         // INIT / RESET
         // ═══════════════════════════════════════════════════════════
         init(world) {
+            // Les effets des pouvoirs sont globaux au module : les vider avant de créer le nouveau match.
+            if (window.AbilityBehaviors && typeof window.AbilityBehaviors.resetAll === 'function') {
+                window.AbilityBehaviors.resetAll();
+            }
             this._world = world;
             this.elapsedTime = 0;
             this.finished = false;
