@@ -19,11 +19,14 @@ La priorité actuelle est **la fiabilité du moteur et l'intégration fidèle de
 
 - Dépôt : https://github.com/Riiddiimz/BallYstik
 - Déploiement indiqué dans les métadonnées du dépôt : https://ballystik.vercel.app
-- Branche par défaut GitHub constatée le 21 octobre 2026 : `v2`.
-- La branche `main` a été alignée précédemment sur `feature/sanctuaire-chaos` afin d'en faire la base de travail courante. Ne pas supposer que `main` est la branche par défaut GitHub : ce sont deux notions distinctes.
-- La PR #9, « Corriger les fuites d’effets et réaligner les tests sur les 14 pouvoirs », a été **fusionnée dans `main` le 21 octobre 2026**. Commit de merge : `cb730d0b2dd063703a6ad7cd5807257c76e721fe`.
-- PR : https://github.com/Riiddiimz/BallYstik/pull/9
-- Avant chaque nouvelle modification, vérifier la branche, le commit de tête et l'état réel du dépôt. Ne pas se fier uniquement à ce document pour connaître la dernière version déployée.
+- Branche de travail active : `gem_check` (mission Audit, Modes de jeu & Maps).
+- La PR #9, « Corriger les fuites d’effets et réaligner les tests sur les 14 pouvoirs », a été **fusionnée dans `main` le 21 octobre 2026**.
+- **Avancées majeures sur `gem_check` (21 oct 2026)** :
+  1. Audit complet et sécurisation du déterminisme PRNG (Mulberry32).
+  2. Architecture modulaire de modes de jeu (`js/arena/game-modes.js`).
+  3. 3 modes opérationnels : Battle Royale (Last Standing), Duel à Distance (champ de force et munitions), Guerre de Territoire (160 dalles à conquérir avec méga-bombes).
+  4. 12 cartes actives dans l'arène (déblocage de reactor, crossfire, void + ajout de sablier et cyber_core).
+  5. Documentation complète : `FEATURE_STATUS.md`, `MAPS_CATALOG.md`, `GAME_MODES.md`, `AI_WORKFLOW.md`.
 
 ## 3. Comment le projet a évolué
 

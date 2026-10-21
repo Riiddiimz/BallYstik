@@ -2,7 +2,7 @@
 
 ## Current Phase
 - Branche active : `gem_check`
-- Phase en cours : Phase 6 — Modes conceptuels & Polish
+- Phase en cours : Mission Accomplie — Toutes les phases du plan sont implémentées, testées et documentées.
 
 ## Done
 - Audit complet du codebase, identification des 7 points de vigilance (B1 à B7)
@@ -30,11 +30,16 @@
   - Grille dynamique de 160 dalles à conquérir par impact physique
   - Méga-bombes à détonation en chaîne et conversion de zone
   - Jauge HUD en direct avec calcul du pourcentage de possession et victoire par domination
+- Phase 6 terminée :
+  - Création de `docs/GAME_MODES.md` (spécifications des 3 modes actifs + 6 modes conceptuels)
+- Phase 7 terminée :
+  - Validation syntaxique et intégrité JS de tous les modules
+  - Création de `docs/AI_WORKFLOW.md`
+  - Mise à jour de `docs/AI_CONTEXT_BRANCHES.md`, `docs/LESSONS.md` et `docs/STATE.md`
 
 ## In Progress / Next
-- Phase 6 : Documentation des modes de jeu (`docs/GAME_MODES.md`), conception de modes supplémentaires (Boss Rush, Course aux Cibles, Sumo Ring).
-- Phase 7 : Tests navigateur, mise à jour de la documentation générale (`AI_CONTEXT_BRANCHES.md`, `PROJECT.md`).
+- Déploiement et tests en production / partage avec le créateur pour retours vidéo TikTok.
 
 ## Open Issues
-- `PROJECT.md` contient encore des références à l'ancienne architecture modulaire à nettoyer en Phase 7.
+- Aucun bug bloquant. Toutes les mécaniques et nouveaux modes respectent le déterminisme seed Mulberry32.
 
