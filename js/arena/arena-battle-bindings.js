@@ -114,7 +114,42 @@
                     if (status) status.textContent = message;
                 }
             });
+            const modeSelect = document.getElementById('gameModeSelect');
+            if (modeSelect && saved.matchMode) modeSelect.value = saved.matchMode;
+            this.syncGameModeSettings();
             this.syncMapSettings();
+        },
+
+        syncGameModeSettings() {
+            const modeId = document.getElementById('gameModeSelect')?.value || 'lastStanding';
+            const title = document.getElementById('gameModeTitle');
+            const desc = document.getElementById('gameModeDesc');
+            const victory = document.getElementById('gameModeVictory');
+            const info = {
+                lastStanding: {
+                    title: 'Battle Royale (Last Standing)',
+                    desc: 'Chacun pour soi. Les boules s\'affrontent avec leurs armes et capacités jusqu\'à ce qu\'il n\'en reste qu\'une.',
+                    victory: 'Victoire : Dernière boule en vie'
+                },
+                rangedDuel: {
+                    title: 'Duel à Distance',
+                    desc: '2 combattants séparés par une barrière infranchissable. Ramassez les orbes de tir pour canarder l\'adversaire.',
+                    victory: 'Victoire : Élimination de l\'adversaire'
+                },
+                territoryWar: {
+                    title: 'Guerre de Territoire',
+                    desc: 'Arène quadrillée de briques neutres et piégées. Chaque choc colore les cases ou déclenche des bombes à fragmentation.',
+                    victory: 'Victoire : % de territoire contrôlé à la fin du temps'
+                }
+            }[modeId];
+            if (info) {
+                if (title) title.textContent = info.title;
+                if (desc) desc.textContent = info.desc;
+                if (victory) victory.textContent = info.victory;
+            }
+            if (window.GameModes) {
+                window.GameModes.setActiveMode(modeId);
+            }
         },
 
         syncMapSettings() {
@@ -149,7 +184,8 @@
             const shrink = document.getElementById('abShrinkToggle');
             if (document.getElementById('abSpeed')) options.gameSpeed = 1.5 + Number(document.getElementById('abSpeed').value) * 0.25;
             options.speedLevel = Number(document.getElementById('abSpeed')?.value || 0);
-            options.matchMode = 'lastStanding';
+            const modeSelect = document.getElementById('gameModeSelect');
+            options.matchMode = modeSelect ? modeSelect.value : 'lastStanding';
             // La recherche et les combats rejoués doivent tous deux aller jusqu'à 01:05 au maximum.
             options.matchTime = 65;
             const mapSelect = document.getElementById('arenaMapSelect');
@@ -242,6 +278,14 @@
             });
             const play = document.getElementById('playPauseBtn');
             if (play) play.addEventListener('click', () => this.togglePause());
+
+            const modeSelect = document.getElementById('gameModeSelect');
+            if (modeSelect) modeSelect.addEventListener('change', () => {
+                this.syncGameModeSettings();
+                this.saveOptions();
+                if (window.ArenaBattle) window.ArenaBattle.applyOptions(this.getOptions());
+                this.start();
+            });
 
             const mapSelect = document.getElementById('arenaMapSelect');
             if (mapSelect) mapSelect.addEventListener('change', () => {

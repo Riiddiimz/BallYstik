@@ -207,6 +207,32 @@
             </div>
 
 
+            <!-- Menu Mode de jeu -->
+            <div id="gameModeSettingsBox" class="rounded-2xl bg-zinc-900/60 border border-purple-500/40 overflow-hidden mb-3">
+                <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="gameModeSettings">
+                    <span class="flex items-center gap-2 text-purple-400"><i class="fa-solid fa-gamepad"></i> Mode de jeu</span>
+                    <i class="fa-solid fa-chevron-down text-zinc-400 transition-transform duration-200"></i>
+                </button>
+                <div id="gameModeSettings" class="accordion-content open px-3 pb-3 space-y-3 pt-1">
+                    <div>
+                        <label for="gameModeSelect" class="text-[11px] text-zinc-400 block mb-1">Type d'affrontement</label>
+                        <select id="gameModeSelect" class="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            <option value="lastStanding">Battle Royale (Last Standing)</option>
+                            <option value="rangedDuel">Duel à Distance</option>
+                            <option value="territoryWar">Guerre de Territoire</option>
+                        </select>
+                    </div>
+                    <div id="gameModeDescBox" class="rounded-xl border border-purple-500/30 bg-zinc-950/50 p-2.5 space-y-1">
+                        <p id="gameModeTitle" class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Battle Royale (Last Standing)</p>
+                        <p id="gameModeDesc" class="text-[10px] text-zinc-400 leading-snug">Chacun pour soi. Les boules s'affrontent avec leurs armes et capacités jusqu'à ce qu'il n'en reste qu'une.</p>
+                        <div class="pt-1 flex items-center gap-1.5 text-[9px] text-zinc-500">
+                            <i class="fa-solid fa-trophy text-amber-400"></i>
+                            <span id="gameModeVictory">Victoire : Dernière boule en vie</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Menu Maps : les réglages des obstacles sont propres à la carte sélectionnée. -->
             <div id="mapsSettingsBox" class="rounded-2xl bg-zinc-900/60 border border-cyan-500/40 overflow-hidden">
                 <button type="button" class="accordion-toggle w-full p-3 flex items-center justify-between text-xs font-bold text-zinc-200 uppercase tracking-wider hover:bg-zinc-800/40 transition" data-target="mapsSettings">
@@ -429,6 +455,8 @@
     <script src="js/arena/new-powers-panel.js?v=no-duplicate-powers-20261021-r1"></script>
     <script src="js/arena/pickups.js"></script>
     <script src="js/arena/arena-hud.js"></script>
+    <script src="js/arena/game-modes.js"></script>
+    <script src="js/arena/mode-last-standing.js"></script>
     <script src="js/arena/arena-battle.js?v=no-duplicate-powers-20261021-r1"></script>
     <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
     <script src="js/arena/arena-battle-bindings.js?v=record-start-seed-20261018"></script>

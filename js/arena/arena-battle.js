@@ -53,12 +53,15 @@
             this.damageNumbers = null;
             this.floatingPlus = [];
             this.winner = null;
+            this.activeMode = null;
             this._nextBallId = 1;
             this._killFeedHooked = false;
         }
 
         applyOptions(opts) {
             Object.assign(this.options, opts || {});
+            const modeId = this.options.matchMode || 'lastStanding';
+            this.activeMode = (window.GameModes && window.GameModes.get(modeId)) || (window.LastStandingMode || null);
             if (this._world && this._world.arena) {
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
@@ -126,6 +129,8 @@
             this.shockwaves.length = 0;
             this.floatingPlus.length = 0;
             this._nextBallId = 1;
+            const modeId = this.options.matchMode || 'lastStanding';
+            this.activeMode = (window.GameModes && window.GameModes.get(modeId)) || (window.LastStandingMode || null);
 
             // Arène
             if (!world.arena || world.arena.canvas !== world.canvas) {
@@ -176,7 +181,14 @@
 
             // Boules
             world.balls.length = 0;
-            this._spawnBalls(world);
+            if (this.activeMode && typeof this.activeMode.customBallSpawn === 'function') {
+                this.activeMode.customBallSpawn(world, this);
+            } else {
+                this._spawnBalls(world);
+            }
+            if (this.activeMode && typeof this.activeMode.init === 'function') {
+                this.activeMode.init(world, this);
+            }
 
             // Hooks
             this._hookWorld(world);
@@ -599,7 +611,17 @@
                 world.matchTime = duration;
                 world.elapsedTime = this.elapsedTime;
 
-                // À 1:05 au plus tard, clôturer la manche même si plusieurs boules survivent.
+                // Clôture de la manche : déléguer au mode ou classement PV par défaut
+                if (this.activeMode && typeof this.activeMode.onTimeout === 'function') {
+                    const timeoutRes = this.activeMode.onTimeout(world, this);
+                    if (timeoutRes && timeoutRes.finished) {
+                        this.winner = timeoutRes.winner || null;
+                        this.winnerDisplayActive = true;
+                        this.winnerDisplayElapsed = 0;
+                        this.finished = false;
+                        return;
+                    }
+                }
                 const contenders = world.balls
                     .filter(ball => !ball.isClone)
                     .sort((a, b) => {
@@ -626,6 +648,11 @@
             // La carte a ses propres mécaniques lisibles : télégraphe puis danger réel.
             world.arena.update(dt);
             this._updateMapMechanics(dt, world);
+
+            // Mise à jour spécifique au mode de jeu actif
+            if (this.activeMode && typeof this.activeMode.update === 'function') {
+                this.activeMode.update(dt, world, this);
+            }
 
             // Pickups : conserve leur système, mais évite qu'un spawn reste hors du cercle Vortex.
             this.pickupSystem.update(dt, world);
@@ -1016,19 +1043,26 @@
             // Damage numbers
             this.damageNumbers.update(dt);
 
-            // Dès qu'il ne reste qu'une seule boule réelle en vie, elle gagne.
-            // Laisser d'abord se voir tout le ralenti final, puis afficher Winner 2 secondes.
-            const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
-            if (survivors.length === 1) {
-                const finalSlowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
-                if (finalSlowMoRemaining > 0) return;
-                this.winner = survivors[0];
+            // Vérification de la condition de victoire selon le mode
+            let victoryResult = null;
+            if (this.activeMode && typeof this.activeMode.checkVictory === 'function') {
+                victoryResult = this.activeMode.checkVictory(world, this);
+            } else {
+                const survivors = world.balls.filter(ball => ball.alive && !ball.isClone);
+                if (survivors.length === 1) {
+                    const finalSlowMoRemaining = (window.ArenaBattleBridge?.deathSlowMoUntil || 0) - performance.now();
+                    if (finalSlowMoRemaining <= 0) {
+                        victoryResult = { finished: true, winner: survivors[0], reason: 'Dernière survivante' };
+                    }
+                }
+            }
+
+            if (victoryResult && victoryResult.finished) {
+                this.winner = victoryResult.winner;
                 console.info('[BallYstik][WINNER]', {
                     time: Number(this.elapsedTime.toFixed(2)),
-                    livingRealBalls: survivors.length,
-                    livingClones: world.balls.filter(ball => ball.alive && ball.isClone).length,
-                    livingTotal: world.balls.filter(ball => ball.alive).length,
-                    winnerId: survivors[0].id
+                    reason: victoryResult.reason,
+                    winnerId: this.winner?.id
                 });
                 this.winnerDisplayActive = true;
                 this.winnerDisplayElapsed = 0;
@@ -1051,6 +1085,11 @@
 
             // Arène
             world.arena.render(ctx);
+
+            // Rendu de fond propre au mode actif (ex: grille de territoire)
+            if (this.activeMode && typeof this.activeMode.renderBackground === 'function') {
+                this.activeMode.renderBackground(ctx, world, this);
+            }
 
             // Pickups (sous les balles)
             this.pickupSystem.render(ctx);
@@ -1076,6 +1115,11 @@
                     const beh = window.AbilityBehaviors[slot.meta.id];
                     if (beh && beh.render) beh.render(ctx, ball, world, slot);
                 }
+            }
+
+            // Rendu d'avant-plan propre au mode actif (ex: murs séparateurs, viseurs)
+            if (this.activeMode && typeof this.activeMode.render === 'function') {
+                this.activeMode.render(ctx, world, this);
             }
 
             // Particules
