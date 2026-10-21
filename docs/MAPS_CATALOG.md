@@ -6,26 +6,22 @@ Ce document répertorie l'ensemble des arènes intégrées, cachées et issues d
 
 ---
 
-## 1. Maps actives dans l'interface
+## 1. Maps actives dans l'interface (12 arènes)
 
 | Clé ID | Nom affiché | Géométrie | Éléments & Mécaniques |
 |---|---|---|---|
 | `neon` | Néon (Défaut) | Rectangle vertical | Grille cyberpunk, bordures luminescentes néon, obstacles au centre. |
-| `grid` | Néon Grid | Rectangle vertical | Grille rétro-futuriste, 3 bumpers circulaires à répulsion active. |
-| `volcano` | Volcan | Rectangle vertical | Arène de roche sombre, coulée de lave centrale, projections de braises. |
+| `neon_grid` | Néon Grid | Rectangle vertical | Grille rétro-futuriste, 3 bumpers circulaires à répulsion active. |
+| `volcan` | Volcan | Rectangle vertical | Arène de roche sombre, coulée de lave centrale, projections de braises. |
 | `nexus` | Nexus Spatial | Rectangle vertical | Étoiles défilantes, nébuleuse sombre, 3 astéroïdes flottants interactifs. |
+| `reactor` | Cœur de Réacteur | Rectangle vertical | Ondes de choc radiales périodiques repoussant les boules avec dégâts. |
+| `crossfire` | Tir Croisé | Rectangle vertical | Faisceau laser traversant périodique balayant l'arène. |
+| `void` | Le Néant | Rectangle vertical | 2 singularités gravitationnelles asymétriques déviant les trajectoires. |
+| `sablier` | Le Sablier | Rectangle vertical | Étranglement en sablier au centre avec 4 bumpers défensifs. |
+| `cyber_core` | Cyber Core | Rectangle vertical | Noyau central pulsar ultra-répulsif avec 4 micro-bumpers satellites. |
 | `vortex` | Vortex Spirale | Cercle / Arène ronde | Force centripète continue vers le centre, particules de succion. |
-| `vortex-test` | Vortex Test (WebGL) | Cercle / Arène ronde | Rendu shader GLSL interactif avec distorsion d'espace-temps. |
-| `chaos` | Sanctuaire du Chaos | Rectangle vertical | Style mystique, piliers d'énergie pulsée, décharges arcaniques. |
-
----
-
-## 2. Maps cachées dans le moteur (à brancher dans l'UI)
-
-Ces maps disposent déjà de logique spécifique dans `arena-battle.js` :
-- **`reactor` (Cœur de Réacteur)** : Pulsion énergétique à intervalles réguliers infligeant des micro-dégâts ou une poussée radiale.
-- **`crossfire` (Tir Croisé)** : Lasers de balayage ou zones de danger découpant la map.
-- **`void` (Le Néant)** : Gravité fluctuante et bordures instables.
+| `vortex_test` | Vortex Test (WebGL) | Cercle / Arène ronde | Rendu shader GLSL interactif avec distorsion d'espace-temps. |
+| `sanctuaire` | Sanctuaire du Chaos | Rectangle vertical | Style mystique, piliers d'énergie pulsée, décharges arcaniques. |
 
 ---
 

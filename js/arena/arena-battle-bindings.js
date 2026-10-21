@@ -161,13 +161,18 @@
             if (defaultSettings) defaultSettings.hidden = map !== 'neon';
             if (vortexSettings) vortexSettings.hidden = !['vortex', 'vortex_test'].includes(map);
             if (sanctuaireSettings) sanctuaireSettings.hidden = map !== 'sanctuaire';
-            if (newSettings) newSettings.hidden = !['neon_grid', 'volcan', 'nexus'].includes(map);
+            if (newSettings) newSettings.hidden = !['neon_grid', 'volcan', 'nexus', 'reactor', 'crossfire', 'void', 'sablier', 'cyber_core'].includes(map);
             const title = document.getElementById('newMapTitle');
             const description = document.getElementById('newMapDescription');
             const copy = {
                 neon_grid: ['Néon Grid', 'Trois bumpers à collisions réelles et une ligne de danger lumineuse décorative. Style arcade cyan et magenta.'],
                 volcan: ['Volcan — Faille de Magma', 'Trois rochers à collisions réelles et une fissure lumineuse décorative. Palette roche sombre et lave orange.'],
-                nexus: ['Nexus Spatial — Portails', 'Trois astéroïdes à collisions réelles et deux anneaux de portail décoratifs. La téléportation n’est pas activée dans cette version.']
+                nexus: ['Nexus Spatial — Portails', 'Trois astéroïdes à collisions réelles et deux anneaux de portail décoratifs.'],
+                reactor: ['Cœur de Réacteur', 'Ondes de choc énergétiques radiales périodiques. Les décharges repoussent et infligent des dégâts de zone.'],
+                crossfire: ['Tir Croisé', 'Balayage horizontal continu d’un laser de haute intensité. Franchir le faisceau inflige de lourds dégâts.'],
+                void: ['Singularité du Néant', 'Deux puits gravitationnels attirent et dévient dynamiquement les trajectoires des combattants.'],
+                sablier: ['Le Sablier', 'Arène étranglée au centre créant un goulot forcé et 4 piliers protecteurs favorisant les affrontements intenses.'],
+                cyber_core: ['Cyber Core', 'Noyau réacteur central à haute répulsion entouré de 4 micro-bumpers cybernétiques déviateurs.']
             }[map];
             if (title) title.textContent = copy ? copy[0] : '';
             if (description) description.textContent = copy ? copy[1] : '';

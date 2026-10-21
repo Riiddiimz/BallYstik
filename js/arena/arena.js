@@ -179,14 +179,18 @@
                 this.obstacles.push(...spiralPoints.slice(0, requested - 1));
                 return;
             }
-            if (['neon_grid', 'volcan', 'nexus'].includes(this.mapStyle)) {
+            if (['neon_grid', 'volcan', 'nexus', 'sablier', 'cyber_core'].includes(this.mapStyle)) {
                 const fx = this.frameX, fy = this.frameY, fw = this.frameW, fh = this.frameH;
                 const layouts = {
                     neon_grid: [{x:.28,y:.34,r:24},{x:.72,y:.50,r:27},{x:.32,y:.70,r:24}],
                     volcan: [{x:.30,y:.30,r:27},{x:.68,y:.52,r:24},{x:.34,y:.74,r:27}],
-                    nexus: [{x:.30,y:.36,r:23},{x:.70,y:.64,r:23},{x:.50,y:.50,r:27}]
+                    nexus: [{x:.30,y:.36,r:23},{x:.70,y:.64,r:23},{x:.50,y:.50,r:27}],
+                    sablier: [{x:.28,y:.50,r:26},{x:.72,y:.50,r:26},{x:.50,y:.26,r:22},{x:.50,y:.74,r:22}],
+                    cyber_core: [{x:.50,y:.50,r:36},{x:.26,y:.30,r:18},{x:.74,y:.70,r:18},{x:.26,y:.70,r:18},{x:.74,y:.30,r:18}]
                 };
-                layouts[this.mapStyle].slice(0, Math.max(0, Math.min(3, Math.floor(Number(count) || 0))))
+                const list = layouts[this.mapStyle] || [];
+                const maxItems = list.length;
+                list.slice(0, Math.max(0, Math.min(maxItems, Math.floor(Number(count) || maxItems))))
                     .forEach(p => this.obstacles.push({x:fx+fw*p.x,y:fy+fh*p.y,r:p.r}));
                 return;
             }
@@ -1028,6 +1032,76 @@ void main() {
                     for(let n=0;n<4;n++){const ox=(n-1.5)*8;ctx.beginPath();ctx.moveTo(ox,-11);ctx.lineTo(ox+5,7);ctx.lineTo(ox-5,7);ctx.closePath();ctx.fill();ctx.stroke();}
                     ctx.restore();
                 });
+            } else if (this.mapStyle === 'sablier') {
+                const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
+                const pulse = 0.5 + 0.5 * Math.sin(this.time * 3);
+                ctx.save();
+                ctx.strokeStyle = '#00f2fe';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = '#00f2fe';
+                ctx.shadowBlur = 18;
+                ctx.globalAlpha = 0.65 + pulse * 0.3;
+                ctx.beginPath();
+                ctx.moveTo(frameX + frameW * 0.1, frameY + frameH * 0.05);
+                ctx.lineTo(frameX + frameW * 0.38, cy);
+                ctx.lineTo(frameX + frameW * 0.1, frameY + frameH * 0.95);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.moveTo(frameX + frameW * 0.9, frameY + frameH * 0.05);
+                ctx.lineTo(frameX + frameW * 0.62, cy);
+                ctx.lineTo(frameX + frameW * 0.9, frameY + frameH * 0.95);
+                ctx.stroke();
+
+                for (let i = 0; i < 16; i++) {
+                    const py = frameY + ((this.time * 140 + i * 45) % frameH);
+                    const spread = Math.abs(py - cy) / (frameH * 0.5);
+                    const px = cx + (Math.sin(i * 1.7) * (18 + spread * 75));
+                    ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#38bdf8';
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.shadowBlur = 10;
+                    ctx.globalAlpha = 0.35 + 0.45 * (1 - spread * 0.6);
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2.2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.restore();
+            } else if (this.mapStyle === 'cyber_core') {
+                const cx = frameX + frameW / 2, cy = frameY + frameH / 2;
+                const rot = this.time * 0.8;
+                const pulse = 0.5 + 0.5 * Math.sin(this.time * 4);
+                ctx.save();
+                ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
+                ctx.lineWidth = 1.2;
+                for (let r = 50; r <= 220; r += 45) {
+                    ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const a = rot * 0.2 + (i * Math.PI / 3);
+                        const px = cx + Math.cos(a) * r, py = cy + Math.sin(a) * r;
+                        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+                ctx.strokeStyle = '#00f2fe';
+                ctx.lineWidth = 2.5;
+                ctx.shadowColor = '#00f2fe';
+                ctx.shadowBlur = 20;
+                ctx.globalAlpha = 0.6 + pulse * 0.4;
+                for (let i = 0; i < 4; i++) {
+                    const a = rot + (i * Math.PI / 2);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy);
+                    ctx.lineTo(cx + Math.cos(a) * 85, cy + Math.sin(a) * 85);
+                    ctx.stroke();
+                }
+                ctx.strokeStyle = '#ff007f';
+                ctx.shadowColor = '#ff007f';
+                ctx.shadowBlur = 16;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 38 + pulse * 6, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
             }
             ctx.restore();
 
