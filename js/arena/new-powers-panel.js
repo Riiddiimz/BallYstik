@@ -51,7 +51,7 @@
     const root = document.getElementById('rightSettingsContainer');
     if (!root) return;
     root.innerHTML =
-      '<div class="power-panel-head"><div class="power-final-heading">BALLYSTIK · 14 POUVOIRS</div><p>Uniquement les pouvoirs de powers_final.html. Clique autant de fois que nécessaire pour ajouter des pickups.</p></div>' + renderNew();
+      '<div class="power-panel-head"><div class="power-final-heading">BALLYSTIK · 14 POUVOIRS</div><p>Réglages communs à toutes les maps. Un exemplaire de chaque pouvoir peut être au sol ou actif par combat.</p></div>' + renderNew();
   }
   window.BallYstikNewPowers = { render, groups, isNewPower: id => newIds.has(id) };
   document.addEventListener('click', function (event) {
@@ -63,7 +63,7 @@
     button.dataset.label = previous;
     button.textContent = ok ? '✓ AJOUTÉ' : 'DÉJÀ PRÉSENT / PARTIE À LANCER';
     button.classList.toggle('spawn-error', !ok);
-    // Ne jamais désactiver le bouton : un même pouvoir peut être spawn plusieurs fois.
+    // Le bouton reste disponible ; le moteur refuse les doublons au sol ou déjà actifs.
     window.setTimeout(function () { if (button.isConnected) { button.textContent = previous; button.classList.remove('spawn-error'); } }, 1400);
   });
   document.addEventListener('DOMContentLoaded', render);
