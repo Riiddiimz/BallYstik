@@ -335,6 +335,37 @@
             return { left: this.x, right: this.x + this.w, top: this.y, bottom: this.y + this.h };
         }
 
+        // Contrat commun des maps : le moteur de pouvoirs n'a pas à connaître leur nom.
+        // Une map de forme spéciale peut surcharger ces méthodes pour définir son espace jouable.
+        isPointInside(x, y, padding = 0) {
+            if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+            if (this._isVortexMap()) {
+                const limit = Math.max(0, this.vortexRadius - padding);
+                return Math.hypot(x - this.vortexCx, y - this.vortexCy) <= limit;
+            }
+            return x >= this.x + padding && x <= this.x + this.w - padding
+                && y >= this.y + padding && y <= this.y + this.h - padding;
+        }
+
+        constrainPoint(x, y, padding = 0) {
+            if (!Number.isFinite(x) || !Number.isFinite(y)) {
+                return { x: this.x + this.w / 2, y: this.y + this.h / 2 };
+            }
+            if (this._isVortexMap()) {
+                const dx = x - this.vortexCx, dy = y - this.vortexCy;
+                const dist = Math.hypot(dx, dy);
+                const limit = Math.max(0, this.vortexRadius - padding);
+                if (dist > limit && dist > 0) {
+                    return { x: this.vortexCx + dx / dist * limit, y: this.vortexCy + dy / dist * limit };
+                }
+                return { x, y };
+            }
+            return {
+                x: Math.max(this.x + padding, Math.min(this.x + this.w - padding, x)),
+                y: Math.max(this.y + padding, Math.min(this.y + this.h - padding, y))
+            };
+        }
+
         isInsideDangerZone(ball) {
             if (this._isVortexMap() || !this.shrinkEnabled) return false;
             // La zone dangereuse reste à l'intérieur des murs de l'arène configurée.
