@@ -1,39 +1,35 @@
-# BallYstik — Last Sphere Standing
+# BallYstik — générateur de combats pour TikTok
 
-BallYstik est un jeu de combat de boules en arène, conçu pour un affichage vertical 9:16. Les boules disposent de points de vie, s'affrontent, récupèrent des capacités et la partie se termine selon le mode de victoire choisi.
+BallYstik est une application web de combats de boules en arène, pensée avant tout comme un **outil de création de vidéos verticales 9:16 d'environ 60 secondes**. L'objectif est de produire des combats visuellement lisibles, spectaculaires, reproductibles et avec une fin marquante. Le projet ne vise pas à devenir un jeu complet.
 
-## Lancer le jeu
+## Démarrer
 
-Le projet est une application web statique. Ouvrir `index.html` dans un navigateur ou déployer le dépôt sur un hébergement statique (par exemple Vercel). Les styles Tailwind et Font Awesome sont chargés depuis leurs CDN.
+Application web statique HTML/CSS/JavaScript. Ouvrir `index.html` dans un navigateur ou déployer le dépôt sur un hébergement statique, par exemple Vercel. Certaines dépendances de style et d'icônes sont chargées depuis des CDN.
 
-## Structure
+- Application : https://ballystik.vercel.app
+- Dépôt GitHub : https://github.com/Riiddiimz/BallYstik
 
-- `index.html` — structure de l'interface, panneau de réglages, canvas et HUD.
-- `css/style.css` — styles de base et cadre de jeu.
-- `js/app.js` — interactions de l'interface (panneaux, accordéons, plein écran et bouton audio).
-- `js/audio.js` — synthétiseur audio optionnel.
-- `js/arena/arena.js` — arène, obstacles et zone rétrécissante.
-- `js/arena/arena-battle.js` — logique du match, déplacements, dégâts et conditions de victoire.
-- `js/arena/arena-battle-bindings.js` — boucle de jeu autonome, seed, sauvegarde des options et branchement des contrôles.
-- `js/arena/health.js` — points de vie.
-- `js/arena/status-effects.js` — effets de statut.
-- `js/arena/ability-registry.js` — catalogue des capacités.
-- `js/arena/ability-offensive.js`, `ability-defensive.js`, `ability-utility.js` — comportements des capacités.
-- `js/arena/pickups.js` — apparition et collecte des orbes.
-- `js/arena/arena-hud.js` — barres de vie, classement et flux d'éliminations.
-- `js/arena/damage-numbers.js` — nombres de dégâts.
+## Documentation pour reprendre le projet
 
-## Seed et réglages
+**Avant de modifier le code, lire [le dossier de reprise et la feuille de route](docs/AI_CONTEXT_BRANCHES.md).** Il résume l'objectif produit, l'évolution du projet, les nouveaux pouvoirs, les corrections déjà fusionnées, les points non validés et l'ordre recommandé des prochaines tâches.
 
-La seed permet de reproduire la configuration initiale. Les options de match sont enregistrées localement dans le navigateur. Les données de sauvegarde sont propres au navigateur et à l'origine du site.
+La référence visuelle des 14 nouveaux pouvoirs est `idees/powers_final.html`. Leur dessin, couleurs et animations doivent rester fidèles à ce fichier : les corrections doivent se concentrer sur l'intégration et la logique, sans refaire leur visuel.
 
-## Architecture
+## Principaux fichiers
 
-Arena Brawl démarre directement depuis son propre contrôleur et sa propre boucle de rendu. Le bootstrap et le moteur multi-modes historiques (Classic/Escape, ancien chercheur de durée et ancien moteur physique) ont été retirés du chemin d'exécution et les fichiers devenus inutiles ont été supprimés.
+- `index.html` — interface et panneaux de réglages.
+- `css/style.css` — styles de l'interface.
+- `js/app.js` — interactions de l'interface.
+- `js/arena/arena.js` — arène, obstacles et rétrécissement.
+- `js/arena/arena-battle.js` — simulation, dégâts et conditions de victoire.
+- `js/arena/arena-battle-bindings.js` — boucle de jeu, seed et options.
+- `js/arena/new-powers-panel.js` — panneau des 14 nouveaux pouvoirs.
+- `js/arena/new-powers-behaviors.js` — comportements et rendu des nouveaux pouvoirs.
+- `idees/powers_final.html` — référence visuelle source.
+- `docs/LESSONS.md` — leçons techniques à consulter avant les corrections liées.
 
-## À vérifier avant une version de production
+## État et prudence
 
-- Tester les trois conditions de victoire : dernier survivant, durée limitée et premier à 10 éliminations.
-- Vérifier les capacités, les effets de statut et le rétrécissement de l'arène.
-- Vérifier le rendu sur mobile, le plein écran, le son et la persistance des options.
-- Confirmer que la seed reproduit bien les éléments aléatoires attendus sur plusieurs navigateurs.
+La PR #9 qui ajoute le nettoyage des effets entre les combats et réaligne les tests sur les 14 pouvoirs a été fusionnée dans `main` le 21 octobre 2026 : https://github.com/Riiddiimz/BallYstik/pull/9. Les tests Playwright n'avaient pas encore été exécutés sur l'hébergement réel au moment de la fusion. Il reste donc à valider le comportement en navigateur, la fidélité visuelle des pouvoirs, les effets persistants et l'export vidéo.
+
+Ne déclarez jamais une fonction « testée » si elle a seulement été lue dans le code. Vérifiez la branche et le commit avant tout travail : la branche par défaut GitHub constatée le 21 octobre 2026 est `v2`, tandis que les changements récents documentés ici concernent `main`.
