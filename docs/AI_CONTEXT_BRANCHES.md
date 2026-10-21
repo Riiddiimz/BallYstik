@@ -1,190 +1,172 @@
-# BallYstik — mémoire de reprise du projet
+# BallYstik — dossier de reprise et feuille de route
 
-> Mis à jour le 16 octobre 2026 après archivage des travaux de `feature/fusion-circle`. Ce document est conservé sur `main` pour retrouver les idées et le travail historique même après suppression des autres branches. Il décrit ce qui a été fait, ce qui reste à tester et ce qui n'a pas été intégré au jeu principal.
+> **Mis à jour le 21 octobre 2026.** Document de référence destiné à un développeur ou à une IA qui reprend le dépôt sans connaître les conversations précédentes. Il distingue l'intention produit, l'historique, l'état du code, les validations réellement effectuées et la suite du travail.
 
-## 1. Objectif du projet
+## 1. Résumé en une minute
 
-BallYstik est un jeu web de combats entre boules dans une arène. L'objectif final confirmé est de produire des vidéos TikTok d'environ 60 secondes qui donnent envie de rester jusqu'à la fin, de gagner des abonnés et, si les résultats le permettent, d'envisager la monétisation.
+BallYstik est un **générateur web de combats de boules destinés à devenir des vidéos TikTok verticales d'environ 60 secondes**. Ce n'est pas un projet visant à devenir un jeu complet avec une grande campagne ou une progression complexe. Le moteur de combat sert à produire une séquence visuelle immédiatement compréhensible, surprenante, reproductible et satisfaisante à regarder jusqu'à la fin.
 
-Le jeu est donc aussi un outil de production de contenu :
-- accroche visuelle immédiate, sans longue introduction ;
-- combats lisibles et spectaculaires ;
-- progression et surprises qui entretiennent le suspense ;
-- payoff important vers la fin ;
-- si pertinent, fin qui relance naturellement le début ;
-- suivi de la rétention à 3 secondes, de la durée moyenne, du taux de complétion, des relectures, commentaires et abonnements par vue.
+Le résultat recherché :
+- format vertical 9:16, avec une arène et des boules faciles à lire sur téléphone ;
+- événements visuels distincts, impacts compréhensibles et escalade du suspense ;
+- combats reproductibles grâce à une seed, pour pouvoir retrouver une séquence intéressante ;
+- résultat clair à la fin, idéalement à 60 secondes, puis écran du gagnant ;
+- à terme, export vidéo fiable en MP4, prêt à être monté ou publié sur TikTok.
 
-Ces principes sont des objectifs à tester, pas une garantie de viralité ou de monétisation.
+La priorité actuelle est **la fiabilité du moteur et l'intégration fidèle des 14 nouveaux pouvoirs**, puis leur validation en conditions réelles. Les objectifs TikTok et la qualité visuelle comptent davantage que l'ajout de mécaniques complexes sans preuve qu'elles améliorent la vidéo.
 
-## 2. Référence Git après nettoyage
-
-- Dépôt : `Riiddiimz/BallYstik`
-- Branche à conserver : `main`
-- Commit de référence observé sur `main) avant cette mise à jour documentaire : `d3944a91689b7a7aa89fada2b6a358f3262b6b92` — « docs: réduire le stun du dash à 2 secondes ».
-- Les travaux détaillés ci-dessous ont été réalisés sur l'ancienne branche `feature/fusion-circle`. **Ils sont documentés ici, mais cela ne signifie pas que leur code a été fusionné dans `main`.**
-- Cette mise à jour archive les informations pour une reprise éventuelle ; elle ne fusionne pas les modifications de gameplay de l'ancienne branche.
-- À la date de rédaction, la suppression effective des autres branches doit encore être confirmée. Ne pas considérer le nettoyage terminé tant que la liste des branches GitHub ne montre que `main`.
-
-Le projet est une application web statique en HTML/CSS/JavaScript, prévue pour être hébergée sur un hébergement statique/Vercel. Toujours vérifier l'état réel du dépôt et le commit de tête avant de modifier quoi que ce soit.
-
-## 3. État général du jeu principal
-
-D'après les documents et les fichiers précédemment observés, le projet comprend ou documente :
-- une arène de combat entre boules, déplacements et collisions ;
-- points de vie, dégâts, effets de statut, nombres de dégâts et éliminations ;
-- capacités offensives, défensives et utilitaires ;
-- pickups/orbes et armes ;
-- rétrécissement de l'arène ;
-- chronomètre et conditions de victoire ;
-- audio synthétisé avec Web Audio API ;
-- seed et options locales ;
-- interface de jeu, contrôles et panneaux de réglages.
-
-Cette liste ne certifie pas que chaque fonction marche actuellement dans la version déployée. Refaire des tests après toute modification importante. Aucun test navigateur ne doit être déclaré effectué s'il ne l'a pas réellement été.
-
-## 4. Travaux de l'ancienne branche `feature/fusion-circle`
-
-Dernier commit connu de cette branche : `7ff90f327f5713338e772ae74adecf6b0d561dde` — ajout du document de mémoire de travail. Le commit précédent notable était `97f7ad385a4022ca8d8f547fce916dcf4af43035` — « Add independent weapon selection fallback ».
-
-### 4.1 Système de fusion de capacités
-
-Fichiers ajoutés :
-- `js/arena/ability-fusion.js` : logique de progression et d'exécution des fusions.
-- `js/arena/ability-fusion-registry.js` : registre des paires compatibles.
-- `js/arena/fusion-info.js` : informations/UI liées à la fusion.
-- `tests/ability-fusion.test.js` : tests automatisés du système de fusion.
-
-La seule fusion explicitement répertoriée dans le registre observé était :
-
-**Dash + Firetrail → Tornade de feu**
-
-Paramètres présents dans le registre :
-- type : offensive ;
-- préparation/potentiel : 2 secondes ;
-- incantation : 3 secondes ;
-- rayon d'interruption : 60 ;
-- délai de pression avant recul : 3 secondes ;
-- recul par seconde : 0,10 ;
-- rayon de cible : 200 ;
-- attente prête : 5 secondes ;
-- tornade : rayon 60, vitesse 235, dégâts 8 DPS, durée 8 secondes, brûlure pendant 3 secondes.
-
-Ces valeurs sont les valeurs de code observées, pas un équilibrage confirmé par des essais de jeu. La fusion prévoit une phase de préparation/incantation et peut être interrompue. Un commentaire du code précise que les effets visuels n'utilisent pas le générateur pseudo-aléatoire du monde, afin de ne pas modifier les résultats du combat.
-
-Un rendu de tornade de feu en Canvas 2D a également été décrit : silhouette conique, spirales, flammes animées, noyau incandescent et base lumineuse. Retrouver et vérifier le code exact avant de le réutiliser.
-
-**Statut : présent dans l'ancienne branche, intégration à `main` non confirmée et comportement en navigateur à retester.**
-
-### 4.2 Armes et images
-
-Assets ajoutés dans l'ancienne branche :
-- `assets/weapons/axe_a.png`
-- `assets/weapons/axe_b.png`
-- `assets/weapons/axe_c.png`
-- `assets/weapons/axe_s.png`
-
-Il s'agit de quatre PNG transparents de haches préparés à partir des versions PhotoRoom. Les anciennes variantes et suffixes PhotoRoom avaient été nettoyés ; les fichiers finaux reprenaient le nommage attendu. `NOTES_DEV.md` indiquait que le rendu des armes/pickups faisait référence à ces images dans `js/arena/ability-offensive.js` et `js/arena/pickups.js`.
-
-Autres assets d'armes observés : `assets/weapons/blade.png` et `assets/weapons/blade2.png`.
-
-**Attention :** la présence de ces fichiers sur l'ancienne branche ne veut pas dire que les PNG de haches ont été copiés dans `main`.
-
-### 4.3 Atelier de création d'armes
-
-Fichiers/pages présents dans l'ancienne branche :
-- `atelier-armes.html) : atelier autonome de dessin d'armes en SVG/code ;
-- `test-armes.html` ;
-- `test-armes-live.html).
-
-L'atelier propose six catégories : Hache, Épée, Marteau, Arc, Sceptre et Lance. Il comprend des réglages visuels tels que taille, rotation, palette, lueur et arrière-plan, ainsi que l'export SVG/PNG.
-
-Problème rencontré : les armes ne s'affichaient pas correctement et le changement d'arme ne fonctionnait pas pour l'utilisateur. Plusieurs correctifs ont été ajoutés :
-- SVG avec dimensions explicites ;
-- SVG de hache statique comme fallback ;
-- script indépendant écoutant les clics sur `.weapon-choice[data-weapon]` et remplaçant le SVG par une silhouette simplifiée si le rendu principal ne se met pas à jour, avec mise à jour du titre/sous-titre et du bouton actif.
-
-**Statut : correctifs de secours présents dans l'ancienne branche, mais pas de test navigateur réel confirmé. La cause racine n'a pas été établie.** Si l'atelier est recréé plus tard, diagnostiquer d'abord le chargement JavaScript, les erreurs console, les sélecteurs et l'ordre d'initialisation plutôt que d'ajouter encore des fallbacks.
-
-### 4.4 Prototype d'arène et contrôles
-
-La page `test.html` de l'ancienne branche avait été décrite comme un prototype d'arène isométrique en losange avec quadrillage/relief, obstacles, boules avec ombres/reflets et vies, combats, dégâts, éliminations, orbes, déplacement, dash et pause. Elle avait aussi été adaptée à une présentation mobile verticale 9:16 avec joystick tactile et bouton Dash, tout en conservant les contrôles clavier ZQSD/WASD/flèches et Espace.
-
-Il faut inspecter la version exacte avant de réutiliser le prototype : cette description ne garantit pas que toutes les interactions étaient fiables.
-
-### 4.5 Fichiers modifiés dans l'ancienne branche
-
-Les fichiers du système de fusion et les fichiers d'interface associés incluaient notamment :
-- `js/arena/ability-offensive.js`
-- `js/arena/ability-registry.js`
-- `js/arena/arena-battle-bindings.js`
-- `js/arena/arena-battle.js`
-- `js/arena/pickups.js`
-- `css/style.css`
-- `index.html)
-
-La liste exacte du diff peut être retrouvée via l'historique Git tant que les commits sont accessibles. Avant suppression de branches, vérifier que les commits historiques resteront retrouvables dans le dépôt ou sauvegarder les références SHA importantes. Ne pas supposer que le code est présent sur `main` simplement parce que cette mémoire le décrit.
-
-## 5. Autres pistes historiques à conserver comme idées
-
-Les branches de travail historiques contenaient ou exploraient des sujets différents. Les points suivants sont des pistes à examiner, pas des fonctions garanties dans la version actuelle :
-
-- **Spectacle de l'arène :** Canon à plasma avec charge visible, obus explosif et dégâts de zone ; Bobine Tesla avec charge, éclair et foudre en chaîne.
-- **Variété des cartes :** Néon, Réacteur avec onde radiale, Crossfire avec faisceau annoncé, Néant avec puits gravitationnels. Vérifier l'état du code avant d'en faire une feuille de route ferme.
-- **Réglages des capacités :** une ancienne branche travaillait sur le panneau de contrôle des capacités et le redémarrage d'une nouvelle partie avec une seed randomisée.
-- **Démarrage Arena Brawl :** une ancienne branche avait pour objectif de démarrer ce mode automatiquement au chargement.
-- **Physique Arena Brawl :** une ancienne branche visait à isoler ce mode de l'ancienne architecture multi-modes et retirait la gravité de la physique des boules dans son diff de tête.
-- **Collisions sur coins arrondis :** une branche de correction abordait la normalisation des angles autour de -PI/PI et l'utilisation d'une distance point-segment exacte.
-- **Nettoyage de l'ancien arcade :** une ancienne branche retirait des implémentations de modes inutilisés, mais utilisait une structure de fichiers plus ancienne. Ne pas reprendre son code sans comparer avec `main`.
-
-## 6. Notes techniques déjà retenues
-
-Le document `docs/LESSONS.md` répertorie notamment :
-- la traversée de murs à grande vitesse traitée avec plusieurs sous-pas de physique ;
-- l'apparition initiale d'une boule adaptée au rayon de l'anneau ;
-- la normalisation des angles de collision autour de -PI/PI ;
-- les rampes de volume Web Audio sécurisées et l'initialisation audio après interaction ;
-- la correction d'un saut de défilement dans l'interface ;
-- les accordéons fermés masqués via `display: none !important` ;
-- le rendu canvas haute densité et le budget de temps de la recherche de seed ;
-- un générateur aléatoire séparé pour les effets visuels afin qu'ils ne changent pas le résultat du combat.
-
-Relire ce fichier avant de retoucher les zones concernées.
-
-## 7. Objectif TikTok : priorités MVP
-
-Une structure narrative à tester pour une vidéo d'environ 60 secondes :
-- **0–3 s :** hook visuel immédiat, une question ou une promesse claire ;
-- **3–12 s :** premier test d'arme ou premier événement qui prouve le concept ;
-- **12–30 s :** escalade avec des événements distincts, pas des répétitions longues ;
-- **30–45 s :** twist ou combinaison inattendue ;
-- **45–57 s :** payoff le plus spectaculaire et résultat compréhensible ;
-- **57–60 s :** boucle de fin/début si elle améliore réellement le revisionnage.
-
-Priorité MVP conseillée : peu d'armes mais très différentes, un adversaire/cible clair, des impacts lisibles, une combinaison spectaculaire (la Tornade de feu est une candidate à tester), puis un mode tournage reproductible.
-
-Fonctionnalités **non confirmées comme livrées** :
-- mode tournage avec événements planifiés et répétables ;
-- cadrage vertical fiable en 1080 × 1920 (9:16) ;
-- enregistrement/export du résultat vidéo ;
-- timeline pour textes, sons et réactions ;
-- génération reproductible d'une séquence complète d'environ 60 secondes.
-
-Le jeu doit être pensé comme le moteur de la vidéo, mais il faut d'abord rendre la séquence fiable, lisible et reproductible avant d'ajouter beaucoup de contenu.
-
-## 8. Règles de reprise après nettoyage des branches
-
-1. Commencer par lire ce fichier, `NOTES_DEV.md` et `docs/LESSONS.md`.
-2. Confirmer que la branche courante est `main` et relever son commit de tête.
-3. Ne pas supposer que le code de l'ancienne branche `feature/fusion-circle` a été fusionné. Cette mémoire est une archive d'idées et d'historique, pas un patch.
-4. Si une ancienne fonctionnalité doit être reprise, retrouver son commit à partir des SHA ci-dessus ou de l'historique Git ; inspecter le diff et ne réintroduire que les changements nécessaires.
-5. Après chaque changement important, noter la branche, le commit, les fichiers concernés, les tests réellement exécutés et les problèmes ouverts.
-6. Distinguer systématiquement **présent dans le code**, **testé**, **à tester** et **idée future**.
-7. Ne jamais déclarer qu'un test navigateur a été effectué sans l'avoir fait.
-8. Garder l'objectif final en tête : créer des combats qui retiennent l'attention jusqu'au payoff, puis ajouter les outils nécessaires pour tourner/exporter des vidéos TikTok d'environ une minute.
-
-## 9. Références utiles
+## 2. Dépôt et état Git connu
 
 - Dépôt : https://github.com/Riiddiimz/BallYstik
-- Branche principale : https://github.com/Riiddiimz/BallYstik/tree/main
-- Ce document : https://github.com/Riiddiimz/BallYstik/blob/main/docs/AI_CONTEXT_BRANCHES.md
-- Ancien compare entre branches (utile si encore accessible) : https://github.com/Riiddiimz/BallYstik/compare/main...feature/fusion-circle
+- Déploiement indiqué dans les métadonnées du dépôt : https://ballystik.vercel.app
+- Branche par défaut GitHub constatée le 21 octobre 2026 : `v2`.
+- La branche `main` a été alignée précédemment sur `feature/sanctuaire-chaos` afin d'en faire la base de travail courante. Ne pas supposer que `main` est la branche par défaut GitHub : ce sont deux notions distinctes.
+- La PR #9, « Corriger les fuites d’effets et réaligner les tests sur les 14 pouvoirs », a été **fusionnée dans `main` le 21 octobre 2026**. Commit de merge : `cb730d0b2dd063703a6ad7cd5807257c76e721fe`.
+- PR : https://github.com/Riiddiimz/BallYstik/pull/9
+- Avant chaque nouvelle modification, vérifier la branche, le commit de tête et l'état réel du dépôt. Ne pas se fier uniquement à ce document pour connaître la dernière version déployée.
+
+## 3. Comment le projet a évolué
+
+### Étape A — moteur de combat d'arène
+
+Le projet a commencé comme une application web de combats entre boules. Le code comporte une interface de réglages, une arène, déplacements et collisions, points de vie, dégâts, effets de statut, capacités, orbes/pickups, HUD, chronomètre et conditions de victoire. Le projet utilise HTML, CSS et JavaScript côté navigateur, avec des canvas pour le rendu.
+
+La base a ensuite été recentrée sur Arena Brawl, avec un contrôleur et une boucle de rendu dédiés. La seed et les réglages locaux servent à rejouer des configurations. La présence d'un mécanisme dans le code ne garantit pas que tous ses scénarios ont été validés en navigateur.
+
+### Étape B — objectif de production vidéo TikTok
+
+La direction produit a été clarifiée : BallYstik doit servir à fabriquer des clips verticaux d'environ une minute, pas à devenir un jeu complet. Une bonne séquence doit accrocher immédiatement, montrer plusieurs événements lisibles, augmenter la tension et livrer un résultat marquant vers la fin.
+
+La structure proposée pour les vidéos (à expérimenter, pas une règle absolue) :
+- 0–3 s : accroche visuelle ou question ;
+- 3–12 s : premier événement marquant ;
+- 12–30 s : escalade avec des événements variés ;
+- 30–45 s : retournement ou événement inattendu ;
+- 45–57 s : moment le plus spectaculaire et gagnant compréhensible ;
+- 57–60 s : fin propre ou boucle si elle améliore réellement le revisionnage.
+
+Les métriques à observer après publication seront notamment la rétention à 3 secondes, la durée moyenne, le taux de complétion, les relectures, commentaires et abonnements par vue. La viralité et la monétisation ne sont pas garanties.
+
+### Étape C — expérimentations de fusion et d'armes
+
+Une branche historique `feature/fusion-circle` a exploré la fusion **Dash + Firetrail → Tornade de feu**, avec préparation, incantation, interruption possible et dégâts de zone. Elle contenait aussi des PNG de haches, un atelier SVG pour six familles d'armes (hache, épée, marteau, arc, sceptre, lance) et des pages de test.
+
+Ces travaux sont de l'historique et des pistes : **ne pas présumer que tout le code de cette branche a été intégré à la version actuelle**. Les valeurs de combat décrites dans les anciens commits n'ont pas toutes été validées par des essais. L'atelier d'armes avait des problèmes d'affichage/sélection non diagnostiqués de manière concluante.
+
+La direction produit a ensuite privilégié une première version plus simple, avec des armes et des pouvoirs distincts, plutôt que d'accumuler trop tôt des systèmes de fusion.
+
+### Étape D — nouveau catalogue de pouvoirs depuis le fichier validé
+
+Le fichier de référence demandé par le propriétaire est `idees/powers_final.html`. Les nouveaux pouvoirs intégrés doivent conserver **exactement leur rendu visuel d'origine** : formes, animations, couleurs et effets. Ne pas redessiner, simplifier, recolorer ou réinterpréter ces pouvoirs pour « améliorer » leur apparence sans autorisation explicite.
+
+Le panneau de l'application sépare les « Pouvoirs d'origine » des « Nouveaux pouvoirs », ces derniers étant organisés par thème. Le panneau actuel référence 14 nouveaux pouvoirs répartis en quatre groupes :
+1. Rayon du Jugement
+2. Chasseur Stellaire
+3. Bombe à fragmentation
+4. Nova Sismique
+5. Faille Magmatique
+6. Singularité Violette
+7. Saut Quantique
+8. Surcharge Giga
+9. Prisme Réflecteur
+10. Division Cellulaire
+11. Éclair en chaîne
+12. Prison de Cristal
+13. Fleur Explosive
+14. Sceau d'Emprisonnement
+
+Le fichier `js/arena/new-powers-behaviors.js` porte le moteur des effets repris du fichier original, avec un adaptateur vers les coordonnées, boules et dégâts du moteur natif. `js/arena/new-powers-panel.js` construit le panneau de sélection/spawn. Les pouvoirs doivent être disponibles via le menu de nouveaux pouvoirs, sans doublons accidentels, et les effets ne doivent pas continuer à polluer un combat suivant.
+
+Le propriétaire a signalé auparavant des écarts visuels par rapport au fichier source, des pouvoirs dupliqués et des problèmes pour faire apparaître plusieurs pouvoirs. Toute validation doit donc comparer le rendu au fichier original, vérifier la liste du panneau, les catégories et les interactions de spawn.
+
+## 4. Dernier audit technique et changements déjà fusionnés
+
+L'audit réalisé par Claude sur la branche `gem_check` a été pris en compte dans la branche `fix/claude-audit`, puis fusionné dans `main` via la PR #9.
+
+Modifications incluses :
+- ajout de `AbilityBehaviors.resetAll()` pour vider les collections d'effets globaux et les entités conservées par les pouvoirs ;
+- appel du nettoyage au début de l'initialisation d'un nouveau combat ;
+- suppression d'une deuxième définition strictement identique de `drawCrystals` ; la définition restante et son dessin n'ont pas été modifiés ;
+- mise à jour des tests d'interface qui attendaient une ancienne liste de 10 pouvoirs : ils vérifient désormais le panneau et le catalogue de 14 pouvoirs ;
+- ajout d'un test de régression sur le nettoyage des entités des pouvoirs entre les combats.
+
+**Limite importante :** la PR indique que les tests Playwright n'ont pas encore été exécutés dans un navigateur sur l'hébergement réel. Les changements ont fait l'objet d'une comparaison ciblée du code, mais ce n'est pas l'équivalent d'une validation complète du jeu en fonctionnement. Ne pas déclarer la correction totalement testée.
+
+Les blocs `POWERS.*` et leurs fonctions de dessin n'ont volontairement pas été retouchés. Les impulsions/propulsions, le gel, la règle de dégâts à 50 secondes, les halos et le DPR ont été laissés inchangés tant qu'une validation ou une décision produit n'est pas disponible.
+
+## 5. Points techniques connus à traiter
+
+À reprendre dans cet ordre, en privilégiant les corrections isolées et testables :
+
+1. **Validation réelle des 14 pouvoirs.** Ouvrir l'application, comparer chaque effet à `idees/powers_final.html`, tester chaque bouton, les apparitions multiples, les collisions, les dégâts, les durées et la fin des effets.
+2. **Cycle de vie des effets.** Vérifier le nettoyage lorsqu'une boule porteuse meurt, perd son pouvoir ou qu'un combat est réinitialisé. L'audit a signalé notamment le risque autour de Prison de Cristal et d'effets globaux qui peuvent survivre à leur porteur. Le reset entre combats a été ajouté, mais les cas de mort/perte de pouvoir doivent encore être validés et corrigés si nécessaire.
+3. **Conflit entre vitesse de base et effets de mouvement.** Vérifier si `_keepBaseSpeed` annule ou réduit des propulsions/attractions prévues. Ne pas modifier la sensation de mouvement sans reproduire le problème.
+4. **Tests automatisés.** Exécuter les tests Playwright dans un environnement réel ou CI, corriger les échecs, et ajouter des tests de comportement au-delà des seuls contrôles d'interface.
+5. **Rendu et performances.** Vérifier le DPR, les halos et le pré-rendu sans changer l'apparence des pouvoirs validés. Comparer des captures au fichier source.
+6. **Export vidéo.** Tester l'enregistrement complet et le téléchargement sur l'hébergement cible. Des erreurs passées concernaient `VideoEncoder ... closed codec` et `SharedArrayBuffer is not defined`. La compatibilité MP4 ne doit pas être annoncée tant qu'un fichier MP4 réel n'a pas été exporté et lu correctement.
+7. **Durée de combat.** La cible produit exprimée est un gagnant déterminé exactement à 1:00, puis un écran gagnant de 2 secondes. Le multiplicateur de dégâts x2 doit commencer à 50 secondes exactement. Ces points sont des exigences à vérifier, pas des garanties validées par le présent document.
+8. **Arène et format vertical.** Conserver le format 9:16 et la zone de cadrage convenue : haut 16 %, bas 10 %, gauche 0 %, droite 14 %. Les cartes doivent rester dans la même zone utile. Le rétrécissement de l'arène et les obstacles doivent être testés visuellement.
+9. **Cartes et obstacles.** Le menu de cartes visé comprend Défaut, des obstacles centraux réglables jusqu'à 10 et placement aléatoire, ainsi qu'une option Vortex (Test) avec nombre d'obstacles réglable, y compris zéro. Inspecter l'état réel avant d'annoncer toutes ces options comme livrées.
+10. **Fichiers historiques.** Ne pas supprimer `spiral.html`, `deepseek_html_20261015_b8d319.html`, d'anciens modules ou assets sans vérifier leurs références et obtenir l'accord du propriétaire si leur utilité est incertaine.
+
+## 6. Règles visuelles et de collaboration
+
+- **Priorité absolue : fidélité visuelle** des pouvoirs provenant de `idees/powers_final.html). La logique d'intégration peut être adaptée, pas le dessin original.
+- Éviter les refontes globales et les changements de gameplay non demandés. Préférer une correction ciblée, un test ciblé, puis une vérification visuelle.
+- Garder les modifications sur une branche de travail avant de les fusionner dans `main`, sauf demande explicite contraire.
+- Avant de coder, vérifier les fichiers et le commit de la branche cible ; l'historique du chat ou une branche ancienne ne remplace pas le code actuel.
+- Pour chaque lot de changements, noter : branche, commit/PR, fichiers touchés, tests réellement lancés, résultat, limites et problèmes restants.
+- Séparer explicitement les statuts : **présent dans le code**, **test automatisé exécuté**, **test navigateur réalisé**, **à valider**, **idée future**.
+- Ne jamais dire « testé » si seule une lecture du code a été faite.
+- Ne pas retirer les pouvoirs d'origine sans demande explicite ; conserver leur menu distinct des nouveaux pouvoirs.
+
+## 7. Feuille de route recommandée
+
+### Phase 1 — stabiliser ce qui existe
+- récupérer le dernier état Git et vérifier que le déploiement correspond à la bonne branche ;
+- exécuter les tests automatisés ;
+- faire une passe de validation visuelle des 14 pouvoirs source par source ;
+- corriger les doublons, le spawn multiple et le nettoyage des effets, sans modifier les dessins ;
+- vérifier le redémarrage du combat et l'absence d'effets fantômes.
+
+### Phase 2 — rendre le combat reproductible et conforme à la vidéo cible
+- confirmer le cadrage vertical 9:16 ;
+- confirmer la chronologie : x2 à 50 s, gagnant à 60 s, écran gagnant pendant 2 s ;
+- vérifier les seeds et créer un outil de recherche de seeds produisant un vainqueur au temps demandé ;
+- vérifier les cartes, les obstacles et le comportement des boules au contact des obstacles.
+
+### Phase 3 — rendre l'export fiable
+- choisir et tester une méthode d'enregistrement compatible avec l'hébergement ;
+- générer un vrai fichier vidéo vertical, idéalement MP4 1080 × 1920 ;
+- vérifier lecture, durée, synchronisation et absence de corruption dans plusieurs lecteurs ;
+- si le navigateur ne peut pas produire le MP4 de manière fiable, choisir explicitement une solution de conversion au lieu de présenter un WebM comme un MP4.
+
+### Phase 4 — optimiser la vidéo, pas complexifier le jeu
+- augmenter la variété des événements et la lisibilité des impacts ;
+- concevoir une accroche et un payoff visuel par combat ;
+- ajouter éventuellement textes, réactions et appel à l'abonnement au stade du montage ;
+- mesurer les performances des vidéos avant d'investir dans davantage d'armes, fusions ou systèmes.
+
+## 8. Architecture et documents à lire
+
+Application web statique HTML/CSS/JavaScript :
+- `index.html` : interface principale ;
+- `css/style.css` : styles ;
+- `js/app.js` : interactions de l'interface ;
+- `js/arena/arena.js` : arène, obstacles et zone rétrécissante ;
+- `js/arena/arena-battle.js` : combat, déplacements, dégâts et victoire ;
+- `js/arena/arena-battle-bindings.js` : boucle autonome, seed, options et contrôles ;
+- `js/arena/new-powers-panel.js` : panneau des 14 nouveaux pouvoirs ;
+- `js/arena/new-powers-behaviors.js` : logique et rendu des nouveaux pouvoirs ;
+- `idees/powers_final.html` : source visuelle de référence à préserver ;
+- `docs/LESSONS.md` : leçons techniques issues des corrections précédentes ;
+- `NOTES_DEV.md` : notes de développement, si présent sur la branche consultée.
+
+## 9. Liens
+
+- Dépôt : https://github.com/Riiddiimz/BallYstik
+- Branche `main` : https://github.com/Riiddiimz/BallYstik/tree/main
+- Branche par défaut constatée : https://github.com/Riiddiimz/BallYstik/tree/v2
+- PR d'audit fusionnée : https://github.com/Riiddiimz/BallYstik/pull/9
+- Source des pouvoirs (si présente sur la branche consultée) : https://github.com/Riiddiimz/BallYstik/blob/main/idees/powers_final.html
+- Application : https://ballystik.vercel.app
