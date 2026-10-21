@@ -64,6 +64,7 @@
             this.vortexRadius = 0;
             this.vortexCx = 0;
             this.vortexCy = 0;
+            this.prng = options.prng || null;
             this._recompute();
             this._buildObstacles(options.obstacles ?? 1, options.obstaclePositions);
             if (this._isVortexMap()) {
@@ -265,14 +266,15 @@
                     this.obstacles.push({ x: cx, y: cy + gap, r });
                 }
             }
+            const nextRnd = () => (this.prng ? this.prng.next() : Math.random());
             while (this.obstacles.length < Math.min(10, count)) {
                 const candidate = {
-                    x: this.padding + 34 + Math.random() * Math.max(1, this.canvas.width - 2 * (this.padding + 34)),
-                    y: this.padding + 34 + Math.random() * Math.max(1, this.canvas.height - 2 * (this.padding + 34)),
+                    x: this.padding + 34 + nextRnd() * Math.max(1, this.canvas.width - 2 * (this.padding + 34)),
+                    y: this.padding + 34 + nextRnd() * Math.max(1, this.canvas.height - 2 * (this.padding + 34)),
                     r
                 };
                 if (this.obstacles.every(o => Math.hypot(o.x - candidate.x, o.y - candidate.y) > 66)) this.obstacles.push(candidate);
-                else if (this.obstacles.length >= 3 && this.obstacles.length < 10 && Math.random() < 0.04) this.obstacles.push(candidate);
+                else if (this.obstacles.length >= 3 && this.obstacles.length < 10 && nextRnd() < 0.04) this.obstacles.push(candidate);
             }
         }
 

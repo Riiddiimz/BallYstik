@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BallYstik — 11 Maps Premium + Physique</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { 
+    background: #020205; 
+    display: flex; 
+    height: 100vh; 
+    overflow: hidden;
+    font-family: system-ui, sans-serif;
+  }
+  
+  #stage {
+    flex: 1; display: flex; align-items: center; justify-content: center; padding: 14px;
+  }
+  #wrap {
+    height: 95vh; aspect-ratio: 9 / 16; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 0 80px -10px rgba(138, 43, 226, 0.2), 0 0 0 1px rgba(255,255,255,0.06);
+    background: #000;
+  }
+  canvas { display: block; width: 100%; height: 100%; }
+
+  #panel {
+    width: 360px; background: rgba(10, 12, 18, 0.95); border-left: 1px solid #22242e;
+    display: flex; flex-direction: column; padding: 15px; gap: 10px; overflow-y: auto;
+    box-shadow: -10px 0 30px rgba(0,0,0,0.5); z-index: 10;
+  }
+  #panel h1 {
+    font-size: 15px; font-weight: 900; letter-spacing: 0.05em; text-transform: uppercase;
+    background: linear-gradient(90deg, #00f2fe, #ff2a85); -webkit-background-clip: text; color: transparent;
+    margin-bottom: 2px;
+  }
+  #panel .subtitle { font-size: 11px; color: #71717a; margin-bottom: 10px; }
+  
+  .map-item {
+    display: flex; gap: 12px; padding: 10px 12px; border-radius: 10px; cursor: pointer;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+    transition: all 0.15s; align-items: center; flex-shrink: 0;
+  }
+  .map-item:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+  .map-item.active {
+    background: rgba(0, 242, 254, 0.08); border-color: rgba(0, 242, 254, 0.4);
+    box-shadow: 0 0 15px rgba(0, 242, 254, 0.15);
+  }
+  .map-item .icon {
+    width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    background: #000; border: 1px solid #333; flex-shrink: 0; font-size: 16px;
+  }
+  .map-item.active .icon { border-color: #00f2fe; box-shadow: 0 0 10px rgba(0, 242, 254, 0.4); }
+  .map-info { flex: 1; }
+  .map-name { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+  .map-desc { font-size: 9.5px; color: #a1a1aa; line-height: 1.3; }
+  .map-item.active .map-name { color: #00f2fe; }
+
+  #panel::-webkit-scrollbar { width: 5px; }
+  #panel::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="wrap">
+    <canvas id="cv"></canvas>
+  </div>
+</div>
+
+<aside id="panel">
+  <h1>Arènes</h1>
+  <div class="subtitle">Clique pour changer de map</div>
+  <div id="mapList"></div>
+</aside>
+
+<script>
+const canvas = document.getElementById('cv');
+const ctx = canvas.getContext('2d');
+let W, H, DPR, time = 0;
+let currentMapIndex = 0;
+
+// --- Systèmes de fond ---
+const stars = [];
+for(let i = 0; i < 60; i++) {
+    stars.push({
+        x: Math.random(), y: Math.random(),
+        size: Math.random() * 2 + 0.5,
+        speed: Math.random() * 0.02 + 0.005,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+const particles = [];
+for(let i = 0; i < 40; i++) {
+    particles.push({
+        x: Math.random(), y: Math.random(),
+        vx: (Math.random() - 0.5) * 0.02,
+        vy: (Math.random() - 0.5) * 0.02,
+        size: Math.random() * 2 + 1,
+        phase: Math.random() * Math.PI * 2
+    });
+}
+
+// --- Moteur Physique ---
+const BALL_R = 14;
+let balls = [];
+
+function initBalls() {
+    balls = [];
+    const colors = ['#ff2a85', '#00f2fe', '#fbbf24', '#a855f7'];
+    const b = { x: 0, y: H * 0.16, w: W * 0.86, h: H * 0.74, right: W * 0.86, bottom: H * 0.90 };
+
+    for(let i=0; i<4; i++) {
+        const margin = BALL_R * DPR * 4;
+        const rx = Math.random() * (b.w - margin * 2) + b.x + margin;
+        const ry = Math.random() * (b.h - margin * 2) + b.y + margin;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = (2 + Math.random() * 3) * DPR;
+
+        balls.push({
+            x: rx, y: ry,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            r: BALL_R * DPR,
+            color: colors[i],
+            portalCd: 0
+        });
+    }
+}
+
+// --- Résolutions des collisions ---
+
+function resolveLine(ball, c) {
+    const abx = c.x2 - c.x1, aby = c.y2 - c.y1;
+    const apx = ball.x - c.x1, apy = ball.y - c.y1;
+    let t = (apx * abx + apy * aby) / (abx * abx + aby * aby || 1);
+    t = Math.max(0, Math.min(1, t));
+    const px = c.x1 + t * abx;
+    const py = c.y1 + t * aby;
+    const dx = ball.x - px, dy = ball.y - py;
+    const dist = Math.hypot(dx, dy);
+    
+    if (dist > 0.001 && dist < ball.r + c.thickness) {
+        const nx = dx / dist;
+        const ny = dy / dist;
+        ball.x = px + nx * (ball.r + c.thickness);
+        ball.y = py + ny * (ball.r + c.thickness);
+        const dot = ball.vx * nx + ball.vy * ny;
+        if (dot < 0) {
+            ball.vx -= 2 * dot * nx;
+            ball.vy -= 2 * dot * ny;
+        }
+    }
+}
+
+function resolvePolygon(ball, pts) {
+    let inside = false;
+    for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+        const xi = pts[i].x, yi = pts[i].y;
+        const xj = pts[j].x, yj = pts[j].y;
+        const intersect = ((yi > ball.y) !== (yj > ball.y)) && (ball.x < (xj - xi) * (ball.y - yi) / (yj - yi) + xi);
+        if (intersect) inside = !inside;
+    }
+
+    let minDist = Infinity;
+    let closestPt = null;
+    let nx = 0, ny = 0;
+
+    for (let i = 0; i < pts.length; i++) {
+        const a = pts[i];
+        const b = pts[(i + 1) % pts.length];
+        const abx = b.x - a.x, aby = b.y - a.y;
+        const apx = ball.x - a.x, apy = ball.y - a.y;
+        let t = (apx * abx + apy * aby) / (abx * abx + aby * aby || 1);
+        t = Math.max(0, Math.min(1, t));
+        const px = a.x + t * abx;
+        const py = a.y + t * aby;
+        const dx = ball.x - px, dy = ball.y - py;
+        const dist = Math.hypot(dx, dy);
+
+        if (dist < minDist) {
+            minDist = dist;
+            closestPt = { x: px, y: py };
+            if (dist > 0.001) {
+                nx = dx / dist;
+                ny = dy / dist;
+            } else {
+                nx = 1; ny = 0;
+            }
+        }
+    }
+
+    if (closestPt && minDist < ball.r) {
+        if (!inside) {
+            ball.x = closestPt.x - nx * ball.r;
+            ball.y = closestPt.y - ny * ball.r;
+            const dot = ball.vx * nx + ball.vy * ny;
+            if (dot > 0) {
+                ball.vx -= 2 * dot * nx;
+                ball.vy -= 2 * dot * ny;
+            }
+        } else {
+            ball.x = closestPt.x + nx * ball.r;
+            ball.y = closestPt.y + ny * ball.r;
+            const dot = ball.vx * nx + ball.vy * ny;
+            if (dot < 0) {
+                ball.vx -= 2 * dot * nx;
+                ball.vy -= 2 * dot * ny;
+            }
+        }
+    }
+}
+
+function resolveCircleBoundary(ball, cx, cy, r) {
+    const dx = ball.x - cx;
+    const dy = ball.y - cy;
+    const dist = Math.hypot(dx, dy);
+    if (dist > r - ball.r) {
+        const nx = dx / (dist || 1);
+        const ny = dy / (dist || 1);
+        ball.x = cx + nx * (r - ball.r);
+        ball.y = cy + ny * (r - ball.r);
+        const dot = ball.vx * nx + ball.vy * ny;
+        if (dot > 0) {
+            ball.vx -= 2 * dot * nx;
+            ball.vy -= 2 * dot * ny;
+        }
+    }
+}
+
+function resolveBallBall() {
+    for (let i = 0; i < balls.length; i++) {
+        for (let j = i + 1; j < balls.length; j++) {
+            const a = balls[i], b = balls[j];
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = a.r + b.r;
+            if (dist < minDist && dist > 0) {
+                const nx = dx / dist, ny = dy / dist;
+                const overlap = minDist - dist;
+                a.x -= nx * overlap * 0.5;
+                a.y -= ny * overlap * 0.5;
+                b.x += nx * overlap * 0.5;
+                b.y += ny * overlap * 0.5;
+                const relV = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+                if (relV > 0) {
+                    a.vx -= relV * nx; a.vy -= relV * ny;
+                    b.vx += relV * nx; b.vy += relV * ny;
+                }
+            }
+        }
+    }
+}
+
+function resolveCollisions() {
+    const map = MAPS[currentMapIndex];
+    const b = { x: 0, y: H * 0.16, w: W * 0.86, h: H * 0.74, cx: W * 0.43, cy: H * 0.53, right: W * 0.86, bottom: H * 0.90 };
+    const colliders = map.getColliders(time, b, DPR);
+    const boundary = map.getBoundary(b);
+
+    for (const ball of balls) {
+        if (ball.portalCd > 0) ball.portalCd -= 1/60;
+
+        // Bords
+        if (boundary.type === 'circle') resolveCircleBoundary(ball, boundary.cx, boundary.cy, boundary.r);
+        else if (boundary.type === 'poly') resolvePolygon(ball, boundary.pts);
+
+        // Obstacles
+        for (const c of colliders) {
+            if (c.type === 'circle') {
+                const dx = ball.x - c.x, dy = ball.y - c.y;
+                const dist = Math.hypot(dx, dy);
+                if (dist < ball.r + c.r) {
+                    const nx = dx / (dist || 1), ny = dy / (dist || 1);
+                    ball.x = c.x + nx * (ball.r + c.r);
+                    ball.y = c.y + ny * (ball.r + c.r);
+                    const dot = ball.vx * nx + ball.vy * ny;
+                    if (dot < 0) { ball.vx -= 2 * dot * nx; ball.vy -= 2 * dot * ny; }
+                }
+            } else if (c.type === 'rect') {
+                const closestX = Math.max(c.x, Math.min(ball.x, c.x + c.w));
+                const closestY = Math.max(c.y, Math.min(ball.y, c.y + c.h));
+                const dx = ball.x - closestX, dy = ball.y - closestY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > 0 && dist < ball.r) {
+                    const nx = dx / dist, ny = dy / dist;
+                    ball.x = closestX + nx * ball.r;
+                    ball.y = closestY + ny * ball.r;
+                    const dot = ball.vx * nx + ball.vy * ny;
+                    if (dot < 0) { ball.vx -= 2 * dot * nx; ball.vy -= 2 * dot * ny; }
+                }
+            } else if (c.type === 'poly') {
+                resolvePolygon(ball, c.pts);
+            } else if (c.type === 'line') {
+                resolveLine(ball, c);
+            }
+        }
+
+        // Mouvement et limite de vitesse
+        ball.x += ball.vx;
+        ball.y += ball.vy;
+        const sp = Math.hypot(ball.vx, ball.vy);
+        if (sp > 8 * DPR) { ball.vx = (ball.vx / sp) * 8 * DPR; ball.vy = (ball.vy / sp) * 8 * DPR; }
+    }
+
+    // Ball-Ball
+    resolveBallBall();
+
+    // Téléporteurs
+    for (const ball of balls) {
+        if (map.portalPos && map.portalPos.length > 0 && ball.portalCd <= 0) {
+            for (let i = 0; i < map.portalPos.length; i += 2) {
+                const p1 = map.portalPos[i], p2 = map.portalPos[i+1];
+                if (!p1 || !p2) continue;
+                const p1x = b.x + b.w * p1.x, p1y = b.y + b.h * p1.y;
+                const p2x = b.x + b.w * p2.x, p2y = b.y + b.h * p2.y;
+                if (Math.hypot(ball.x - p1x, ball.y - p1y) < ball.r + 22*DPR) {
+                    ball.x = p2x; ball.y = p2y; ball.portalCd = 0.5;
+                } else if (Math.hypot(ball.x - p2x, ball.y - p2y) < ball.r + 22*DPR) {
+                    ball.x = p1x; ball.y = p1y; ball.portalCd = 0.5;
+                }
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// DÉFINITION DES 11 MAPS
+// ══════════════════════════════════════════════════════════════════
+const MAPS = [
+  {
+    name: "L'Hexagone", desc: "3 cercles centraux",
+    color1: '#00ffff', color2: '#0055ff', bg: '#020a14',
+    portalPos: [{x:0.05, y:0.5}, {x:0.95, y:0.5}],
+    getBoundary: (b) => {
+        const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+        return { type: 'poly', pts: [pt(0.25, 0), pt(0.75, 0), pt(1, 0.5), pt(0.75, 1), pt(0.25, 1), pt(0, 0.5)] };
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'circle', x: b.cx, y: b.y + b.h*0.3, r: 20*dpr },
+        { type:'circle', x: b.cx, y: b.y + b.h*0.5, r: 20*dpr },
+        { type:'circle', x: b.cx, y: b.y + b.h*0.7, r: 20*dpr }
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const t1 = pt(0.25, 0), t2 = pt(0.75, 0), r = pt(1, 0.5);
+      const b2 = pt(0.75, 1), b1 = pt(0.25, 1), l = pt(0, 0.5);
+      p.moveTo(t1.x, t1.y); p.lineTo(t2.x, t2.y); p.lineTo(r.x, r.y);
+      p.lineTo(b2.x, b2.y); p.lineTo(b1.x, b1.y); p.lineTo(l.x, l.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      [0.3, 0.5, 0.7].forEach((py) => {
+        const cx = b.cx, cy = b.y + b.h * py, rad = 20 * dpr;
+        c.save(); c.strokeStyle = '#00ffff'; c.lineWidth = 3 * dpr; c.shadowColor = '#00ffff'; c.shadowBlur = 15 * dpr;
+        c.beginPath(); c.arc(cx, cy, rad, 0, Math.PI*2); c.stroke();
+        c.fillStyle = 'rgba(0,255,255,0.1)'; c.fill(); c.restore();
+      });
+    }
+  },
+  {
+    name: "La Croix", desc: "Losange central",
+    color1: '#ff5500', color2: '#ff0055', bg: '#140200',
+    portalPos: [{x:0.5, y:0.03}, {x:0.5, y:0.97}],
+    getBoundary: (b) => {
+        const cx = b.cx, cy = b.cy;
+        const w = b.w * 0.3, h = b.h * 0.3;
+        const w2 = w/2, h2 = h/2;
+        return { type: 'poly', pts: [
+            {x: cx - w2, y: b.y}, {x: cx + w2, y: b.y},
+            {x: cx + w2, y: cy - h2}, {x: b.right, y: cy - h2},
+            {x: b.right, y: cy + h2}, {x: cx + w2, y: cy + h2},
+            {x: cx + w2, y: b.bottom}, {x: cx - w2, y: b.bottom},
+            {x: cx - w2, y: cy + h2}, {x: b.x, y: cy + h2},
+            {x: b.x, y: cy - h2}, {x: cx - w2, y: cy - h2}
+        ]};
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'circle', x: b.cx, y: b.cy, r: 30*dpr }
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const w = 0.3, h = 0.3, cx = 0.5, cy = 0.5;
+      p.moveTo(b.x + b.w*(cx-w/2), b.y); p.lineTo(b.x + b.w*(cx+w/2), b.y);
+      p.lineTo(b.x + b.w*(cx+w/2), b.y + b.h*(cy-h/2)); p.lineTo(b.x + b.w, b.y + b.h*(cy-h/2));
+      p.lineTo(b.x + b.w, b.y + b.h*(cy+h/2)); p.lineTo(b.x + b.w*(cx+w/2), b.y + b.h*(cy+h/2));
+      p.lineTo(b.x + b.w*(cx+w/2), b.y + b.h); p.lineTo(b.x + b.w*(cx-w/2), b.y + b.h);
+      p.lineTo(b.x + b.w*(cx-w/2), b.y + b.h*(cy+h/2)); p.lineTo(b.x, b.y + b.h*(cy+h/2));
+      p.lineTo(b.x, b.y + b.h*(cy-h/2)); p.lineTo(b.x + b.w*(cx-w/2), b.y + b.h*(cy-h/2));
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      const cx = b.cx, cy = b.cy, size = 30 * dpr;
+      c.save(); c.strokeStyle = '#ff5500'; c.lineWidth = 4 * dpr; c.shadowColor = '#ff5500'; c.shadowBlur = 20 * dpr;
+      c.beginPath(); c.moveTo(cx, cy - size); c.lineTo(cx + size, cy); c.lineTo(cx, cy + size); c.lineTo(cx - size, cy); c.closePath(); c.stroke();
+      c.fillStyle = 'rgba(255,85,0,0.2)'; c.fill(); c.restore();
+    }
+  },
+  {
+    name: "Le Diamant", desc: "2 triangles latéraux",
+    color1: '#00ff00', color2: '#008800', bg: '#021402',
+    portalPos: [{x:0.5, y:0.10}, {x:0.5, y:0.90}],
+    getBoundary: (b) => {
+        return { type: 'poly', pts: [
+            { x: b.cx, y: b.y }, { x: b.right, y: b.cy },
+            { x: b.cx, y: b.bottom }, { x: b.x, y: b.cy }
+        ]};
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'poly', pts: [
+            {x: b.x + b.w*0.2, y: b.cy},
+            {x: b.x + b.w*0.35, y: b.cy - 40*dpr},
+            {x: b.x + b.w*0.35, y: b.cy + 40*dpr}
+        ]},
+        { type:'poly', pts: [
+            {x: b.x + b.w*0.8, y: b.cy},
+            {x: b.x + b.w*0.65, y: b.cy - 40*dpr},
+            {x: b.x + b.w*0.65, y: b.cy + 40*dpr}
+        ]}
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const top = pt(0.5, 0), right = pt(1, 0.5), bot = pt(0.5, 1), left = pt(0, 0.5);
+      p.moveTo(top.x, top.y); p.lineTo(right.x, right.y); p.lineTo(bot.x, bot.y); p.lineTo(left.x, left.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      c.save(); c.strokeStyle = '#00ff00'; c.lineWidth = 3 * dpr; c.shadowColor = '#00ff00'; c.shadowBlur = 15 * dpr;
+      c.beginPath(); c.moveTo(b.x + b.w*0.2, b.cy); c.lineTo(b.x + b.w*0.35, b.cy - 40*dpr); c.lineTo(b.x + b.w*0.35, b.cy + 40*dpr); c.closePath(); c.stroke();
+      c.beginPath(); c.moveTo(b.x + b.w*0.8, b.cy); c.lineTo(b.x + b.w*0.65, b.cy - 40*dpr); c.lineTo(b.x + b.w*0.65, b.cy + 40*dpr); c.closePath(); c.stroke();
+      c.restore();
+    }
+  },
+  {
+    name: "Le Stade", desc: "2 barres verticales",
+    color1: '#ff00ff', color2: '#8000ff', bg: '#0f0214',
+    portalPos: [{x:0.1, y:0.5}, {x:0.9, y:0.5}],
+    getBoundary: (b) => {
+        const pts = [];
+        const r = b.w * 0.3;
+        const left = b.x, right = b.right, top = b.y, bottom = b.bottom;
+        pts.push({x: left + r, y: top}); pts.push({x: right - r, y: top});
+        for(let i=1; i<10; i++) { const a = -Math.PI/2 + (i/10)*Math.PI; pts.push({x: right - r + Math.cos(a)*r, y: top + r + Math.sin(a)*r}); }
+        pts.push({x: right, y: bottom - r});
+        for(let i=1; i<10; i++) { const a = (i/10)*Math.PI; pts.push({x: right - r + Math.cos(a)*r, y: bottom - r + Math.sin(a)*r}); }
+        pts.push({x: left + r, y: bottom});
+        for(let i=1; i<10; i++) { const a = Math.PI/2 + (i/10)*Math.PI; pts.push({x: left + r + Math.cos(a)*r, y: bottom - r + Math.sin(a)*r}); }
+        pts.push({x: left, y: top + r});
+        for(let i=1; i<10; i++) { const a = Math.PI + (i/10)*Math.PI; pts.push({x: left + r + Math.cos(a)*r, y: top + r + Math.sin(a)*r}); }
+        return { type: 'poly', pts };
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'rect', x: b.x + b.w*0.3 - 2*dpr, y: b.y + b.h*0.3, w: 4*dpr, h: b.h*0.4 },
+        { type:'rect', x: b.x + b.w*0.7 - 2*dpr, y: b.y + b.h*0.3, w: 4*dpr, h: b.h*0.4 }
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const r = b.w * 0.3;
+      p.moveTo(b.x + r, b.y); p.lineTo(b.x + b.w - r, b.y);
+      p.arcTo(b.x + b.w, b.y, b.x + b.w, b.y + r, r); p.lineTo(b.x + b.w, b.y + b.h - r);
+      p.arcTo(b.x + b.w, b.y + b.h, b.x + b.w - r, b.y + b.h, r); p.lineTo(b.x + r, b.y + b.h);
+      p.arcTo(b.x, b.y + b.h, b.x, b.y + b.h - r, r); p.lineTo(b.x, b.y + r);
+      p.arcTo(b.x, b.y, b.x + r, b.y, r); p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      c.save(); c.strokeStyle = '#ff00ff'; c.lineWidth = 4 * dpr; c.shadowColor = '#ff00ff'; c.shadowBlur = 20 * dpr;
+      c.beginPath(); c.moveTo(b.x + b.w*0.3, b.y + b.h*0.3); c.lineTo(b.x + b.w*0.3, b.y + b.h*0.7); c.stroke();
+      c.beginPath(); c.moveTo(b.x + b.w*0.7, b.y + b.h*0.3); c.lineTo(b.x + b.w*0.7, b.y + b.h*0.7); c.stroke();
+      c.restore();
+    }
+  },
+  {
+    name: "Le Sablier", desc: "Barre horizontale",
+    color1: '#ffffff', color2: '#00aaff', bg: '#020914',
+    portalPos: [{x:0.8, y:0.15}, {x:0.2, y:0.85}],
+    getBoundary: (b) => {
+        const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+        return { type: 'poly', pts: [
+            pt(0.2, 0), pt(0.8, 0), pt(0.6, 0.5), pt(0.8, 1), pt(0.2, 1), pt(0.4, 0.5)
+        ]};
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'rect', x: b.cx - 45*dpr, y: b.cy - 4*dpr, w: 90*dpr, h: 8*dpr }
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const tl = pt(0.2, 0), tr = pt(0.8, 0), mr = pt(0.6, 0.5);
+      const br = pt(0.8, 1), bl = pt(0.2, 1), ml = pt(0.4, 0.5);
+      p.moveTo(tl.x, tl.y); p.lineTo(tr.x, tr.y); p.lineTo(mr.x, mr.y);
+      p.lineTo(br.x, br.y); p.lineTo(bl.x, bl.y); p.lineTo(ml.x, ml.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      c.save(); c.strokeStyle = '#ffffff'; c.lineWidth = 4 * dpr; c.shadowColor = '#ffffff'; c.shadowBlur = 15 * dpr;
+      c.beginPath(); c.moveTo(b.cx - 45*dpr, b.cy); c.lineTo(b.cx + 45*dpr, b.cy); c.stroke();
+      c.restore();
+    }
+  },
+  {
+    name: "Cyber Core", desc: "Laser rotatif",
+    color1: '#00f2fe', color2: '#0055ff', bg: '#020a14',
+    portalPos: [],
+    getBoundary: (b) => {
+        const pts = [];
+        const r = Math.min(b.w / Math.sqrt(3), b.h / 2) * 0.9;
+        for(let i=0; i<6; i++) {
+            const a = -Math.PI/2 + i * Math.PI/3;
+            pts.push({ x: b.cx + Math.cos(a)*r, y: b.cy + Math.sin(a)*r });
+        }
+        return { type: 'poly', pts };
+    },
+    getColliders: (t, b, dpr) => {
+        const cx = b.cx, cy = b.cy;
+        const len = 100 * dpr;
+        const ang = t * 1.5;
+        return [{ type: 'line',
+            x1: cx - Math.cos(ang)*len, y1: cy - Math.sin(ang)*len,
+            x2: cx + Math.cos(ang)*len, y2: cy + Math.sin(ang)*len,
+            thickness: 4 * dpr
+        }];
+    },
+    getPath: (b) => {
+      const p = new Path2D();
+      const r = Math.min(b.w / Math.sqrt(3), b.h / 2) * 0.9;
+      for(let i=0; i<6; i++) {
+        const a = -Math.PI/2 + i * Math.PI/3;
+        const px = b.cx + Math.cos(a)*r, py = b.cy + Math.sin(a)*r;
+        if(i===0) p.moveTo(px,py); else p.lineTo(px,py);
+      }
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      c.save(); c.translate(b.cx, b.cy); c.rotate(t * 1.5);
+      c.strokeStyle = '#00f2fe'; c.lineWidth = 4 * dpr; c.shadowColor = '#00f2fe'; c.shadowBlur = 20 * dpr;
+      c.beginPath(); c.moveTo(-100*dpr, 0); c.lineTo(100*dpr, 0); c.stroke();
+      c.restore();
+    }
+  },
+  {
+    name: "Anomalie Spatiale", desc: "Trou noir central",
+    color1: '#c084fc', color2: '#4c1d95', bg: '#05010a',
+    portalPos: [],
+    getBoundary: (b) => {
+        return { type: 'circle', cx: b.cx, cy: b.cy, r: Math.min(b.w, b.h)/2 * 0.95 };
+    },
+    getColliders: (t, b, dpr) => {
+        let c = [];
+        for(let i=0; i<3; i++) {
+            let ang = t*1.2 + i * (Math.PI*2/3);
+            c.push({ type:'circle', x: b.cx + Math.cos(ang) * 140*dpr, y: b.cy + Math.sin(ang) * 140*dpr, r: 15*dpr });
+        }
+        return c;
+    },
+    getPath: (b) => {
+      const p = new Path2D();
+      p.arc(b.cx, b.cy, Math.min(b.w, b.h)/2 * 0.95, 0, Math.PI*2);
+      return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      const pulse = 0.8 + Math.sin(t*3)*0.2;
+      const g = c.createRadialGradient(b.cx, b.cy, 0, b.cx, b.cy, 60*dpr*pulse);
+      g.addColorStop(0, '#000'); g.addColorStop(0.5, '#4c1d95'); g.addColorStop(1, 'rgba(192,132,252,0)');
+      c.fillStyle = g; c.beginPath(); c.arc(b.cx, b.cy, 60*dpr*pulse, 0, Math.PI*2); c.fill();
+      for(let i=0; i<3; i++) {
+        let ang = t*1.2 + i * (Math.PI*2/3);
+        let px = b.cx + Math.cos(ang) * 140*dpr, py = b.cy + Math.sin(ang) * 140*dpr;
+        c.fillStyle = '#4b5563'; c.beginPath(); c.arc(px, py, 15*dpr, 0, Math.PI*2); c.fill();
+        c.strokeStyle = '#c084fc'; c.lineWidth = 2*dpr; c.stroke();
+      }
+    }
+  },
+  {
+    name: "Forge Magmatique", desc: "Portails aux angles",
+    color1: '#ff5500', color2: '#8a1800', bg: '#0f0200',
+    portalPos: [{x: 0.9, y: 0.1}, {x: 0.1, y: 0.9}],
+    getBoundary: (b) => {
+        return { type: 'poly', pts: [
+            {x: b.x + b.w*0.1, y: b.y},
+            {x: b.x + b.w*0.9, y: b.y},
+            {x: b.x + b.w*0.9, y: b.bottom},
+            {x: b.x + b.w*0.1, y: b.bottom}
+        ]};
+    },
+    getColliders: (t, b, dpr) => [],
+    getPath: (b) => {
+      const p = new Path2D();
+      p.roundRect(b.x + b.w*0.1, b.y, b.w*0.8, b.h, 20);
+      return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {}
+  },
+  {
+    name: "Labo Quantique", desc: "Bumpers oscillants",
+    color1: '#e879f9', color2: '#6b21a8', bg: '#0a0214',
+    portalPos: [],
+    getBoundary: (b) => {
+        const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+        return { type: 'poly', pts: [
+            pt(0.2, 0), pt(0.8, 0), pt(1, 0.5), pt(0.8, 1), pt(0.2, 1), pt(0, 0.5)
+        ]};
+    },
+    getColliders: (t, b, dpr) => [
+        { type:'circle', x: b.cx, y: b.cy - b.h*0.15, r: 25*dpr + Math.sin(t*5)*4*dpr },
+        { type:'circle', x: b.cx, y: b.cy + b.h*0.15, r: 25*dpr - Math.sin(t*5)*4*dpr }
+    ],
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const t1 = pt(0.2, 0), t2 = pt(0.8, 0), r = pt(1, 0.5);
+      const b2 = pt(0.8, 1), b1 = pt(0.2, 1), l = pt(0, 0.5);
+      p.moveTo(t1.x, t1.y); p.lineTo(t2.x, t2.y); p.lineTo(r.x, r.y);
+      p.lineTo(b2.x, b2.y); p.lineTo(b1.x, b1.y); p.lineTo(l.x, l.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      [[0, -0.15],[0, 0.15]].forEach(p => {
+        let px = b.cx + p[0]*b.w, py = b.cy + p[1]*b.h;
+        c.strokeStyle = '#e879f9'; c.lineWidth = 4*dpr; c.shadowColor = '#e879f9'; c.shadowBlur = 20*dpr;
+        c.beginPath(); c.arc(px, py, 25*dpr + Math.sin(t*5)*4*dpr, 0, Math.PI*2); c.stroke();
+      });
+    }
+  },
+  {
+    name: "Sanctuaire Aurora", desc: "Étoile de bumpers",
+    color1: '#34d399', color2: '#065f46', bg: '#020a06',
+    portalPos: [],
+    getBoundary: (b) => {
+        const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+        return { type: 'poly', pts: [pt(0.5, 0), pt(1, 0.5), pt(0.5, 1), pt(0, 0.5)] };
+    },
+    getColliders: (t, b, dpr) => {
+        let c = [];
+        for(let i=0; i<5; i++) {
+            let ang = (i/5) * Math.PI*2 - Math.PI/2;
+            c.push({ type:'circle', x: b.cx + Math.cos(ang) * 90*dpr, y: b.cy + Math.sin(ang) * 90*dpr, r: 15*dpr });
+        }
+        return c;
+    },
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const top = pt(0.5, 0), right = pt(1, 0.5), bot = pt(0.5, 1), left = pt(0, 0.5);
+      p.moveTo(top.x, top.y); p.lineTo(right.x, right.y); p.lineTo(bot.x, bot.y); p.lineTo(left.x, left.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      for(let i=0; i<5; i++) {
+        let ang = (i/5) * Math.PI*2 - Math.PI/2;
+        let px = b.cx + Math.cos(ang) * 90*dpr, py = b.cy + Math.sin(ang) * 90*dpr;
+        c.fillStyle = '#34d399'; c.shadowColor = '#34d399'; c.shadowBlur = 15*dpr;
+        c.beginPath(); c.arc(px, py, 15*dpr, 0, Math.PI*2); c.fill();
+      }
+    }
+  },
+  {
+    name: "Néon Arena", desc: "Nœud papillon & chevrons",
+    color1: '#a855f7', color2: '#5a189a', bg: '#05020a',
+    portalPos: [],
+    getBoundary: (b) => {
+        const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+        return { type: 'poly', pts: [
+            pt(0.15, 0), pt(0.35, 0.12), pt(0.65, 0.12), pt(0.85, 0),
+            pt(1, 0.2), pt(1, 0.8), pt(0.85, 1), pt(0.65, 0.88),
+            pt(0.35, 0.88), pt(0.15, 1), pt(0, 0.8), pt(0, 0.2)
+        ]};
+    },
+    getColliders: (t, b, dpr) => {
+        const cyTop = b.y + b.h*0.35;
+        const cyBot = b.y + b.h*0.65;
+        return [
+            { type: 'line', x1: b.cx - 80*dpr, y1: cyTop - 30*dpr, x2: b.cx, y2: cyTop + 40*dpr, thickness: 5*dpr },
+            { type: 'line', x1: b.cx, y1: cyTop + 40*dpr, x2: b.cx + 80*dpr, y2: cyTop - 30*dpr, thickness: 5*dpr },
+            { type: 'line', x1: b.cx - 80*dpr, y1: cyBot + 30*dpr, x2: b.cx, y2: cyBot - 40*dpr, thickness: 5*dpr },
+            { type: 'line', x1: b.cx, y1: cyBot - 40*dpr, x2: b.cx + 80*dpr, y2: cyBot + 30*dpr, thickness: 5*dpr }
+        ];
+    },
+    getPath: (b) => {
+      const p = new Path2D();
+      const pt = (px, py) => ({ x: b.x + b.w * px, y: b.y + b.h * py });
+      const p_tl = pt(0.15, 0), p_ti_l = pt(0.35, 0.12), p_ti_r = pt(0.65, 0.12), p_tr = pt(0.85, 0);
+      const p_r_t = pt(1, 0.2), p_r_b = pt(1, 0.8), p_br = pt(0.85, 1), p_bi_r = pt(0.65, 0.88);
+      const p_bi_l = pt(0.35, 0.88), p_bl = pt(0.15, 1), p_l_b = pt(0, 0.8), p_l_t = pt(0, 0.2);
+      p.moveTo(p_tl.x, p_tl.y); p.lineTo(p_ti_l.x, p_ti_l.y); p.lineTo(p_ti_r.x, p_ti_r.y);
+      p.lineTo(p_tr.x, p_tr.y); p.lineTo(p_r_t.x, p_r_t.y); p.lineTo(p_r_b.x, p_r_b.y);
+      p.lineTo(p_br.x, p_br.y); p.lineTo(p_bi_r.x, p_bi_r.y); p.lineTo(p_bi_l.x, p_bi_l.y);
+      p.lineTo(p_bl.x, p_bl.y); p.lineTo(p_l_b.x, p_l_b.y); p.lineTo(p_l_t.x, p_l_t.y);
+      p.closePath(); return p;
+    },
+    drawObstacles: (c, b, dpr, t) => {
+      const drawChevron = (cy, isTop) => {
+        c.save(); c.lineJoin = 'round';
+        c.beginPath();
+        if(isTop) { c.moveTo(b.cx - 80*dpr, cy - 30*dpr); c.lineTo(b.cx, cy + 40*dpr); c.lineTo(b.cx + 80*dpr, cy - 30*dpr); }
+        else { c.moveTo(b.cx - 80*dpr, cy + 30*dpr); c.lineTo(b.cx, cy - 40*dpr); c.lineTo(b.cx + 80*dpr, cy + 30*dpr); }
+        c.strokeStyle = '#00f2fe'; c.lineWidth = 5*dpr; c.shadowColor = '#00f2fe'; c.shadowBlur = 20*dpr; c.stroke();
+        c.restore();
+      };
+      drawChevron(b.y + b.h*0.35, true);
+      drawChevron(b.y + b.h*0.65, false);
+    }
+  }
+];
+
+// ══════════════════════════════════════════════════════════════════
+// MOTEUR DE RENDU
+// ══════════════════════════════════════════════════════════════════
+function drawMap(c, w, h, dpr, t, mapIndex) {
+  const map = MAPS[mapIndex];
+  const b = { x: 0, y: h * 0.16, w: w * 0.86, h: h * 0.74, cx: w * 0.43, cy: h * 0.53, right: w * 0.86, bottom: h * 0.90 };
+
+  c.fillStyle = map.bg; c.fillRect(0, 0, w, h);
+  const nebula = c.createRadialGradient(b.cx, b.cy, 0, b.cx, b.cy, Math.max(w, h) * 0.8);
+  nebula.addColorStop(0, map.color2 + '40'); nebula.addColorStop(1, map.bg);
+  c.fillStyle = nebula; c.fillRect(0, 0, w, h);
+
+  c.fillStyle = '#ffffff';
+  stars.forEach(s => {
+    s.y -= s.speed * 0.01; if(s.y < 0) s.y = 1;
+    c.globalAlpha = 0.3 + Math.sin(t * 2 + s.phase) * 0.3;
+    c.beginPath(); c.arc(s.x * w, s.y * h, s.size * dpr, 0, Math.PI * 2); c.fill();
+  });
+  c.globalAlpha = 1;
+
+  const path = map.getPath(b);
+
+  c.save();
+  c.clip(path);
+  c.fillStyle = 'rgba(6, 10, 20, 0.85)'; c.fill();
+
+  c.strokeStyle = map.color1 + '15'; c.lineWidth = 1 * dpr;
+  const hexR = 16 * dpr, hexW = Math.sqrt(3) * hexR, hexH = 2 * hexR;
+  for (let x = b.x - hexW; x < b.x + b.w + hexW; x += hexW) {
+    for (let y = b.y - hexH; y < b.y + b.h + hexH; y += hexH * 0.75) {
+      let cx = x;
+      if (Math.round(y / (hexH * 0.75)) % 2 === 1) cx += hexW / 2;
+      c.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = (Math.PI / 3) * i;
+        const px = cx + hexR * Math.cos(angle), py = y + hexR * Math.sin(angle);
+        if (i === 0) c.moveTo(px, py); else c.lineTo(px, py);
+      }
+      c.closePath(); c.stroke();
+    }
+  }
+
+  c.fillStyle = map.color1;
+  particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if(p.x < 0 || p.x > 1) p.vx *= -1;
+      if(p.y < 0 || p.y > 1) p.vy *= -1;
+      c.globalAlpha = 0.2 + Math.sin(t * 3 + p.phase) * 0.2;
+      c.beginPath(); c.arc(b.x + p.x * b.w, b.y + p.y * b.h, p.size * dpr, 0, Math.PI * 2); c.fill();
+  });
+  c.globalAlpha = 1;
+
+  if (map.portalPos) {
+    map.portalPos.forEach((pos, i) => {
+      const cx = b.x + b.w * pos.x, cy = b.y + b.h * pos.y;
+      const radius = 22 * dpr;
+      c.save();
+      const glow = c.createRadialGradient(cx, cy, 0, cx, cy, radius * 2);
+      glow.addColorStop(0, map.color1 + '60'); glow.addColorStop(1, map.color1 + '00');
+      c.fillStyle = glow; c.beginPath(); c.arc(cx, cy, radius * 2, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = map.color1; c.lineWidth = 3 * dpr; c.shadowColor = map.color1; c.shadowBlur = 15 * dpr;
+      c.beginPath(); c.arc(cx, cy, radius, 0, Math.PI * 2); c.stroke();
+      const hole = c.createRadialGradient(cx, cy, 0, cx, cy, radius - 1);
+      hole.addColorStop(0, '#000000'); hole.addColorStop(0.8, map.bg); hole.addColorStop(1, map.color1);
+      c.fillStyle = hole; c.beginPath(); c.arc(cx, cy, radius - 2, 0, Math.PI * 2); c.fill();
+      c.strokeStyle = map.color1 + '99'; c.lineWidth = 1.5 * dpr;
+      c.setLineDash([6 * dpr, 6 * dpr]);
+      c.lineDashOffset = t * 40 * dpr * (i % 2 === 0 ? 1 : -1);
+      c.beginPath(); c.arc(cx, cy, radius - 8 * dpr, 0, Math.PI * 2); c.stroke();
+      c.restore();
+    });
+  }
+  c.restore();
+
+  c.save();
+  c.lineJoin = 'round'; c.lineCap = 'round';
+  c.strokeStyle = map.color2; c.lineWidth = 18 * dpr; c.shadowColor = map.color2; c.shadowBlur = 40 * dpr; c.stroke(path);
+  c.strokeStyle = map.color1; c.lineWidth = 6 * dpr; c.shadowColor = map.color1; c.shadowBlur = 20 * dpr; c.stroke(path);
+  c.strokeStyle = '#ffffff'; c.lineWidth = 2 * dpr; c.shadowColor = '#ffffff'; c.shadowBlur = 10 * dpr; c.stroke(path);
+  c.save();
+  c.setLineDash([100 * dpr, 1000 * dpr]); c.lineDashOffset = -t * 150 * dpr;
+  c.strokeStyle = map.color1; c.lineWidth = 4 * dpr; c.shadowColor = map.color1; c.shadowBlur = 20 * dpr; c.stroke(path);
+  c.restore();
+  c.restore();
+
+  map.drawObstacles(c, b, dpr, t);
+
+  balls.forEach(ball => {
+      c.save();
+      c.shadowColor = ball.color; c.shadowBlur = 15*dpr;
+      c.fillStyle = ball.color;
+      c.beginPath(); c.arc(ball.x, ball.y, ball.r, 0, Math.PI*2); c.fill();
+      c.strokeStyle = '#fff'; c.lineWidth = 1.5*dpr; c.stroke();
+      c.fillStyle = 'rgba(255,255,255,0.7)';
+      c.beginPath(); c.ellipse(ball.x - ball.r*0.3, ball.y - ball.r*0.3, ball.r*0.3, ball.r*0.15, -0.5, 0, Math.PI*2); c.fill();
+      c.restore();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════
+// UI & BOUCLE
+// ══════════════════════════════════════════════════════════════════
+const mapListEl = document.getElementById('mapList');
+
+MAPS.forEach((m, i) => {
+  const el = document.createElement('div');
+  el.className = 'map-item' + (i === 0 ? ' active' : '');
+  el.innerHTML = `
+    <div class="icon" style="color: ${m.color1}">🎮</div>
+    <div class="map-info">
+      <div class="map-name">${m.name}</div>
+      <div class="map-desc">${m.desc}</div>
+    </div>
+  `;
+  el.onclick = () => {
+    document.querySelectorAll('.map-item').forEach(e => e.classList.remove('active'));
+    el.classList.add('active');
+    currentMapIndex = i;
+    initBalls();
+  };
+  mapListEl.appendChild(el);
+});
+
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * DPR;
+  canvas.height = rect.height * DPR;
+  W = canvas.width;
+  H = canvas.height;
+  initBalls();
+}
+
+let lastT = 0;
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+  time += dt;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  resolveCollisions();
+  drawMap(ctx, W, H, DPR, time, currentMapIndex);
+
+  requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resize);
+resize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

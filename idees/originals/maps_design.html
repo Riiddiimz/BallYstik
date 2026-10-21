@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BallYstik — 35 Maps</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #05070d;
+    font-family: -apple-system, system-ui, sans-serif;
+    color: #fff; user-select: none;
+}
+body { display: flex; flex-direction: column; }
+
+#topbar {
+    padding: 10px 14px;
+    background: rgba(10, 14, 22, 0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    display: flex; align-items: center; gap: 10px;
+    z-index: 10;
+}
+#brand {
+    font-size: 12px; font-weight: 900; letter-spacing: 0.15em;
+    background: linear-gradient(90deg, #7ce7ff, #ff8a3d, #c084fc);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent; flex-shrink: 0;
+}
+#mapBar {
+    display: flex; gap: 4px; overflow-x: auto; padding: 2px;
+}
+#mapBar::-webkit-scrollbar { height: 3px; }
+#mapBar::-webkit-scrollbar-thumb { background: #2a3a52; }
+
+.map-pill {
+    flex-shrink: 0;
+    padding: 5px 10px; border-radius: 14px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #8a97ac; font-size: 10px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+    display: flex; align-items: center; gap: 5px;
+    white-space: nowrap;
+}
+.map-pill:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.map-pill.active {
+    background: rgba(124, 231, 255, 0.15);
+    border-color: rgba(124, 231, 255, 0.5);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(124, 231, 255, 0.25);
+}
+.map-pill .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    box-shadow: 0 0 6px currentColor;
+}
+
+#stage {
+    flex: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 14px;
+}
+#frame {
+    position: relative;
+    height: 100%;
+    max-height: calc(100vh - 70px);
+    aspect-ratio: 9 / 16;
+    border-radius: 22px; overflow: hidden;
+    background: #000;
+    box-shadow: 0 0 80px -10px rgba(124, 231, 255, 0.2),
+                0 0 0 1px rgba(255,255,255,0.06),
+                0 20px 80px rgba(0,0,0,0.6);
+}
+#glCanvas, #simCanvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; display: block;
+}
+#glCanvas { z-index: 0; }
+#simCanvas { z-index: 1; }
+
+#hud {
+    position: absolute; top: 14px; left: 14px; right: 14px;
+    display: flex; justify-content: space-between;
+    pointer-events: none; z-index: 2;
+}
+.badge {
+    padding: 4px 10px; border-radius: 7px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-family: ui-monospace, monospace;
+    font-size: 10px; font-weight: 700; color: #a1a1aa;
+    backdrop-filter: blur(8px);
+}
+
+#mapName {
+    position: absolute; bottom: 18px; left: 50%;
+    transform: translateX(-50%);
+    padding: 7px 18px; border-radius: 18px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 10px; font-weight: 800;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    backdrop-filter: blur(8px);
+    pointer-events: none; z-index: 2;
+    white-space: nowrap;
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+    <div id="brand">BALLYSTIK</div>
+    <div id="mapBar"></div>
+</div>
+
+<div id="stage">
+    <div id="frame">
+        <canvas id="glCanvas"></canvas>
+        <canvas id="simCanvas"></canvas>
+        <div id="hud">
+            <div class="badge" id="fps">60 FPS</div>
+            <div class="badge" id="ballCount">4 boules</div>
+        </div>
+        <div id="mapName">CYBER GRID</div>
+    </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+const W = 1080, H = 1920;
+const BALL_R = 44;
+const MAX_SPEED = 900;
+const MIN_SPEED = 140;
+const SUB_STEPS = 4;
+const TRAIL = 8;
+const MAX_P = 200;
+
+const BALL_COLORS = ['#ff2a85', '#00f2fe', '#fbbf24', '#a855f7'];
+let balls = [];
+
+// ═══════════════════════════════════════════════════════════════
+// WEBGL
+// ═══════════════════════════════════════════════════════════════
+const glCanvas = document.getElementById('glCanvas');
+glCanvas.width = 540;
+glCanvas.height = 960;
+let gl = null, prog = null, U = {};
+
+try { gl = glCanvas.getContext('webgl', { antialias: false, alpha: false }); } catch(e) {}
+
+if (gl) {
+    const VS = `
+        attribute vec2 aPos;
+        varying vec2 vUV;
+        void main() { vUV = aPos * 0.5 + 0.5; gl_Position = vec4(aPos, 0.0, 1.0); }
+    `;
+    const FS = `
+        precision highp float;
+        varying vec2 vUV;
+        uniform float uTime, uPattern, uSpeed, uIntensity;
+        uniform vec2 uResolution;
+        uniform vec3 uColA, uColB, uColC;
+
+        float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+
+        float noise(vec2 p) {
+            vec2 i = floor(p), f = fract(p);
+            f = f * f * (3.0 - 2.0 * f);
+            float a = hash(i), b = hash(i + vec2(1.0, 0.0));
+            float c = hash(i + vec2(0.0, 1.0)), d = hash(i + vec2(1.0, 1.0));
+            return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
+        }
+        float fbm(vec2 p) {
+            float v = 0.0, a = 0.5;
+            for (int i = 0; i < 4; i++) { v += a * noise(p); p *= 2.0; a *= 0.5; }
+            return v;
+        }
+
+        // 0: GRID SCANLINES
+        vec3 patternGrid(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec2 g = abs(fract(uv * 20.0 + t * 0.02) - 0.5);
+            float line = smoothstep(0.47, 0.5, max(g.x, g.y));
+            float scan = 0.5 + 0.5 * sin(uv.y * 400.0 + t * 5.0);
+            vec3 col = mix(uColC, uColA, smoothstep(0.0, 0.9, dist));
+            col += uColB * line * 0.25;
+            col += uColB * scan * 0.04;
+            col += uColB * smoothstep(0.4, 0.0, dist) * 0.1;
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 1: STARS + NEBULA
+        vec3 patternStars(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec3 col = mix(uColC, vec3(0.01, 0.01, 0.03), smoothstep(0.0, 1.0, dist));
+            for (int i = 0; i < 25; i++) {
+                float fi = float(i);
+                vec2 star = vec2(hash(vec2(fi*1.7, 3.1)), hash(vec2(fi*2.3, 5.7)));
+                star = (star - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+                float d = length(p - star);
+                float tw = 0.5 + 0.5 * sin(t * (1.0 + hash(vec2(fi))*3.0) + fi);
+                col += uColA * smoothstep(0.004, 0.0, d) * tw;
+            }
+            float neb = fbm(uv * 3.0 + vec2(t*0.05, t*0.03));
+            col += uColB * neb * 0.4 * smoothstep(0.8, 0.1, dist);
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 2: MATRIX RAIN
+        vec3 patternMatrix(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec3 col = mix(uColC, vec3(0.0, 0.02, 0.0), smoothstep(0.0, 1.0, dist));
+            float cols = 40.0;
+            float cc = floor(uv.x * cols);
+            float seed = hash(vec2(cc));
+            float offset = fract(uv.y + t * (0.3 + seed * 0.6) + seed);
+            float yCell = fract(offset * 30.0);
+            float dot = smoothstep(0.35, 0.5, yCell) * smoothstep(0.65, 0.5, yCell);
+            dot *= smoothstep(0.9, 0.0, offset);
+            vec2 cellUV = vec2(fract(uv.x * cols) - 0.5, yCell - 0.5);
+            float ch = smoothstep(0.4, 0.1, length(cellUV));
+            col += uColA * ch * dot * (0.4 + seed * 0.6);
+            col += uColB * smoothstep(0.85, 1.0, offset) * 0.4;
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 3: CAUSTICS (WATER)
+        vec3 patternCaustics(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec3 col = mix(uColC, vec3(0.0, 0.02, 0.05), smoothstep(0.0, 1.0, dist));
+            vec2 p1 = uv * 5.0 + vec2(t*0.25, t*0.2);
+            vec2 p2 = uv * 5.0 - vec2(t*0.2, t*0.3);
+            float w1 = sin(p1.x*6.0 + sin(p1.y*4.0)*2.0)*0.5+0.5;
+            float w2 = cos(p2.y*6.0 + cos(p2.x*4.0)*2.0)*0.5+0.5;
+            col += uColA * pow(w1*w2, 2.0) * 0.4;
+            col += uColB * (sin(dist*30.0 - t*3.0)*0.5+0.5) * 0.08;
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 4: FIRE
+        vec3 patternFire(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec2 fuv = vec2(uv.x, 1.0 - uv.y);
+            float flame = fbm(fuv * vec2(3.0, 5.0) + vec2(0.0, t * 0.6));
+            flame += fbm(fuv * vec2(6.0, 10.0) + vec2(t*0.2, t*1.2)) * 0.5;
+            flame = pow(flame, 1.8);
+            vec3 col = mix(uColC, vec3(0.02, 0.0, 0.0), smoothstep(0.0, 1.0, dist));
+            col = mix(col, uColB, flame * smoothstep(0.85, 0.0, dist));
+            col += uColA * flame * flame * 1.5;
+            col += uColA * step(0.97, hash(floor(uv*30.0 + vec2(0.0, t*3.0)))) * 0.4;
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 5: KALEIDOSCOPE
+        vec3 patternKaleido(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float r = length(p);
+            float a = atan(p.y, p.x);
+            a = mod(a, 6.28318 / 6.0);
+            a = abs(a - 3.14159 / 6.0);
+            p = vec2(cos(a), sin(a)) * r;
+            float a2 = t * 0.4;
+            mat2 rot = mat2(cos(a2), -sin(a2), sin(a2), cos(a2));
+            p = rot * p;
+            vec2 nuv = p * 6.0 + vec2(sin(t*0.4), cos(t*0.5));
+            float n1 = fbm(nuv), n2 = fbm(nuv*2.0 + vec2(t*0.3));
+            float pat = n1 * n2;
+            vec3 col = mix(uColC, uColB, pat);
+            col = mix(col, uColA, pow(pat, 3.0));
+            col += uColA * (sin(r*40.0 - t*3.0)*0.5+0.5) * 0.12 * smoothstep(0.7, 0.2, r);
+            col *= 1.0 - smoothstep(0.5, 1.1, r);
+            return col;
+        }
+
+        // 6: GLITCH
+        vec3 patternGlitch(vec2 uv, float t) {
+            float row = floor(uv.y * 40.0);
+            float slice = hash(vec2(row, floor(t * 8.0)));
+            float offset = (slice - 0.5) * 0.08 * step(0.75, slice);
+            vec2 guv = uv + vec2(offset, 0.0);
+            vec2 p = (guv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec3 col = mix(uColC, vec3(0.02, 0.0, 0.02), smoothstep(0.0, 1.0, dist));
+            col += uColB * (0.5 + 0.5 * sin(guv.y * 800.0)) * 0.05;
+            float block = hash(floor(guv * vec2(20.0, 40.0) + floor(t*5.0)));
+            col += uColA * step(0.97, block) * (0.5 + 0.5*sin(t*20.0)) * 0.8;
+            float rs = sin(t*15.0) * 0.002 * (1.0 + dist*3.0);
+            col.r += sin(guv.x*500.0 + t*5.0) * rs * 0.5;
+            col.b -= sin(guv.x*500.0 - t*3.0) * rs * 0.5;
+            col += vec3(1.0) * step(0.995, hash(vec2(floor(t*10.0)))) * 0.15;
+            col *= 1.0 - smoothstep(0.4, 1.0, dist);
+            return col;
+        }
+
+        // 7: AURORA
+        vec3 patternAurora(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec3 col = mix(uColC, vec3(0.02, 0.01, 0.04), smoothstep(0.0, 1.0, dist));
+            for (int i = 0; i < 3; i++) {
+                float fi = float(i);
+                float yOff = sin(uv.x*5.0 + t*0.5 + fi*1.5) * 0.15 + 0.3 + fi*0.15;
+                float ribbon = smoothstep(0.12, 0.0, abs(uv.y - yOff - sin(t*0.8 + fi)*0.05));
+                vec3 c = mix(uColB, uColA, fi * 0.5);
+                col += c * ribbon * 0.5;
+            }
+            for (int i = 0; i < 25; i++) {
+                float fi = float(i);
+                vec2 star = vec2(hash(vec2(fi*2.0)), hash(vec2(fi*3.0)));
+                star = (star - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+                float tw = 0.5 + 0.5*sin(t*3.0 + fi*1.5);
+                col += uColA * smoothstep(0.004, 0.0, length(p - star)) * tw * 0.6;
+            }
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 8: VORONOI CELLS
+        vec3 patternCells(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            vec2 gv = uv * 8.0;
+            vec2 g = floor(gv);
+            vec2 f = fract(gv);
+            float minD = 10.0;
+            vec2 minPt = vec2(0.0);
+            for (int y = -1; y <= 1; y++) {
+                for (int x = -1; x <= 1; x++) {
+                    vec2 o = vec2(float(x), float(y));
+                    vec2 pt = o + vec2(hash(g+o), hash(g+o+100.0));
+                    pt += 0.25 * vec2(sin(t + o.x), cos(t + o.y));
+                    float d = length(f - pt);
+                    if (d < minD) { minD = d; minPt = pt; }
+                }
+            }
+            float edge = smoothstep(0.06, 0.0, minD - 0.4);
+            float br = 0.3 + 0.7 * hash(g + floor(minPt));
+            vec3 col = mix(uColC, vec3(0.02, 0.03, 0.05), smoothstep(0.0, 1.0, dist));
+            col = mix(col, uColB, br * 0.4);
+            col += uColA * edge * 0.7;
+            col += uColA * (sin(t*2.0 + minD*20.0)*0.5+0.5) * 0.06 * smoothstep(0.5, 0.0, minD);
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        // 9: RADIAL SUN
+        vec3 patternRadial(vec2 uv, float t) {
+            vec2 p = (uv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
+            float dist = length(p);
+            float angle = atan(p.y, p.x);
+            vec3 col = mix(uColC, vec3(0.02, 0.01, 0.0), smoothstep(0.0, 1.0, dist));
+            float rays = pow(sin(angle*20.0 + t*2.0)*0.5+0.5, 3.0);
+            col += uColB * rays * smoothstep(0.8, 0.0, dist) * 0.6;
+            col += uColB * (1.0 - smoothstep(0.0, 0.55, dist)) * 0.5;
+            float pulse = 0.8 + 0.2 * sin(t*4.0);
+            col += uColA * (1.0 - smoothstep(0.0, 0.18, dist)) * pulse;
+            col += uColA * (sin(dist*40.0 - t*2.0)*0.5+0.5) * 0.06;
+            col *= 1.0 - smoothstep(0.5, 1.1, dist);
+            return col;
+        }
+
+        void main() {
+            float t = uTime * uSpeed;
+            vec3 col;
+            if (uPattern < 0.5) col = patternGrid(vUV, t);
+            else if (uPattern < 1.5) col = patternStars(vUV, t);
+            else if (uPattern < 2.5) col = patternMatrix(vUV, t);
+            else if (uPattern < 3.5) col = patternCaustics(vUV, t);
+            else if (uPattern < 4.5) col = patternFire(vUV, t);
+            else if (uPattern < 5.5) col = patternKaleido(vUV, t);
+            else if (uPattern < 6.5) col = patternGlitch(vUV, t);
+            else if (uPattern < 7.5) col = patternAurora(vUV, t);
+            else if (uPattern < 8.5) col = patternCells(vUV, t);
+            else col = patternRadial(vUV, t);
+            gl_FragColor = vec4(col * uIntensity, 1.0);
+        }
+    `;
+
+    const compile = (type, src) => {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+            console.error('Shader:', gl.getShaderInfoLog(s));
+            return null;
+        }
+        return s;
+    };
+
+    const vs = compile(gl.VERTEX_SHADER, VS);
+    const fs = compile(gl.FRAGMENT_SHADER, FS);
+
+    if (vs && fs) {
+        prog = gl.createProgram();
+        gl.attachShader(prog, vs);
+        gl.attachShader(prog, fs);
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) prog = null;
+    }
+
+    if (prog) {
+        gl.useProgram(prog);
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+            -1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1
+        ]), gl.STATIC_DRAW);
+        const aPos = gl.getAttribLocation(prog, 'aPos');
+        gl.enableVertexAttribArray(aPos);
+        gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+        ['uTime','uResolution','uColA','uColB','uColC','uPattern','uSpeed','uIntensity'].forEach(n => {
+            U[n] = gl.getUniformLocation(prog, n);
+        });
+    }
+}
+
+function renderGL(t, m) {
+    if (!gl || !prog) return;
+    gl.viewport(0, 0, glCanvas.width, glCanvas.height);
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(prog);
+    gl.uniform1f(U.uTime, t);
+    gl.uniform2f(U.uResolution, glCanvas.width, glCanvas.height);
+    gl.uniform3fv(U.uColA, m.col[0]);
+    gl.uniform3fv(U.uColB, m.col[1]);
+    gl.uniform3fv(U.uColC, m.col[2]);
+    gl.uniform1f(U.uPattern, m.pat);
+    gl.uniform1f(U.uSpeed, m.spd || 1);
+    gl.uniform1f(U.uIntensity, m.int || 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 2D CANVAS
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+
+// ═══════════════════════════════════════════════════════════════
+// BALL
+// ═══════════════════════════════════════════════════════════════
+class Ball {
+    constructor(id, x, y, color) {
+        this.id = id;
+        this.x = x; this.y = y;
+        const a = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(a) * 550;
+        this.vy = Math.sin(a) * 550;
+        this.r = BALL_R;
+        this.color = color;
+        this.trail = [];
+        this.glow = 0;
+    }
+    cap() {
+        const s = Math.hypot(this.vx, this.vy);
+        if (s > MAX_SPEED) { this.vx = this.vx/s*MAX_SPEED; this.vy = this.vy/s*MAX_SPEED; }
+        else if (s > 0.01 && s < MIN_SPEED) { this.vx = this.vx/s*MIN_SPEED; this.vy = this.vy/s*MIN_SPEED; }
+    }
+    integrate(dt) { this.x += this.vx * dt; this.y += this.vy * dt; }
+    render(ctx) {
+        for (let i = 0; i < this.trail.length; i++) {
+            const t = this.trail[i];
+            const a = (i / this.trail.length) * 0.4;
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, this.r * (i / this.trail.length) * 0.7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        const gr = this.r * 2.2 + this.glow * 30;
+        const gg = ctx.createRadialGradient(this.x, this.y, this.r*0.5, this.x, this.y, gr);
+        gg.addColorStop(0, this.color + '99');
+        gg.addColorStop(0.4, this.color + '33');
+        gg.addColorStop(1, this.color + '00');
+        ctx.fillStyle = gg;
+        ctx.beginPath(); ctx.arc(this.x, this.y, gr, 0, Math.PI * 2); ctx.fill();
+
+        const bg = ctx.createRadialGradient(this.x - this.r*0.3, this.y - this.r*0.3, 0, this.x, this.y, this.r);
+        bg.addColorStop(0, '#fff');
+        bg.addColorStop(0.35, this.color);
+        bg.addColorStop(1, this.color);
+        ctx.fillStyle = bg;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2); ctx.fill();
+
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.r-0.5, 0, Math.PI * 2); ctx.stroke();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.75)';
+        ctx.beginPath();
+        ctx.ellipse(this.x - this.r*0.35, this.y - this.r*0.35, this.r*0.28, this.r*0.16, -0.6, 0, Math.PI*2);
+        ctx.fill();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PARTICLES
+// ═══════════════════════════════════════════════════════════════
+const particles = [];
+function spawnImpact(x, y, color, power) {
+    if (particles.length > MAX_P - 15) return;
+    const n = Math.floor(5 + power * 7);
+    for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = (80 + Math.random() * 180) * power;
+        particles.push({
+            x, y, vx: Math.cos(a)*s, vy: Math.sin(a)*s,
+            life: 0.4 + Math.random()*0.35, max: 0.75,
+            color, size: 3 + Math.random()*4
+        });
+    }
+    particles.push({ x, y, ring: true, life: 0.35, max: 0.35, color, maxR: 35 + power*55 });
+}
+function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life -= dt;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        if (!p.ring) {
+            p.x += p.vx * dt; p.y += p.vy * dt;
+            p.vx *= 0.94; p.vy *= 0.94;
+        }
+    }
+}
+function renderParticles(ctx) {
+    for (const p of particles) {
+        const a = p.life / p.max;
+        ctx.save();
+        ctx.globalAlpha = a;
+        if (p.ring) {
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = 3 * a;
+            ctx.beginPath(); ctx.arc(p.x, p.y, (1-a)*p.maxR, 0, Math.PI*2); ctx.stroke();
+        } else {
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.size*a, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COLLISION HELPERS
+// ═══════════════════════════════════════════════════════════════
+function clampRect(b, x, y, w, h) {
+    let hit = false;
+    if (b.x - b.r < x) { b.x = x + b.r; if (b.vx < 0) { b.vx = -b.vx; hit = true; } }
+    else if (b.x + b.r > x + w) { b.x = x + w - b.r; if (b.vx > 0) { b.vx = -b.vx; hit = true; } }
+    if (b.y - b.r < y) { b.y = y + b.r; if (b.vy < 0) { b.vy = -b.vy; hit = true; } }
+    else if (b.y + b.r > y + h) { b.y = y + h - b.r; if (b.vy > 0) { b.vy = -b.vy; hit = true; } }
+    if (hit) { b.glow = 1; spawnImpact(b.x, b.y, b.color, 0.5); }
+    return hit;
+}
+function clampCircle(b, cx, cy, r) {
+    const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy), l = r - b.r;
+    if (d > l && d > 0.01) {
+        const nx = dx/d, ny = dy/d;
+        b.x = cx + nx*l; b.y = cy + ny*l;
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot > 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1; spawnImpact(b.x, b.y, b.color, 0.5);
+    }
+}
+function clampRing(b, cx, cy, outer, inner) {
+    const dx = b.x - cx, dy = b.y - cy, d = Math.hypot(dx, dy);
+    const maxD = outer - b.r, minD = inner + b.r;
+    if (d > maxD) {
+        const nx = dx/d, ny = dy/d;
+        b.x = cx + nx*maxD; b.y = cy + ny*maxD;
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot > 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1;
+    } else if (d < minD && d > 0.01) {
+        const nx = dx/d, ny = dy/d;
+        b.x = cx + nx*minD; b.y = cy + ny*minD;
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot < 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1;
+    }
+}
+function pointInPoly(x, y, pts) {
+    let inside = false;
+    for (let i = 0, j = pts.length-1; i < pts.length; j = i++) {
+        const xi = pts[i].x, yi = pts[i].y, xj = pts[j].x, yj = pts[j].y;
+        if (((yi > y) !== (yj > y)) && (x < (xj-xi)*(y-yi)/(yj-yi) + xi)) inside = !inside;
+    }
+    return inside;
+}
+function clampPoly(b, pts) {
+    let cD = Infinity, cX = 0, cY = 0, nx = 0, ny = 0;
+    for (let i = 0; i < pts.length; i++) {
+        const a = pts[i], bb = pts[(i+1)%pts.length];
+        const dx = bb.x - a.x, dy = bb.y - a.y;
+        const l2 = dx*dx + dy*dy;
+        if (l2 === 0) continue;
+        const t = Math.max(0, Math.min(1, ((b.x-a.x)*dx + (b.y-a.y)*dy)/l2));
+        const px = a.x + t*dx, py = a.y + t*dy;
+        const ddx = b.x - px, ddy = b.y - py;
+        const d = Math.hypot(ddx, ddy);
+        if (d < cD) {
+            cD = d; cX = px; cY = py;
+            if (d > 0.01) { nx = ddx/d; ny = ddy/d; }
+        }
+    }
+    const inside = pointInPoly(b.x, b.y, pts);
+    if (inside && cD < b.r) {
+        b.x -= nx * (b.r - cD);
+        b.y -= ny * (b.r - cD);
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot > 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1;
+    } else if (!inside) {
+        b.x = cX - nx*b.r;
+        b.y = cY - ny*b.r;
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot < 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1;
+    }
+}
+function collideSeg(b, ax, ay, bx, by) {
+    const dx = bx-ax, dy = by-ay;
+    const l2 = dx*dx + dy*dy;
+    if (l2 === 0) return;
+    const t = Math.max(0, Math.min(1, ((b.x-ax)*dx + (b.y-ay)*dy)/l2));
+    const px = ax + t*dx, py = ay + t*dy;
+    const ddx = b.x - px, ddy = b.y - py;
+    const d = Math.hypot(ddx, ddy);
+    if (d < b.r && d > 0.01) {
+        const nx = ddx/d, ny = ddy/d;
+        b.x = px + nx*b.r;
+        b.y = py + ny*b.r;
+        const dot = b.vx*nx + b.vy*ny;
+        if (dot < 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+        b.glow = 1;
+        spawnImpact(b.x, b.y, b.color, 0.4);
+    }
+}
+function collideBalls(a, bb) {
+    const dx = bb.x - a.x, dy = bb.y - a.y;
+    const d = Math.hypot(dx, dy);
+    const min = a.r + bb.r;
+    if (d < min && d > 0.01) {
+        const nx = dx/d, ny = dy/d;
+        const ov = (min - d) / 2;
+        a.x -= nx*ov; a.y -= ny*ov;
+        bb.x += nx*ov; bb.y += ny*ov;
+        const rvx = bb.vx - a.vx, rvy = bb.vy - a.vy;
+        const vn = rvx*nx + rvy*ny;
+        if (vn < 0) {
+            a.vx += vn*nx; a.vy += vn*ny;
+            bb.vx -= vn*nx; bb.vy -= vn*ny;
+            a.cap(); bb.cap();
+            a.glow = 0.6; bb.glow = 0.6;
+            spawnImpact(a.x + a.r*nx, a.y + a.r*ny, a.color, 0.6);
+        }
+    }
+}
+function allCollisions() {
+    for (let i = 0; i < balls.length; i++)
+        for (let j = i+1; j < balls.length; j++)
+            collideBalls(balls[i], balls[j]);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POLYGON HELPERS
+// ═══════════════════════════════════════════════════════════════
+function makePoly(cx, cy, r, n, rot) {
+    const pts = [];
+    for (let i = 0; i < n; i++) {
+        const a = (i/n)*Math.PI*2 + rot;
+        pts.push({ x: cx + Math.cos(a)*r, y: cy + Math.sin(a)*r });
+    }
+    return pts;
+}
+function makeStar(cx, cy, r1, r2, n) {
+    const pts = [];
+    for (let i = 0; i < n*2; i++) {
+        const a = (i/(n*2))*Math.PI*2 - Math.PI/2;
+        const r = i%2 === 0 ? r1 : r2;
+        pts.push({ x: cx + Math.cos(a)*r, y: cy + Math.sin(a)*r });
+    }
+    return pts;
+}
+function makeCross(cx, cy, w, h, aw, ah) {
+    return [
+        {x:cx-w, y:cy-h-ah}, {x:cx+w, y:cy-h-ah},
+        {x:cx+w, y:cy-h}, {x:cx+w+aw, y:cy-h},
+        {x:cx+w+aw, y:cy+h}, {x:cx+w, y:cy+h},
+        {x:cx+w, y:cy+h+ah}, {x:cx-w, y:cy+h+ah},
+        {x:cx-w, y:cy+h}, {x:cx-w-aw, y:cy+h},
+        {x:cx-w-aw, y:cy-h}, {x:cx-w, y:cy-h}
+    ];
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 35 MAPS
+// ═══════════════════════════════════════════════════════════════
+const MAPS = [
+    // ─── 20 base maps ───
+    { name: 'CYBER GRID', pat: 0, col: [[0,0.9,1],[0,0.35,0.55],[0,0.05,0.1]], spd: 1.0, phys: 'rect', pad: 100, border: '#00f2fe' },
+    { name: 'COSMIC', pat: 1, col: [[0.7,0.5,1],[0.5,0.3,0.9],[0.05,0.02,0.1]], spd: 0.8, phys: 'circle', border: '#a855f7' },
+    { name: 'MATRIX', pat: 2, col: [[0.2,1,0.3],[0.05,0.5,0.1],[0,0.02,0]], spd: 1.2, phys: 'rect', pad: 100, border: '#22c55e' },
+    { name: 'FESTIVAL', pat: 7, col: [[1,0.5,0.8],[0.5,0.9,1],[0.02,0.01,0.05]], spd: 1.0, phys: 'rect', pad: 90, border: '#f472b6' },
+    { name: 'CRYSTAL', pat: 8, col: [[0.7,1,0.95],[0.3,0.8,0.9],[0.02,0.03,0.05]], spd: 0.9, phys: 'hex', border: '#7ce7ff' },
+    { name: 'VOLCANIC', pat: 4, col: [[1,0.5,0.2],[0.8,0.15,0],[0.05,0,0]], spd: 1.1, phys: 'circle', border: '#fb923c' },
+    { name: 'SOLAR', pat: 9, col: [[1,0.85,0.3],[1,0.6,0.1],[0.05,0.03,0]], spd: 1.3, phys: 'circle', border: '#fbbf24' },
+    { name: 'OCEAN', pat: 3, col: [[0.2,0.9,1],[0.1,0.5,0.8],[0,0.02,0.08]], spd: 0.9, phys: 'rect', pad: 100, border: '#06b6d4' },
+    { name: 'ANCIENT', pat: 4, col: [[1,0.7,0.3],[0.6,0.3,0.05],[0.08,0.04,0]], spd: 0.7, phys: 'diamond', border: '#d97706' },
+    { name: 'TROPICAL', pat: 7, col: [[0.3,1,0.7],[0.2,0.9,0.4],[0,0.03,0.02]], spd: 0.8, phys: 'rect', pad: 100, border: '#34d399' },
+    { name: 'GOTHIC', pat: 8, col: [[0.8,0.5,1],[0.4,0.2,0.6],[0.03,0.01,0.05]], spd: 0.8, phys: 'cross', border: '#c084fc' },
+    { name: 'ICE', pat: 8, col: [[0.8,0.95,1],[0.4,0.7,0.95],[0.02,0.05,0.1]], spd: 0.9, phys: 'triangle', border: '#38bdf8' },
+    { name: 'PSYCHO', pat: 5, col: [[1,0.3,0.9],[0.5,0.2,1],[0.05,0.01,0.1]], spd: 1.4, phys: 'circle', border: '#ec4899' },
+    { name: 'INDUSTRIAL', pat: 2, col: [[1,0.7,0.3],[0.7,0.4,0.1],[0.05,0.02,0]], spd: 1.0, phys: 'rect_walls', pad: 80, border: '#f59e0b' },
+    { name: 'BLACK HOLE', pat: 1, col: [[0.5,0.2,0.9],[0.3,0.1,0.6],[0.01,0,0.03]], spd: 1.5, phys: 'gravity', border: '#8b5cf6' },
+    { name: 'URBAN', pat: 0, col: [[0.5,0.7,1],[0.2,0.3,0.8],[0.02,0.02,0.05]], spd: 1.0, phys: 'rect', pad: 100, border: '#3b82f6' },
+    { name: 'DUNGEON', pat: 4, col: [[1,0.4,0.2],[0.5,0.1,0.05],[0.03,0.01,0]], spd: 0.7, phys: 'rect_walls', pad: 100, border: '#dc2626' },
+    { name: 'MULTIVERSE', pat: 5, col: [[0.3,1,0.9],[0.9,0.3,0.7],[0.02,0.01,0.05]], spd: 1.3, phys: 'ring', border: '#22d3ee' },
+    { name: 'CASINO', pat: 0, col: [[1,0.8,0.2],[1,0.4,0.1],[0.05,0.02,0]], spd: 1.2, phys: 'rect_bump', pad: 100, border: '#fbbf24' },
+    { name: 'ATOMIC', pat: 9, col: [[0.5,1,0.3],[0.3,0.9,0.1],[0.02,0.05,0]], spd: 1.4, phys: 'circle', border: '#84cc16' },
+
+    // ─── 15 new maps ───
+    { name: 'PAC-MAN', pat: 2, col: [[1,0.9,0.2],[0.9,0.5,0],[0.02,0.01,0]], spd: 1.2, phys: 'tunnels', pad: 100, border: '#fbbf24' },
+    { name: 'ORBIT', pat: 1, col: [[1,0.9,0.5],[1,0.5,0.2],[0.02,0.01,0.02]], spd: 0.8, phys: 'orbit', border: '#fbbf24' },
+    { name: 'MOVING WALL', pat: 0, col: [[0.6,0.5,1],[0.3,0.2,0.8],[0.02,0.01,0.05]], spd: 1.0, phys: 'moving_wall', pad: 80, border: '#818cf8' },
+    { name: 'GLITCH', pat: 6, col: [[1,0,1],[0,1,1],[0,0,0]], spd: 1.5, phys: 'glitch', pad: 100, border: '#e879f9' },
+    { name: 'DEEP SEA', pat: 3, col: [[0.3,1,0.7],[0.1,0.5,0.6],[0,0.02,0.05]], spd: 0.6, phys: 'slow_zone', pad: 100, border: '#10b981' },
+    { name: 'STADIUM', pat: 7, col: [[1,0.9,0.4],[0.8,0.3,0.2],[0.05,0.02,0]], spd: 1.0, phys: 'rect', pad: 80, border: '#f97316' },
+    { name: 'CRT', pat: 6, col: [[0.4,1,0.6],[0.2,0.9,0.3],[0.01,0.03,0.01]], spd: 1.2, phys: 'crt', pad: 100, border: '#22c55e' },
+    { name: 'SNOW', pat: 8, col: [[0.9,0.95,1],[0.7,0.8,0.95],[0.02,0.03,0.08]], spd: 0.7, phys: 'snow', pad: 100, border: '#e0e7ff' },
+    { name: 'ZERO-G', pat: 1, col: [[0.8,0.7,1],[0.4,0.5,1],[0.01,0.01,0.05]], spd: 0.6, phys: 'zero_g', pad: 100, border: '#a78bfa' },
+    { name: 'VORTEX', pat: 5, col: [[0.9,0.4,1],[0.5,0.2,0.9],[0.02,0,0.05]], spd: 1.4, phys: 'spiral', border: '#d946ef' },
+    { name: 'MULTI-GRAV', pat: 1, col: [[1,0.6,0.3],[0.8,0.3,0.6],[0.02,0.01,0.03]], spd: 1.0, phys: 'multi_gravity', pad: 100, border: '#f97316' },
+    { name: 'BOUNCE', pat: 7, col: [[1,0.5,0.7],[0.8,0.3,0.5],[0.03,0.01,0.02]], spd: 1.1, phys: 'bounce', pad: 100, border: '#f472b6' },
+    { name: 'SHRINKING', pat: 0, col: [[1,0.4,0.4],[0.8,0.1,0.1],[0.03,0,0]], spd: 1.2, phys: 'shrink', pad: 100, border: '#ef4444' },
+    { name: 'PORTAL MAZE', pat: 5, col: [[0.6,0.4,1],[0.9,0.3,1],[0.02,0,0.05]], spd: 1.3, phys: 'portal_maze', pad: 80, border: '#a855f7' },
+    { name: 'CLAUSTRO', pat: 4, col: [[1,0.6,0.3],[1,0.3,0.1],[0.05,0.01,0]], spd: 1.5, phys: 'rect', pad: 300, border: '#fb923c' }
+];
+
+// ═══════════════════════════════════════════════════════════════
+// STATE INITIALIZATION PER MAP
+// ═══════════════════════════════════════════════════════════════
+function initMapState(m) {
+    m._s = {};
+    const p = m.pad || 100;
+
+    switch (m.phys) {
+        case 'circle':
+            m._s.cx = W/2; m._s.cy = H/2; m._s.r = W/2 - p;
+            break;
+        case 'hex':
+            m._s.cx = W/2; m._s.cy = H/2;
+            m._s.pts = makePoly(W/2, H/2, W/2 - p, 6, -Math.PI/2);
+            break;
+        case 'diamond':
+            m._s.cx = W/2; m._s.cy = H/2;
+            const dr = W/2 - p;
+            m._s.pts = [
+                {x: W/2, y: H/2 - dr},
+                {x: W/2 + dr*0.7, y: H/2},
+                {x: W/2, y: H/2 + dr},
+                {x: W/2 - dr*0.7, y: H/2}
+            ];
+            break;
+        case 'triangle':
+            m._s.pts = makePoly(W/2, H/2, W/2 - p, 3, -Math.PI/2);
+            break;
+        case 'cross':
+            m._s.pts = makeCross(W/2, H/2, 180, 180, 130, 130);
+            break;
+        case 'ring':
+            m._s.cx = W/2; m._s.cy = H/2;
+            m._s.outer = W/2 - p; m._s.inner = 180;
+            break;
+        case 'tunnels':
+            m._s.tunnel = 140;
+            break;
+        case 'gravity':
+        case 'orbit':
+        case 'spiral':
+            m._s.cx = W/2; m._s.cy = H/2; m._s.r = W/2 - p;
+            m._s.angle = 0;
+            break;
+        case 'moving_wall':
+            m._s.angle = 0;
+            break;
+        case 'glitch':
+            m._s.nextTeleport = 2.0;
+            break;
+        case 'slow_zone':
+            m._s.zones = [
+                { x: W*0.3, y: H*0.3, r: 180 },
+                { x: W*0.7, y: H*0.7, r: 180 }
+            ];
+            break;
+        case 'crt':
+            m._s.scanY = 0;
+            break;
+        case 'snow':
+            m._s.gravity = 400;
+            break;
+        case 'multi_gravity':
+            m._s.wells = [
+                { x: W*0.25, y: H*0.25, r: 300 },
+                { x: W*0.75, y: H*0.75, r: 300 }
+            ];
+            break;
+        case 'bounce':
+            m._s.bumpers = [
+                { x: W*0.3, y: H*0.3, r: 80, pulse: 0 },
+                { x: W*0.7, y: H*0.3, r: 80, pulse: 0 },
+                { x: W*0.5, y: H*0.5, r: 100, pulse: 0 },
+                { x: W*0.3, y: H*0.7, r: 80, pulse: 0 },
+                { x: W*0.7, y: H*0.7, r: 80, pulse: 0 }
+            ];
+            break;
+        case 'shrink':
+            m._s.safeR = W/2 - p;
+            m._s.t = 0;
+            break;
+        case 'portal_maze':
+            m._s.portals = [
+                { a: { x: W*0.15, y: H*0.15 }, b: { x: W*0.85, y: H*0.85 }, cd: 0 },
+                { a: { x: W*0.85, y: H*0.15 }, b: { x: W*0.15, y: H*0.85 }, cd: 0 },
+                { a: { x: W*0.5, y: H*0.15 }, b: { x: W*0.5, y: H*0.85 }, cd: 0 }
+            ];
+            break;
+        case 'rect_walls':
+            m._s.walls = [
+                { x1: W*0.3, y1: H*0.3, x2: W*0.3, y2: H*0.5 },
+                { x1: W*0.7, y1: H*0.3, x2: W*0.7, y2: H*0.5 },
+                { x1: W*0.3, y1: H*0.6, x2: W*0.5, y2: H*0.6 }
+            ];
+            break;
+        case 'rect_bump':
+            m._s.bumpers = [
+                { x: W*0.25, y: H*0.25, r: 60, pulse: 0 },
+                { x: W*0.75, y: H*0.25, r: 60, pulse: 0 },
+                { x: W*0.5, y: H*0.5, r: 80, pulse: 0 },
+                { x: W*0.25, y: H*0.75, r: 60, pulse: 0 },
+                { x: W*0.75, y: H*0.75, r: 60, pulse: 0 }
+            ];
+            break;
+    }
+}
+
+function spawnBalls(m) {
+    balls = [];
+    const cx = W/2, cy = H/2;
+    let spawnR = 300;
+    if (m.phys === 'circle' || m.phys === 'hex' || m.phys === 'diamond' || m.phys === 'triangle' || m.phys === 'cross' || m.phys === 'ring' || m.phys === 'gravity' || m.phys === 'orbit' || m.phys === 'spiral') {
+        spawnR = m.phys === 'ring' ? (m._s.outer + m._s.inner) / 2 : (W/2 - 150) * 0.55;
+    }
+    if (m.phys === 'rect' || m.phys === 'rect_walls' || m.phys === 'rect_bump' || m.phys === 'glitch' || m.phys === 'slow_zone' || m.phys === 'crt' || m.phys === 'snow' || m.phys === 'multi_gravity' || m.phys === 'bounce' || m.phys === 'shrink' || m.phys === 'portal_maze' || m.phys === 'moving_wall' || m.phys === 'tunnels') {
+        spawnR = 280;
+    }
+    if (m.name === 'CLAUSTRO') spawnR = 100;
+
+    for (let i = 0; i < 4; i++) {
+        const a = (i / 4) * Math.PI * 2 - Math.PI/2;
+        balls.push(new Ball(i+1, cx + Math.cos(a)*spawnR, cy + Math.sin(a)*spawnR, BALL_COLORS[i]));
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHYSICS UPDATE
+// ═══════════════════════════════════════════════════════════════
+function physicsUpdate(m, dt) {
+    const p = m.pad || 100;
+    const s = m._s;
+
+    for (const b of balls) {
+        b.integrate(dt);
+
+        switch (m.phys) {
+            case 'rect': case 'rect_walls': case 'rect_bump': case 'shrink':
+                clampRect(b, p, p, W - p*2, H - p*2);
+                break;
+            case 'circle': case 'solar': case 'atomic':
+                clampCircle(b, s.cx, s.cy, s.r);
+                break;
+            case 'hex': case 'diamond': case 'triangle': case 'cross':
+                clampPoly(b, s.pts);
+                break;
+            case 'ring':
+                clampRing(b, s.cx, s.cy, s.outer, s.inner);
+                break;
+            case 'gravity':
+                {
+                    const dx = s.cx - b.x, dy = s.cy - b.y;
+                    const d = Math.hypot(dx, dy);
+                    if (d > 50) {
+                        const force = 400 / Math.max(d, 150);
+                        b.vx += (dx/d) * force * 300 * dt;
+                        b.vy += (dy/d) * force * 300 * dt;
+                    }
+                    clampCircle(b, s.cx, s.cy, s.r);
+                }
+                break;
+            case 'orbit':
+                {
+                    s.angle += dt * 0.3;
+                    const dx = s.cx - b.x, dy = s.cy - b.y;
+                    const d = Math.hypot(dx, dy);
+                    if (d > 60) {
+                        const pull = 1500 / Math.max(d, 100);
+                        b.vx += (dx/d) * pull * 300 * dt;
+                        b.vy += (dy/d) * pull * 300 * dt;
+                        const nx = -dy/d, ny = dx/d;
+                        b.vx += nx * 60 * dt;
+                        b.vy += ny * 60 * dt;
+                    }
+                    clampCircle(b, s.cx, s.cy, s.r);
+                }
+                break;
+            case 'spiral':
+                {
+                    const dx = s.cx - b.x, dy = s.cy - b.y;
+                    const d = Math.hypot(dx, dy);
+                    if (d > 60) {
+                        b.vx += (dx/d) * 220 * dt;
+                        b.vy += (dy/d) * 220 * dt;
+                        const nx = -dy/d, ny = dx/d;
+                        b.vx += nx * 120 * dt;
+                        b.vy += ny * 120 * dt;
+                    }
+                    clampCircle(b, s.cx, s.cy, s.r);
+                }
+                break;
+            case 'tunnels':
+                {
+                    const tun = s.tunnel;
+                    const inY = b.y > H/2 - tun && b.y < H/2 + tun;
+                    const inX = b.x > W/2 - tun && b.x < W/2 + tun;
+                    if (b.x - b.r < p) {
+                        if (inY) b.x = W - p + b.r - 2;
+                        else { b.x = p + b.r; if (b.vx < 0) b.vx = -b.vx; }
+                    } else if (b.x + b.r > W - p) {
+                        if (inY) b.x = p - b.r + 2;
+                        else { b.x = W - p - b.r; if (b.vx > 0) b.vx = -b.vx; }
+                    }
+                    if (b.y - b.r < p) {
+                        if (inX) b.y = H - p + b.r - 2;
+                        else { b.y = p + b.r; if (b.vy < 0) b.vy = -b.vy; }
+                    } else if (b.y + b.r > H - p) {
+                        if (inX) b.y = p - b.r + 2;
+                        else { b.y = H - p - b.r; if (b.vy > 0) b.vy = -b.vy; }
+                    }
+                }
+                break;
+            case 'moving_wall':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    s.angle += dt;
+                    for (let i = 0; i < 2; i++) {
+                        const wAngle = s.angle * (i === 0 ? 0.8 : -0.6);
+                        const bx = W/2 + Math.cos(wAngle) * 280;
+                        const by = H/2 + Math.sin(wAngle) * 400;
+                        const wl = 280;
+                        const wn = Math.sin(wAngle);
+                        const wnx = -Math.sin(wAngle);
+                        const wny = Math.cos(wAngle);
+                        collideSeg(b, bx - wnx*wl/2, by - wny*wl/2, bx + wnx*wl/2, by + wny*wl/2);
+                    }
+                }
+                break;
+            case 'glitch':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    if (Math.random() < 0.005) {
+                        b.x = p + b.r + Math.random() * (W - p*2 - b.r*2);
+                        b.y = p + b.r + Math.random() * (H - p*2 - b.r*2);
+                        b.glow = 1;
+                        spawnImpact(b.x, b.y, '#ff00ff', 1);
+                    }
+                }
+                break;
+            case 'slow_zone':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    for (const z of s.zones) {
+                        const d = Math.hypot(b.x - z.x, b.y - z.y);
+                        if (d < z.r) {
+                            b.vx *= 0.94;
+                            b.vy *= 0.94;
+                        }
+                    }
+                }
+                break;
+            case 'crt':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    s.scanY += dt * 400;
+                    if (s.scanY > H - p) s.scanY = p;
+                    const scanH = 40;
+                    if (b.y > s.scanY - scanH && b.y < s.scanY + scanH) {
+                        b.vy += 800 * dt;
+                        b.glow = 1;
+                    }
+                }
+                break;
+            case 'snow':
+                {
+                    b.vy += s.gravity * dt;
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                }
+                break;
+            case 'zero_g':
+                clampRect(b, p, p, W - p*2, H - p*2);
+                break;
+            case 'multi_gravity':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    for (const well of s.wells) {
+                        const dx = well.x - b.x, dy = well.y - b.y;
+                        const d = Math.hypot(dx, dy);
+                        if (d < well.r && d > 30) {
+                            b.vx += (dx/d) * 200 * dt;
+                            b.vy += (dy/d) * 200 * dt;
+                        }
+                    }
+                }
+                break;
+            case 'bounce': case 'rect_bump':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    for (const bmp of s.bumpers) {
+                        if (bmp.pulse > 0) bmp.pulse = Math.max(0, bmp.pulse - dt * 3);
+                        const dx = b.x - bmp.x, dy = b.y - bmp.y;
+                        const d = Math.hypot(dx, dy);
+                        if (d < b.r + bmp.r && d > 0.01) {
+                            const nx = dx/d, ny = dy/d;
+                            b.x = bmp.x + nx * (b.r + bmp.r);
+                            b.y = bmp.y + ny * (b.r + bmp.r);
+                            const dot = b.vx*nx + b.vy*ny;
+                            if (dot < 0) { b.vx -= 2.1 * dot * nx; b.vy -= 2.1 * dot * ny; }
+                            bmp.pulse = 1;
+                            b.glow = 1;
+                            spawnImpact(bmp.x + nx*bmp.r, bmp.y + ny*bmp.r, bmp.color || '#ff8a3d', 0.9);
+                        }
+                    }
+                }
+                break;
+            case 'portal_maze':
+                {
+                    clampRect(b, p, p, W - p*2, H - p*2);
+                    for (const pt of s.portals) {
+                        if (pt.cd > 0) { pt.cd -= dt; continue; }
+                        const da = Math.hypot(b.x - pt.a.x, b.y - pt.a.y);
+                        const db = Math.hypot(b.x - pt.b.x, b.y - pt.b.y);
+                        if (da < b.r + 35) {
+                            b.x = pt.b.x; b.y = pt.b.y;
+                            pt.cd = 0.5;
+                            b.glow = 1;
+                            spawnImpact(pt.a.x, pt.a.y, '#a855f7', 0.8);
+                            break;
+                        } else if (db < b.r + 35) {
+                            b.x = pt.a.x; b.y = pt.a.y;
+                            pt.cd = 0.5;
+                            b.glow = 1;
+                            spawnImpact(pt.b.x, pt.b.y, '#a855f7', 0.8);
+                            break;
+                        }
+                    }
+                }
+                break;
+        }
+
+        // Additional walls for certain maps
+        if (m.phys === 'rect_walls' && s.walls) {
+            for (const w of s.walls) collideSeg(b, w.x1, w.y1, w.x2, w.y2);
+        }
+
+        b.cap();
+    }
+
+    // Shrink map boundary
+    if (m.phys === 'shrink') {
+        s.t += dt;
+        if (s.t > 6) { s.safeR = W/2 - p; s.t = 0; }
+        s.safeR = Math.max(200, s.safeR - 20 * dt);
+        for (const b of balls) {
+            const dx = b.x - W/2, dy = b.y - H/2;
+            const d = Math.hypot(dx, dy);
+            if (d > s.safeR - b.r) {
+                const nx = dx/d, ny = dy/d;
+                b.x = W/2 + nx * (s.safeR - b.r);
+                b.y = H/2 + ny * (s.safeR - b.r);
+                const dot = b.vx*nx + b.vy*ny;
+                if (dot > 0) { b.vx -= 2*dot*nx; b.vy -= 2*dot*ny; }
+                b.glow = 1;
+            }
+        }
+    }
+
+    allCollisions();
+
+    // Update visual state
+    for (const b of balls) {
+        if (b.glow > 0) b.glow = Math.max(0, b.glow - dt * 3);
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > TRAIL) b.trail.shift();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+function drawBorder(m, ctx) {
+    const p = m.pad || 100;
+    const s = m._s;
+    ctx.save();
+    ctx.strokeStyle = m.border;
+    ctx.lineWidth = 6;
+    ctx.shadowColor = m.border;
+    ctx.shadowBlur = 25;
+
+    switch (m.phys) {
+        case 'rect': case 'rect_walls': case 'rect_bump': case 'snow': case 'slow_zone': case 'crt': case 'glitch': case 'moving_wall':
+            ctx.strokeRect(p, p, W - p*2, H - p*2);
+            break;
+        case 'circle': case 'gravity':
+            ctx.beginPath(); ctx.arc(s.cx, s.cy, s.r, 0, Math.PI*2); ctx.stroke();
+            break;
+        case 'hex': case 'diamond': case 'triangle': case 'cross':
+            ctx.beginPath();
+            ctx.moveTo(s.pts[0].x, s.pts[0].y);
+            for (let i = 1; i < s.pts.length; i++) ctx.lineTo(s.pts[i].x, s.pts[i].y);
+            ctx.closePath(); ctx.stroke();
+            break;
+        case 'ring':
+            ctx.beginPath(); ctx.arc(s.cx, s.cy, s.outer, 0, Math.PI*2); ctx.stroke();
+            ctx.beginPath(); ctx.arc(s.cx, s.cy, s.inner, 0, Math.PI*2); ctx.stroke();
+            break;
+        case 'tunnels':
+            const tun = s.tunnel;
+            ctx.beginPath();
+            ctx.moveTo(p, p); ctx.lineTo(W/2 - tun, p);
+            ctx.moveTo(W/2 + tun, p); ctx.lineTo(W - p, p);
+            ctx.moveTo(p, H - p); ctx.lineTo(W/2 - tun, H - p);
+            ctx.moveTo(W/2 + tun, H - p); ctx.lineTo(W - p, H - p);
+            ctx.moveTo(p, p); ctx.lineTo(p, H/2 - tun);
+            ctx.moveTo(p, H/2 + tun); ctx.lineTo(p, H - p);
+            ctx.moveTo(W - p, p); ctx.lineTo(W - p, H/2 - tun);
+            ctx.moveTo(W - p, H/2 + tun); ctx.lineTo(W - p, H - p);
+            ctx.stroke();
+            break;
+        case 'orbit': case 'spiral': case 'multi_gravity': case 'bounce': case 'portal_maze': case 'shrink': case 'zero_g':
+            ctx.strokeRect(p, p, W - p*2, H - p*2);
+            break;
+    }
+    ctx.shadowBlur = 0;
+    ctx.restore();
+
+    // Map-specific extras
+    if (m.phys === 'orbit' || m.phys === 'spiral') {
+        ctx.save();
+        const g = ctx.createRadialGradient(s.cx, s.cy, 0, s.cx, s.cy, 150);
+        g.addColorStop(0, m.border + 'cc');
+        g.addColorStop(1, m.border + '00');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(s.cx, s.cy, 150, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+    if (m.phys === 'multi_gravity') {
+        ctx.save();
+        for (const w of s.wells) {
+            const g = ctx.createRadialGradient(w.x, w.y, 0, w.x, w.y, w.r * 0.5);
+            g.addColorStop(0, m.border + '66');
+            g.addColorStop(1, m.border + '00');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(w.x, w.y, w.r * 0.5, 0, Math.PI*2); ctx.fill();
+        }
+        ctx.restore();
+    }
+    if (m.phys === 'slow_zone') {
+        ctx.save();
+        for (const z of s.zones) {
+            ctx.fillStyle = m.border + '33';
+            ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = m.border;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([8, 8]);
+            ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI*2); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+        ctx.restore();
+    }
+    if (m.phys === 'crt') {
+        ctx.save();
+        const grad = ctx.createLinearGradient(0, s.scanY - 40, 0, s.scanY + 40);
+        grad.addColorStop(0, m.border + '00');
+        grad.addColorStop(0.5, m.border + '88');
+        grad.addColorStop(1, m.border + '00');
+        ctx.fillStyle = grad;
+        ctx.fillRect(p, s.scanY - 40, W - p*2, 80);
+        ctx.restore();
+    }
+    if (m.phys === 'shrink') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,42,133,0.08)';
+        ctx.beginPath();
+        ctx.arc(W/2, H/2, s.safeR, 0, Math.PI*2);
+        ctx.rect(W, 0, -W, H);
+        ctx.fill('evenodd');
+        ctx.strokeStyle = m.border;
+        ctx.lineWidth = 4;
+        ctx.shadowColor = m.border;
+        ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(W/2, H/2, s.safeR, 0, Math.PI*2); ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+    }
+    if (m.phys === 'portal_maze') {
+        ctx.save();
+        for (const pt of s.portals) {
+            for (const pos of [pt.a, pt.b]) {
+                const t = performance.now() / 1000;
+                const r = 30 + Math.sin(t * 3) * 5;
+                const g = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 1.8);
+                g.addColorStop(0, m.border);
+                g.addColorStop(1, m.border + '00');
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(pos.x, pos.y, r * 1.8, 0, Math.PI*2); ctx.fill();
+            }
+        }
+        ctx.restore();
+    }
+    if (m.phys === 'bounce' || m.phys === 'rect_bump') {
+        ctx.save();
+        for (const bmp of s.bumpers) {
+            const scale = 1 + (bmp.pulse || 0) * 0.15;
+            const r = bmp.r * scale;
+            const g = ctx.createRadialGradient(bmp.x, bmp.y, 0, bmp.x, bmp.y, r);
+            g.addColorStop(0, bmp.pulse > 0.3 ? '#ffffff' : m.border);
+            g.addColorStop(0.6, m.border);
+            g.addColorStop(1, m.border + '44');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(bmp.x, bmp.y, r, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(bmp.x, bmp.y, r, 0, Math.PI*2); ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// GAME LOOP
+// ═══════════════════════════════════════════════════════════════
+let currentMap = 0;
+let lastTime = performance.now();
+let fpsFrames = 0, fpsAt = 0;
+let fadeAlpha = 0;
+let transitioning = false;
+
+function switchMap(i) {
+    if (transitioning) return;
+    transitioning = true;
+    fadeAlpha = 1;
+    setTimeout(() => {
+        currentMap = i;
+        const m = MAPS[i];
+        initMapState(m);
+        spawnBalls(m);
+        particles.length = 0;
+        document.getElementById('mapName').textContent = m.name;
+        document.querySelectorAll('.map-pill').forEach((p, idx) => {
+            p.classList.toggle('active', idx === i);
+        });
+        const pill = document.querySelectorAll('.map-pill')[i];
+        if (pill) pill.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }, 180);
+}
+
+function loop(now) {
+    const rawDt = (now - lastTime) / 1000;
+    lastTime = now;
+    const dt = Math.min(0.05, rawDt);
+
+    if (transitioning) {
+        fadeAlpha -= dt * 3;
+        if (fadeAlpha <= 0) { fadeAlpha = 0; transitioning = false; }
+    }
+
+    const m = MAPS[currentMap];
+
+    if (!transitioning || fadeAlpha < 0.5) {
+        const subDt = dt / SUB_STEPS;
+        for (let k = 0; k < SUB_STEPS; k++) {
+            physicsUpdate(m, subDt);
+        }
+    }
+    updateParticles(dt);
+
+    renderGL(now / 1000, m);
+    ctx.clearRect(0, 0, W, H);
+    drawBorder(m, ctx);
+    for (const b of balls) b.render(ctx);
+    renderParticles(ctx);
+
+    if (fadeAlpha > 0) {
+        ctx.fillStyle = `rgba(0,0,0,${fadeAlpha})`;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    fpsFrames++;
+    if (now - fpsAt >= 1000) {
+        document.getElementById('fps').textContent = fpsFrames + ' FPS';
+        fpsFrames = 0;
+        fpsAt = now;
+    }
+    document.getElementById('ballCount').textContent = balls.length + ' boules';
+
+    requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+const mapBar = document.getElementById('mapBar');
+MAPS.forEach((m, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'map-pill' + (i === 0 ? ' active' : '');
+    btn.innerHTML = `<span class="dot" style="background:${m.border};color:${m.border}"></span>${m.name}`;
+    btn.addEventListener('click', () => switchMap(i));
+    mapBar.appendChild(btn);
+});
+
+// Init
+initMapState(MAPS[0]);
+spawnBalls(MAPS[0]);
+document.getElementById('mapName').textContent = MAPS[0].name;
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

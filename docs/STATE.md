@@ -1,17 +1,21 @@
 # Project State
 
 ## Current Phase
-- Branche par défaut : `v2`; développement de l'interface Arena Brawl et de l'export vidéo.
+- Branche active : `gem_check`
+- Phase en cours : Phase 2 — Architecture Game Mode (après validation du plan d'implémentation et clôture de la Phase 1)
 
 ## Done
-- Branche par défaut et branche de travail : `v2`.
-- Interface Arena Brawl : retrait du sélecteur de cartes de combat (arène Néon unique).
-- Armes : retrait des deux lames et de leurs assets ; ajout de la hache, de l'arc, du marteau, du sceptre, de la lance et de l'épée avec sélection/spawn depuis le panneau droit et rendu porté sur les boules.
-- Enregistrement du canvas avec conversion de WebM vers MP4 via FFmpeg WASM.
+- Audit complet du codebase, identification des 7 points de vigilance (B1 à B7)
+- Sauvegarde de tous les prototypes originaux dans `idees/originals/`
+- Correction déterminisme B5 (`spawnCloneFor` avec `world.prng`) et B6 (`Arena` avec `prng`)
+- Documentation créée : `docs/FEATURE_STATUS.md` et `docs/MAPS_CATALOG.md`
+- Approbation du plan d'évolution en 7 phases
 
 ## In Progress / Next
-- Vérifier dans un navigateur le spawn des six armes, leurs animations de frappe et l'export MP4.
-- Vérifier la conversion FFmpeg WASM sur le déploiement cible (GitHub Pages/Vercel).
+- Phase 2 : Créer le gestionnaire modulaire `js/arena/game-modes.js`
+- Extraire "Last Standing" en mode dédié
+- Ajouter le sélecteur "Mode de jeu" dans `index.html` et `arena-battle-bindings.js`
 
 ## Open Issues
-- La syntaxe JavaScript et les comportements de base ont été testés directement. Les performances et le ressenti en navigateur restent à confirmer.
+- `PROJECT.md` contient encore des références à l'ancienne architecture modulaire à nettoyer en Phase 7.
+

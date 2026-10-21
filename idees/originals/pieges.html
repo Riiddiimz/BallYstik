@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BallYstik — Banque d'obstacles</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #07090f;
+  --panel: #0d1119;
+  --panel-hover: #131a26;
+  --border: #1a2232;
+  --border-hover: #2a3a52;
+  --text: #d8e2f0;
+  --text-dim: #6b7a92;
+  --accent: #7ce7ff;
+}
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  background: var(--bg);
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--text);
+  font-size: 13px;
+  -webkit-font-smoothing: antialiased;
+}
+
+#app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 100vh;
+}
+
+/* ═══ SIDEBAR ═══ */
+#sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#sidebarHeader {
+  padding: 16px 16px 14px;
+  border-bottom: 1px solid var(--border);
+}
+#sidebarHeader h1 {
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  background: linear-gradient(90deg, #7ce7ff, #ff8a3d);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 2px;
+}
+#sidebarHeader .sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+#searchBox {
+  padding: 12px 12px 8px;
+}
+#searchInput {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 12px;
+  outline: none;
+  transition: border-color .15s;
+}
+#searchInput:focus {
+  border-color: var(--accent);
+}
+#searchInput::placeholder {
+  color: var(--text-dim);
+}
+#nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 8px 16px;
+}
+#nav::-webkit-scrollbar { width: 4px; }
+#nav::-webkit-scrollbar-track { background: transparent; }
+#nav::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+#nav::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 600;
+  transition: all .12s;
+  margin-bottom: 2px;
+  user-select: none;
+}
+.nav-item:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+.nav-item.active {
+  background: var(--panel-hover);
+  color: #fff;
+}
+.nav-item .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px currentColor;
+}
+.nav-item .label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nav-item .count {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 22px;
+  text-align: center;
+}
+.nav-item.active .count {
+  color: #fff;
+  background: #ffffff15;
+}
+.nav-item.all .dot {
+  background: linear-gradient(135deg, #7ce7ff, #ff8a3d, #c084fc);
+}
+
+/* ═══ MAIN ═══ */
+#main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+#mainHeader {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#mainHeader h2 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -.02em;
+}
+#mainHeader .count {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+}
+#content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+#content::-webkit-scrollbar { width: 8px; }
+#content::-webkit-scrollbar-track { background: transparent; }
+#content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+#content::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
+
+/* ═══ SECTIONS ═══ */
+.section {
+  margin-bottom: 32px;
+}
+.section:last-child {
+  margin-bottom: 0;
+}
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+.sectionHeader .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+.sectionHeader h3 {
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.sectionHeader .badge {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  margin-left: auto;
+}
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+/* ═══ TILE ═══ */
+.tile {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 9px;
+  overflow: hidden;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: transform .15s, border-color .15s, box-shadow .15s;
+  border-left: 3px solid;
+}
+.tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-hover);
+  box-shadow: 0 10px 28px -10px rgba(0,0,0,.7);
+}
+.tile:hover .tilePreview {
+  transform: scale(1.05);
+}
+.tilePreview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transition: transform .3s;
+}
+.tileNum {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  font-size: 9px;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+  font-weight: 800;
+  z-index: 2;
+  opacity: .6;
+}
+.tileFooter {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 22px 8px 8px;
+  background: linear-gradient(transparent, #000000e6);
+  z-index: 2;
+  pointer-events: none;
+}
+.tileName {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══ MODAL FULLSCREEN ═══ */
+#modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000000f0;
+  backdrop-filter: blur(8px);
+  display: none;
+  flex-direction: column;
+}
+#modal.active { display: flex; }
+#modalBody {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+#modalCanvas {
+  max-width: 100%;
+  max-height: 100%;
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 0 80px -20px rgba(124,231,255,.15);
+}
+#modalInfo {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  background: var(--panel);
+}
+#modalInfo h3 {
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 4px;
+}
+#modalInfo .cat {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+#modalInfo .desc {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+#modalClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 102;
+  background: #ffffff10;
+  border: 1px solid var(--border);
+  color: #fff;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+}
+#modalClose:hover {
+  background: #ffffff20;
+  border-color: var(--border-hover);
+}
+.navBtn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  background: #ffffff10;
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .15s;
+  z-index: 102;
+}
+.navBtn:hover {
+  background: #ffffff20;
+  border-color: var(--border-hover);
+}
+#modalPrev { left: 20px; }
+#modalNext { right: 20px; }
+#modalCounter {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: ui-monospace, monospace;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+/* ═══ EMPTY STATE ═══ */
+.empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <aside id="sidebar">
+    <div id="sidebarHeader">
+      <h1>BallYstik</h1>
+      <span class="sub">Banque d'obstacles</span>
+    </div>
+    <div id="searchBox">
+      <input type="search" id="searchInput" placeholder="Rechercher un objet…">
+    </div>
+    <nav id="nav"></nav>
+  </aside>
+  <main id="main">
+    <header id="mainHeader">
+      <h2 id="mainTitle">Tout</h2>
+      <span class="count" id="mainCount"></span>
+    </header>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div id="modal">
+  <button id="modalClose">✕</button>
+  <div id="modalBody">
+    <button class="navBtn" id="modalPrev">‹</button>
+    <canvas id="modalCanvas"></canvas>
+    <button class="navBtn" id="modalNext">›</button>
+  </div>
+  <div id="modalInfo">
+    <div>
+      <h3 id="modalTitle"></h3>
+      <div class="cat" id="modalCat"></div>
+      <div class="desc" id="modalDesc"></div>
+    </div>
+    <span id="modalCounter"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// DRAW HELPERS
+// ═══════════════════════════════════════════════════════════════
+function glow(ctx, x, y, r, color) {
+  const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+  g.addColorStop(0, color + 'aa');
+  g.addColorStop(0.5, color + '40');
+  g.addColorStop(1, color + '00');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+}
+function ball(ctx, x, y, r, color) {
+  color = color || '#7ce7ff';
+  glow(ctx, x, y, r * 2.2, color);
+  const g = ctx.createRadialGradient(x - r * 0.3, y - r * 0.3, 0, x, y, r);
+  g.addColorStop(0, '#fff'); g.addColorStop(0.4, color); g.addColorStop(1, color);
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#fff8'; ctx.lineWidth = 1; ctx.stroke();
+}
+function rect(ctx, x, y, w, h, color, r) {
+  r = r || 2;
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.strokeStyle = '#ffffff33'; ctx.lineWidth = 1; ctx.stroke();
+}
+function circle(ctx, x, y, r, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+}
+function poly(ctx, cx, cy, n, r, rot, color) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const a = rot + (i / n) * Math.PI * 2;
+    const px = cx + Math.cos(a) * r;
+    const py = cy + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#ffffff44'; ctx.lineWidth = 1; ctx.stroke();
+}
+function arrow(ctx, x1, y1, x2, y2, color) {
+  ctx.strokeStyle = color; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  const a = Math.atan2(y2 - y1, x2 - x1);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(x2, y2);
+  ctx.lineTo(x2 - Math.cos(a - 0.5) * 6, y2 - Math.sin(a - 0.5) * 6);
+  ctx.lineTo(x2 - Math.cos(a + 0.5) * 6, y2 - Math.sin(a + 0.5) * 6);
+  ctx.closePath(); ctx.fill();
+}
+function spark(ctx, x, y, r, color) {
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 4; i++) {
+    const a = i * Math.PI / 2;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); ctx.stroke();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CATEGORIES
+// ═══════════════════════════════════════════════════════════════
+const CATS = {
+  walls:       { name: 'Murs & Barrières', color: '#6b829c' },
+  bumpers:     { name: 'Bumpers', color: '#ffd38a' },
+  traps:       { name: 'Pièges', color: '#ff4466' },
+  hazards:     { name: 'Dangers périodiques', color: '#ff8a3d' },
+  moving:      { name: 'Obstacles en mouvement', color: '#c084fc' },
+  force:       { name: 'Champs de force', color: '#7ce7ff' },
+  teleport:    { name: 'Téléporteurs', color: '#c69bff' },
+  zone:        { name: "Zones d'effet", color: '#34d399' },
+  spawner:     { name: 'Générateurs', color: '#fbbf24' },
+  interactive: { name: 'Interactifs', color: '#f472b6' },
+  visual:      { name: 'Effets visuels', color: '#94a3b8' }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════════════
+const ITEMS = [];
+function add(cat, name, desc, draw) { ITEMS.push({ cat, name, desc, draw }); }
+
+// ─── MURS & BARRIÈRES (12) ───────────────────────────────────
+add('walls', 'Mur solide', 'Bloc qui bloque les boules.', (ctx, W, H, t) => {
+  rect(ctx, W*0.3, H*0.35, W*0.4, H*0.3, '#6b829c', 4);
+  const p = (t*0.5) % 1;
+  const x = p < 0.5 ? W*0.1 + p*2*W*0.15 : W*0.4 - (p-0.5)*2*W*0.15;
+  ball(ctx, W - x, H*0.5, W*0.05);
+});
+add('walls', 'Mur arrondi', 'Coins adoucis.', (ctx, W, H, t) => {
+  rect(ctx, W*0.25, H*0.35, W*0.5, H*0.3, '#6b829c', W*0.15);
+  ball(ctx, W*0.5, H*0.2 + Math.sin(t*2)*H*0.05, W*0.05);
+});
+add('walls', 'Pilier hexagonal', 'Colonne à 6 pans.', (ctx, W, H, t) => {
+  poly(ctx, W*0.5, H*0.5, 6, W*0.22, Math.PI/6, '#6b829c');
+  poly(ctx, W*0.5, H*0.5, 6, W*0.16, Math.PI/6, '#a9c5dc');
+});
+add('walls', 'Coin triangulaire', 'Arête en angle.', (ctx, W, H, t) => {
+  poly(ctx, W*0.5, H*0.6, 3, W*0.28, -Math.PI/2, '#6b829c');
+  ball(ctx, W*0.2 + Math.sin(t*1.5)*W*0.1, H*0.3, W*0.05);
+});
+add('walls', 'Mur en L', 'Deux segments à angle droit.', (ctx, W, H, t) => {
+  rect(ctx, W*0.2, H*0.3, W*0.15, H*0.4, '#6b829c');
+  rect(ctx, W*0.2, H*0.55, W*0.4, H*0.15, '#6b829c');
+});
+add('walls', 'Mur en croix', 'Un + au centre.', (ctx, W, H, t) => {
+  rect(ctx, W*0.42, H*0.25, W*0.16, H*0.5, '#6b829c');
+  rect(ctx, W*0.2, H*0.42, W*0.6, H*0.16, '#6b829c');
+});
+add('walls', 'Segment court', 'Petit mur pour dévier.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.45, W*0.5, H*0.08, '#6b829c');
+  ball(ctx, W*0.4, H*0.2 + Math.sin(t*2.5)*H*0.06, W*0.05);
+});
+add('walls', 'Barrière courbe', 'Arc doux de renvoi.', (ctx, W, H, t) => {
+  ctx.strokeStyle = '#6b829c'; ctx.lineWidth = W*0.08;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.7, W*0.35, -Math.PI, 0); ctx.stroke();
+});
+add('walls', 'Anneau de mur', 'Cercle creux.', (ctx, W, H, t) => {
+  ctx.strokeStyle = '#6b829c'; ctx.lineWidth = W*0.09;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.stroke();
+  ball(ctx, W*0.5, H*0.5, W*0.05);
+});
+add('walls', 'Mur rebond', 'Amplifie la vitesse.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#a78bfa');
+  rect(ctx, W*0.4, H*0.3, W*0.2, H*0.4, '#a78bfa', 4);
+});
+add('walls', 'Mur collant', 'Ralentit au contact.', (ctx, W, H, t) => {
+  rect(ctx, W*0.35, H*0.35, W*0.3, H*0.3, '#34d399', 4);
+  for (let i = 0; i < 4; i++) circle(ctx, W*0.4 + (i/3)*W*0.2, H*0.4 + Math.sin(t*3 + i)*3, 2, '#a7f3d0');
+});
+add('walls', 'Mur glissant', 'Aucune friction.', (ctx, W, H, t) => {
+  rect(ctx, W*0.35, H*0.35, W*0.3, H*0.3, '#93c5fd', 4);
+  ball(ctx, W*0.5, H*0.15 + ((t*0.5)%1)*H*0.6, W*0.05);
+});
+
+// ─── BUMPERS (10) ───────────────────────────────────────────
+add('bumpers', 'Bumper classique', 'Renvoi moyen.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.35, '#ffd38a');
+  circle(ctx, W*0.5, H*0.5, W*0.15, '#ffd38a');
+  circle(ctx, W*0.5, H*0.5, W*0.1, '#fff2bd');
+});
+add('bumpers', 'Bumper carré', 'Rebond en angle droit.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#ffd38a');
+  rect(ctx, W*0.35, H*0.4, W*0.3, H*0.2, '#ffd38a', 6);
+});
+add('bumpers', 'Bumper triangulaire', 'Pointes vives.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#ffd38a');
+  poly(ctx, W*0.5, H*0.5, 3, W*0.22, t, '#ffd38a');
+});
+add('bumpers', 'Bumper pulsant', 'Grossit et rétrécit.', (ctx, W, H, t) => {
+  const p = 0.7 + Math.sin(t*2)*0.3;
+  glow(ctx, W*0.5, H*0.5, W*0.35*p, '#ffd38a');
+  circle(ctx, W*0.5, H*0.5, W*0.15*p, '#ffd38a');
+  circle(ctx, W*0.5, H*0.5, W*0.08*p, '#fff2bd');
+});
+add('bumpers', 'Mega bumper', 'Force énorme.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.5, '#ff8a3d');
+  circle(ctx, W*0.5, H*0.5, W*0.18, '#ff8a3d');
+  circle(ctx, W*0.5, H*0.5, W*0.12, '#ffb87d');
+  circle(ctx, W*0.5, H*0.5, W*0.05, '#fff');
+});
+add('bumpers', 'Bumper rotatif', 'Tourne en continu.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t*3);
+  rect(ctx, -W*0.2, -W*0.05, W*0.4, W*0.1, '#ffd38a', 4);
+  ctx.restore();
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#ffd38a');
+});
+add('bumpers', 'Cluster', 'Plusieurs qui rebondissent.', (ctx, W, H, t) => {
+  [[0.5,0.35],[0.35,0.55],[0.65,0.55],[0.5,0.7]].forEach((p, i) => {
+    const j = Math.sin(t*3 + i)*2;
+    glow(ctx, W*p[0], H*p[1]+j, W*0.12, '#ffd38a');
+    circle(ctx, W*p[0], H*p[1]+j, W*0.06, '#ffd38a');
+  });
+});
+add('bumpers', 'Bumper électrique', 'Zap au contact.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.35, '#fbbf24');
+  circle(ctx, W*0.5, H*0.5, W*0.15, '#fbbf24');
+  for (let i = 0; i < 3; i++) {
+    const a = t*4 + i*2.1;
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(W*0.5 + Math.cos(a)*W*0.15, H*0.5 + Math.sin(a)*W*0.15);
+    ctx.lineTo(W*0.5 + Math.cos(a)*W*0.22, H*0.5 + Math.sin(a)*W*0.22);
+    ctx.stroke();
+  }
+});
+add('bumpers', 'Bumper chaîne', 'Trois en ligne.', (ctx, W, H, t) => {
+  for (let i = 0; i < 3; i++) {
+    glow(ctx, W*0.3 + i*W*0.2, H*0.5, W*0.1, '#ffd38a');
+    circle(ctx, W*0.3 + i*W*0.2, H*0.5, W*0.05, '#ffd38a');
+  }
+});
+add('bumpers', 'Bumper rebond', 'Amplifie à chaque impact.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#c084fc');
+  circle(ctx, W*0.5, H*0.5, W*0.14, '#c084fc');
+  circle(ctx, W*0.5, H*0.5, W*0.08, '#e9d5ff');
+});
+
+// ─── PIÈGES (18) ────────────────────────────────────────────
+add('traps', 'Piques statiques', 'Dégâts permanents.', (ctx, W, H, t) => {
+  rect(ctx, W*0.2, H*0.6, W*0.6, H*0.15, '#1a0808');
+  for (let i = 0; i < 6; i++) poly(ctx, W*0.2 + (i+0.5)*W*0.1, H*0.6, 3, W*0.04, -Math.PI/2, '#ff4466');
+});
+add('traps', 'Piques rétractables', 'Sortent et rentrent.', (ctx, W, H, t) => {
+  const c = (t*0.8) % 1;
+  const out = c < 0.5 ? c*2 : (1-c)*2;
+  rect(ctx, W*0.2, H*0.7, W*0.6, H*0.05, '#1a0808');
+  for (let i = 0; i < 6; i++) poly(ctx, W*0.2 + (i+0.5)*W*0.1, H*0.7, 3, W*0.04*out*2, -Math.PI/2, '#ff4466');
+});
+add('traps', 'Scie rotative', 'Lame circulaire fixe.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t*5);
+  ctx.fillStyle = '#7a7a8a';
+  for (let i = 0; i < 8; i++) {
+    ctx.save(); ctx.rotate(i*Math.PI/4);
+    ctx.beginPath(); ctx.moveTo(W*0.16, 0); ctx.lineTo(W*0.22, -W*0.03); ctx.lineTo(W*0.22, W*0.03); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  circle(ctx, 0, 0, W*0.15, '#3a3a4a');
+  circle(ctx, 0, 0, W*0.05, '#ff4466');
+  ctx.restore();
+});
+add('traps', 'Scie mobile', 'Se déplace.', (ctx, W, H, t) => {
+  const x = W*0.5 + Math.sin(t*1.5)*W*0.25;
+  ctx.save(); ctx.translate(x, H*0.5); ctx.rotate(t*6);
+  ctx.fillStyle = '#7a7a8a';
+  for (let i = 0; i < 8; i++) {
+    ctx.save(); ctx.rotate(i*Math.PI/4);
+    ctx.beginPath(); ctx.moveTo(W*0.12, 0); ctx.lineTo(W*0.17, -W*0.03); ctx.lineTo(W*0.17, W*0.03); ctx.closePath(); ctx.fill();
+    ctx.restore();
+  }
+  circle(ctx, 0, 0, W*0.11, '#3a3a4a');
+  ctx.restore();
+});
+add('traps', 'Guillotine', 'Lame qui tombe.', (ctx, W, H, t) => {
+  const c = (t*1.2) % 1;
+  const y = c < 0.7 ? H*0.1 : H*0.1 + (c-0.7)*3*H*0.5;
+  const yC = Math.min(y, H*0.55);
+  ctx.fillStyle = '#666'; ctx.fillRect(W*0.15, H*0.08, W*0.7, H*0.02);
+  ctx.fillStyle = '#888'; ctx.fillRect(W*0.45, H*0.1, W*0.1, yC - H*0.1);
+  ctx.fillStyle = '#a0a0b0';
+  ctx.beginPath(); ctx.moveTo(W*0.3, yC); ctx.lineTo(W*0.7, yC); ctx.lineTo(W*0.5, yC + W*0.15); ctx.closePath(); ctx.fill();
+});
+add('traps', 'Mâchoires', 'Claque au contact.', (ctx, W, H, t) => {
+  const c = (t*0.7) % 1;
+  const open = c < 0.5 ? 1 : 1 - (c-0.5)*2;
+  ctx.save(); ctx.translate(W*0.5, H*0.5);
+  ctx.strokeStyle = '#ff4466'; ctx.lineWidth = 3;
+  for (let s = -1; s <= 1; s += 2) {
+    ctx.save(); ctx.rotate(s * open * 0.6);
+    ctx.beginPath(); ctx.moveTo(-W*0.2, 0); ctx.lineTo(W*0.2, 0);
+    for (let i = 0; i < 5; i++) { const x = -W*0.15 + i*W*0.075; ctx.lineTo(x, -W*0.04); ctx.lineTo(x + W*0.03, 0); }
+    ctx.stroke();
+    ctx.restore();
+  }
+  ctx.restore();
+});
+add('traps', 'Mine', 'Explose au contact.', (ctx, W, H, t) => {
+  const c = (t*0.6) % 1;
+  const r = c < 0.85 ? 1 : 1 + (c-0.85)*6;
+  glow(ctx, W*0.5, H*0.5, W*0.12*r, c > 0.85 ? '#fff' : '#ff4466');
+  circle(ctx, W*0.5, H*0.5, W*0.06, '#3a1a1a');
+  circle(ctx, W*0.5, H*0.5, W*0.02, c > 0.85 ? '#fff' : '#ff4466');
+});
+add('traps', 'Tapis collant', 'Ralentit.', (ctx, W, H, t) => {
+  rect(ctx, W*0.2, H*0.4, W*0.6, H*0.2, '#34d399', 6);
+  for (let i = 0; i < 6; i++) circle(ctx, W*0.22 + (i/5)*W*0.56, H*0.5 + Math.sin(t*3 + i)*2, 2, '#a7f3d0');
+});
+add('traps', 'Toile', 'Émulsion bloquante.', (ctx, W, H, t) => {
+  ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1;
+  const cx = W*0.5, cy = H*0.5;
+  for (let i = 0; i < 8; i++) { const a = i*Math.PI/4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a)*W*0.3, cy + Math.sin(a)*W*0.3); ctx.stroke(); }
+  for (let r = 0.1; r < 0.35; r += 0.08) {
+    ctx.beginPath();
+    for (let i = 0; i <= 8; i++) { const a = i*Math.PI/4; const x = cx + Math.cos(a)*W*r, y = cy + Math.sin(a)*W*r; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+    ctx.stroke();
+  }
+});
+add('traps', 'Sables', 'Aspire vers le bas.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.4, W*0.7, H*0.4, '#8a7a5a', 8);
+  for (let i = 0; i < 10; i++) { const x = W*0.15 + (i/9)*W*0.7; const y = H*0.5 + (Math.sin(t*1.5 + i*0.5)*0.5 + 0.5)*H*0.25; circle(ctx, x, y, 2, '#c8b48c88'); }
+});
+add('traps', 'Lave', 'Dégâts continus.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.4, W*0.7, H*0.4, '#8a1800', 8);
+  for (let i = 0; i < 12; i++) { const x = W*0.15 + (i/11)*W*0.7; const y = H*0.45 + Math.sin(t*3 + i)*3; const r = 3 + Math.sin(t*5 + i*1.3)*2; circle(ctx, x, y, r, ['#ff5500','#ffaa00','#ffdd44'][i%3]); }
+});
+add('traps', 'Acide', 'Dégâts progressifs.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.4, W*0.7, H*0.4, '#0a3a1a', 8);
+  for (let i = 0; i < 8; i++) { const x = W*0.15 + (i/7)*W*0.7; const c = (t*0.8 + i*0.3) % 1; const y = H*0.45 + c*H*0.3; ctx.fillStyle = 'rgba(100,255,100,' + (1-c) + ')'; ctx.beginPath(); ctx.arc(x, y, 2.5, 0, Math.PI*2); ctx.fill(); }
+});
+add('traps', 'Glace', 'Dérapage total.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.4, W*0.7, H*0.25, '#93c5fd', 6);
+  ball(ctx, W*0.2 + ((t*0.6)%1)*W*0.6, H*0.5, W*0.05);
+});
+add('traps', 'Poison', 'Zone floue DOT.', (ctx, W, H, t) => {
+  for (let i = 0; i < 6; i++) { const a = t*0.5 + i*1.05; glow(ctx, W*0.5 + Math.cos(a)*W*0.15, H*0.5 + Math.sin(a)*H*0.12, W*0.18, '#a855f7'); }
+});
+add('traps', 'Flammes', 'Flamme horizontale.', (ctx, W, H, t) => {
+  const active = (t % 1) < 0.4;
+  rect(ctx, W*0.05, H*0.47, W*0.1, H*0.06, '#666', 3);
+  if (active) for (let i = 0; i < 6; i++) { const x = W*0.15 + i*W*0.12; const r = W*0.06 * (1 - i/8); glow(ctx, x, H*0.5, r*1.5, i < 2 ? '#fff' : i < 4 ? '#ffaa00' : '#ff5500'); }
+});
+add('traps', 'Piston', 'Écrase.', (ctx, W, H, t) => {
+  const c = (t*1.2) % 1;
+  const off = c < 0.5 ? c*2*H*0.3 : (1-c)*2*H*0.3;
+  rect(ctx, W*0.3, H*0.15, W*0.4, H*0.05, '#888', 4);
+  rect(ctx, W*0.25, H*0.2 + off, W*0.5, H*0.06, '#a0a0b0', 4);
+});
+add('traps', 'Broyeur', 'Plaques qui se referment.', (ctx, W, H, t) => {
+  const c = (t*0.9) % 1;
+  const open = 0.5 + Math.sin(c*Math.PI)*0.5;
+  const gap = W*0.35 * open;
+  rect(ctx, W*0.1, H*0.4, W*0.1, H*0.2, '#666', 3);
+  rect(ctx, W*0.8, H*0.4, W*0.1, H*0.2, '#666', 3);
+  ctx.fillStyle = '#a0a0b0';
+  ctx.beginPath(); ctx.moveTo(W*0.2, H*0.35); ctx.lineTo(W*0.2 + gap, H*0.5); ctx.lineTo(W*0.2, H*0.65); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(W*0.8, H*0.35); ctx.lineTo(W*0.8 - gap, H*0.5); ctx.lineTo(W*0.8, H*0.65); ctx.closePath(); ctx.fill();
+});
+
+// ─── DANGERS PÉRIODIQUES (10) ───────────────────────────────
+add('hazards', 'Laser rotatif', 'Balaye en arc.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(Math.sin(t*1.5)*0.6);
+  glow(ctx, 0, 0, W*0.5, '#ff2a85');
+  ctx.strokeStyle = '#ff2a85'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(-W*0.5, 0); ctx.lineTo(W*0.5, 0); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(-W*0.5, 0); ctx.lineTo(W*0.5, 0); ctx.stroke();
+  ctx.restore();
+});
+add('hazards', 'Laser vertical', 'Oscille.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(Math.sin(t*1.5 + Math.PI/2)*0.6);
+  glow(ctx, 0, 0, W*0.5, '#ff2a85');
+  ctx.strokeStyle = '#ff2a85'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, -H*0.5); ctx.lineTo(0, H*0.5); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, -H*0.5); ctx.lineTo(0, H*0.5); ctx.stroke();
+  ctx.restore();
+});
+add('hazards', 'Laser balayant', 'Traverse horizontalement.', (ctx, W, H, t) => {
+  const y = H*0.15 + ((t*0.8)%1)*H*0.7;
+  glow(ctx, W*0.5, y, W*0.5, '#ff2a85');
+  ctx.strokeStyle = '#ff2a85'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(W*0.05, y); ctx.lineTo(W*0.95, y); ctx.stroke();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W*0.05, y); ctx.lineTo(W*0.95, y); ctx.stroke();
+});
+add('hazards', 'Grille laser', 'S\'allume périodiquement.', (ctx, W, H, t) => {
+  if (Math.sin(t*3) > 0) {
+    ctx.strokeStyle = '#ff2a85'; ctx.lineWidth = 2;
+    for (let i = 0; i < 3; i++) { const y = H*0.3 + i*H*0.2; ctx.beginPath(); ctx.moveTo(W*0.1, y); ctx.lineTo(W*0.9, y); ctx.stroke(); }
+    for (let i = 0; i < 3; i++) { const x = W*0.3 + i*W*0.2; ctx.beginPath(); ctx.moveTo(x, H*0.2); ctx.lineTo(x, H*0.8); ctx.stroke(); }
+  }
+});
+add('hazards', 'Flamethrower', 'Jet vertical.', (ctx, W, H, t) => {
+  const active = (t % 1) < 0.5;
+  rect(ctx, W*0.3, H*0.85, W*0.4, H*0.08, '#666', 3);
+  if (active) for (let i = 0; i < 6; i++) { const y = H*0.85 - i*H*0.1; const r = W*0.1 * (1 + i*0.15); glow(ctx, W*0.5, y, r, ['#fff','#ffaa00','#ff5500'][Math.min(2, Math.floor(i/2))]); }
+});
+add('hazards', 'Vapeur', 'Pousse latéralement.', (ctx, W, H, t) => {
+  const active = (t % 1) < 0.4;
+  rect(ctx, W*0.05, H*0.45, W*0.08, H*0.1, '#666', 3);
+  if (active) for (let i = 0; i < 8; i++) { const x = W*0.13 + i*W*0.08; const r = W*0.04 * (1 - i/10); ctx.fillStyle = 'rgba(200,220,240,' + (1 - i/8) + ')'; ctx.beginPath(); ctx.arc(x, H*0.5 + Math.sin(t*6 + i)*2, r, 0, Math.PI*2); ctx.fill(); }
+});
+add('hazards', 'Geyser', 'Colonne projetante.', (ctx, W, H, t) => {
+  const c = (t*0.9) % 1;
+  const active = c < 0.35;
+  rect(ctx, W*0.3, H*0.85, W*0.4, H*0.1, '#0a3a5a', 4);
+  if (active) { const height = (c/0.35)*H*0.7; for (let i = 0; i < 6; i++) { const y = H*0.85 - (i/6)*height; const r = W*0.04 * (0.5 + i/6); glow(ctx, W*0.5 + Math.sin(t*8 + i)*3, y, r*1.8, '#7ce7ff'); } }
+});
+add('hazards', 'Météore', 'Rocher en feu.', (ctx, W, H, t) => {
+  const c = (t*0.7) % 1;
+  const x = W*0.5 + Math.sin(t*0.5)*W*0.2;
+  const y = H * (0.1 + c*0.7);
+  for (let i = 0; i < 6; i++) { const ty = y - i*6; const alpha = (1 - i/6)*0.7; ctx.fillStyle = i < 2 ? 'rgba(255,255,255,'+alpha+')' : 'rgba(255,100,0,'+alpha+')'; ctx.beginPath(); ctx.arc(x + i*1.5, ty, W*0.03*(1 - i/12), 0, Math.PI*2); ctx.fill(); }
+  circle(ctx, x, y, W*0.04, '#3a2010');
+});
+add('hazards', 'Éclairs', 'Colonne verticale.', (ctx, W, H, t) => {
+  if (Math.sin(t*4) > 0) {
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.shadowColor = '#7ce7ff'; ctx.shadowBlur = 15;
+    ctx.beginPath(); ctx.moveTo(W*0.5, H*0.1);
+    for (let i = 0; i < 8; i++) ctx.lineTo(W*0.5 + (Math.random()-0.5)*W*0.15, H*0.1 + (i/8)*H*0.8);
+    ctx.stroke(); ctx.shadowBlur = 0;
+  }
+});
+add('hazards', 'Rideau de feu', 'Mur de flammes.', (ctx, W, H, t) => {
+  const active = (t % 1) < 0.5;
+  if (active) for (let i = 0; i < 12; i++) { const y = H*0.1 + (i/11)*H*0.8; const r = W*0.06 * (1 + Math.sin(t*8 + i)*0.3); glow(ctx, W*0.5, y, r*1.5, i%2 ? '#ff5500' : '#ffaa00'); }
+});
+
+// ─── OBSTACLES EN MOUVEMENT (15) ───────────────────────────
+add('moving', 'Barre rotative', 'Tourne autour du centre.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t*1.2);
+  glow(ctx, 0, 0, W*0.4, '#c084fc');
+  rect(ctx, -W*0.3, -H*0.04, W*0.6, H*0.08, '#c084fc', 4);
+  ctx.restore();
+});
+add('moving', 'Pendule', 'Masse oscillante.', (ctx, W, H, t) => {
+  const a = Math.sin(t*2)*0.7;
+  ctx.save(); ctx.translate(W*0.5, H*0.15); ctx.rotate(a);
+  ctx.strokeStyle = '#666'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, H*0.4); ctx.stroke();
+  glow(ctx, 0, H*0.4, W*0.15, '#c084fc');
+  circle(ctx, 0, H*0.4, W*0.08, '#c084fc');
+  ctx.restore();
+});
+add('moving', 'Obstacle orbital', 'Orbite circulaire.', (ctx, W, H, t) => {
+  const a = t*1.5;
+  const x = W*0.5 + Math.cos(a)*W*0.25, y = H*0.5 + Math.sin(a)*H*0.25;
+  glow(ctx, x, y, W*0.2, '#c084fc');
+  circle(ctx, x, y, W*0.08, '#c084fc');
+  ctx.strokeStyle = '#c084fc33'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.25, 0, Math.PI*2); ctx.stroke();
+});
+add('moving', 'Patrouille', 'Va-et-vient.', (ctx, W, H, t) => {
+  const p = (t*0.8) % 1;
+  const pp = p < 0.5 ? p*2 : (1-p)*2;
+  const x = W*0.15 + pp*W*0.7;
+  glow(ctx, x, H*0.5, W*0.18, '#c084fc');
+  rect(ctx, x - W*0.06, H*0.45, W*0.12, H*0.1, '#c084fc', 4);
+});
+add('moving', 'Rebond aléatoire', 'Trajectoire imprévisible.', (ctx, W, H, t) => {
+  const x = W*0.5 + Math.sin(t*1.7)*Math.cos(t*1.3)*W*0.3;
+  const y = H*0.5 + Math.cos(t*2.1)*Math.sin(t*0.9)*H*0.3;
+  glow(ctx, x, y, W*0.18, '#c084fc');
+  circle(ctx, x, y, W*0.06, '#c084fc');
+});
+add('moving', 'Chasseur', 'Suit sa cible.', (ctx, W, H, t) => {
+  const tx = W*0.5 + Math.sin(t*0.5)*W*0.25, ty = H*0.5 + Math.cos(t*0.7)*H*0.25;
+  ball(ctx, tx, ty, W*0.04);
+  const cx = tx + Math.cos(t*2)*W*0.15, cy = ty + Math.sin(t*2)*H*0.15;
+  glow(ctx, cx, cy, W*0.15, '#ff4466');
+  circle(ctx, cx, cy, W*0.06, '#ff4466');
+});
+add('moving', 'Ascenseur', 'Monte et descend.', (ctx, W, H, t) => {
+  const y = H*0.5 + Math.sin(t)*H*0.25;
+  rect(ctx, W*0.3, H*0.08, W*0.4, H*0.03, '#666');
+  rect(ctx, W*0.3, H*0.92, W*0.4, H*0.03, '#666');
+  ctx.strokeStyle = '#666'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.1); ctx.lineTo(W*0.5, H*0.9); ctx.stroke();
+  glow(ctx, W*0.5, y, W*0.15, '#c084fc');
+  rect(ctx, W*0.35, y - H*0.03, W*0.3, H*0.06, '#c084fc', 4);
+});
+add('moving', 'Croix rotative', 'Croix qui tourne.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t*1.5);
+  rect(ctx, -W*0.25, -H*0.03, W*0.5, H*0.06, '#c084fc', 3);
+  rect(ctx, -W*0.03, -H*0.25, W*0.06, H*0.5, '#c084fc', 3);
+  glow(ctx, 0, 0, W*0.25, '#c084fc');
+  ctx.restore();
+});
+add('moving', 'Carré rotatif', 'Carré qui tourne.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t*1.2);
+  rect(ctx, -W*0.15, -W*0.15, W*0.3, W*0.3, '#c084fc', 4);
+  glow(ctx, 0, 0, W*0.25, '#c084fc');
+  ctx.restore();
+});
+add('moving', 'Triangle rotatif', 'Triangle qui tourne.', (ctx, W, H, t) => {
+  poly(ctx, W*0.5, H*0.5, 3, W*0.2, t*2, '#c084fc');
+  glow(ctx, W*0.5, H*0.5, W*0.25, '#c084fc');
+});
+add('moving', 'Étoile rotative', 'Étoile à 5 branches.', (ctx, W, H, t) => {
+  ctx.save(); ctx.translate(W*0.5, H*0.5); ctx.rotate(t);
+  ctx.fillStyle = '#c084fc'; ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const a = i*Math.PI/5 - Math.PI/2;
+    const r = i%2 === 0 ? W*0.22 : W*0.1;
+    const x = Math.cos(a)*r, y = Math.sin(a)*r;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.closePath(); ctx.fill();
+  glow(ctx, 0, 0, W*0.25, '#c084fc');
+  ctx.restore();
+});
+add('moving', 'Anneau orbital', 'Anneau qui tourne.', (ctx, W, H, t) => {
+  const a = t*1.5;
+  const x = W*0.5 + Math.cos(a)*W*0.15, y = H*0.5 + Math.sin(a)*H*0.15;
+  ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.arc(x, y, W*0.12, 0, Math.PI*2); ctx.stroke();
+});
+add('moving', 'Figure-8', 'Trajectoire en huit.', (ctx, W, H, t) => {
+  const x = W*0.5 + Math.sin(t*1.2)*W*0.25;
+  const y = H*0.5 + Math.sin(t*2.4)*H*0.2;
+  glow(ctx, x, y, W*0.15, '#c084fc');
+  circle(ctx, x, y, W*0.06, '#c084fc');
+});
+add('moving', 'Spirale', 'S\'éloigne et revient.', (ctx, W, H, t) => {
+  const r = W*0.2 + Math.sin(t*0.8)*W*0.15;
+  const a = t*2;
+  const x = W*0.5 + Math.cos(a)*r, y = H*0.5 + Math.sin(a)*r;
+  glow(ctx, x, y, W*0.15, '#c084fc');
+  circle(ctx, x, y, W*0.05, '#c084fc');
+});
+add('moving', 'Zigzag', 'Trajectoire en zigzag.', (ctx, W, H, t) => {
+  const y = H*0.2 + ((t*0.5)%1)*H*0.6;
+  const x = W*0.5 + Math.sin(t*4)*W*0.15;
+  glow(ctx, x, y, W*0.15, '#c084fc');
+  rect(ctx, x - W*0.06, y - H*0.04, W*0.12, H*0.08, '#c084fc', 3);
+});
+
+// ─── CHAMPS DE FORCE (10) ──────────────────────────────────
+add('force', 'Trou noir', 'Attire tout.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#a78bfa');
+  circle(ctx, W*0.5, H*0.5, W*0.1, '#000');
+  for (let i = 0; i < 6; i++) { const a = t*2 + i*Math.PI/3; const r = W*0.25; arrow(ctx, W*0.5 + Math.cos(a)*r, H*0.5 + Math.sin(a)*r, W*0.5 + Math.cos(a)*W*0.12, H*0.5 + Math.sin(a)*H*0.12, '#a78bfa'); }
+});
+add('force', 'Trou blanc', 'Repousse tout.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.5, '#fff');
+  circle(ctx, W*0.5, H*0.5, W*0.08, '#fff');
+  for (let i = 0; i < 6; i++) { const a = i*Math.PI/3 + t*0.5; arrow(ctx, W*0.5 + Math.cos(a)*W*0.12, H*0.5 + Math.sin(a)*H*0.12, W*0.5 + Math.cos(a)*W*0.25, H*0.5 + Math.sin(a)*H*0.25, '#fff'); }
+});
+add('force', 'Vortex', 'Aspire en spirale.', (ctx, W, H, t) => {
+  for (let i = 0; i < 20; i++) { const a = t*2 + i*0.3; const r = W*0.4 * (1 - (i/20)*0.8); circle(ctx, W*0.5 + Math.cos(a)*r, H*0.5 + Math.sin(a)*r, 2, 'rgba(168,85,247,' + (0.3 + (i/20)*0.7) + ')'); }
+});
+add('force', 'Puits de gravité', 'Attire doucement.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#7ce7ff');
+  for (let i = 1; i <= 3; i++) { ctx.strokeStyle = '#7ce7ff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.1*i + Math.sin(t*2)*3, 0, Math.PI*2); ctx.stroke(); }
+});
+add('force', 'Anti-gravité', 'Repousse vers le haut.', (ctx, W, H, t) => {
+  rect(ctx, W*0.2, H*0.5, W*0.6, H*0.1, '#7ce7ff', 3);
+  for (let i = 0; i < 5; i++) { const x = W*0.3 + i*W*0.1; const y = H*0.4 - ((t + i*0.5)%1)*H*0.3; arrow(ctx, x, H*0.5, x, y, '#7ce7ff'); }
+});
+add('force', 'Tunnel de vent', 'Souffle horizontal.', (ctx, W, H, t) => {
+  rect(ctx, W*0.1, H*0.4, W*0.8, H*0.2, '#7ce7ff22', 8);
+  for (let i = 0; i < 8; i++) { const x = W*0.1 + ((t*0.5 + i*0.125)%1)*W*0.8; const y = H*0.5 + Math.sin(i + t*2)*H*0.05; arrow(ctx, x, y, x + W*0.08, y, '#7ce7ff'); }
+});
+add('force', 'Entonnoir', 'Aspire vers le haut.', (ctx, W, H, t) => {
+  for (let i = 0; i < 6; i++) { const y = H*0.8 - ((t + i*0.33)%1)*H*0.6; const spread = (1 - (H*0.8 - y)/(H*0.6))*W*0.2; for (let s = -1; s <= 1; s += 2) arrow(ctx, W*0.5 + s*spread, y, W*0.5 + s*spread*0.5, y - H*0.05, '#7ce7ff'); }
+});
+add('force', 'Magnétique', 'Attire les objets.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#f472b6');
+  circle(ctx, W*0.5, H*0.5, W*0.08, '#f472b6');
+  for (let i = 0; i < 4; i++) { const a = t*1.5 + i*Math.PI/2; const r = W*0.15 + (t*20)%W*0.2; circle(ctx, W*0.5 + Math.cos(a)*r, H*0.5 + Math.sin(a)*r, 2, '#f472b6'); }
+});
+add('force', 'Répulsion', 'Repousse avec force.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.45, '#ff8a3d');
+  ctx.strokeStyle = '#ff8a3d'; ctx.lineWidth = 2;
+  for (let i = 1; i <= 4; i++) { const r = W*0.08 + (i + (t*2)%1)*W*0.08; ctx.globalAlpha = 1 - r/(W*0.4); ctx.beginPath(); ctx.arc(W*0.5, H*0.5, r, 0, Math.PI*2); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+});
+add('force', 'Ralentissement', 'Ralentit tout.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#93c5fd');
+  for (let i = 0; i < 6; i++) { const a = i*Math.PI/3; const x = W*0.5 + Math.cos(a)*W*0.35; const y = H*0.5 + Math.sin(a)*H*0.35; ball(ctx, x, y, W*0.03, '#93c5fd'); }
+  circle(ctx, W*0.5, H*0.5, W*0.06, '#93c5fd44');
+});
+
+// ─── TÉLÉPORTEURS (10) ─────────────────────────────────────
+add('teleport', 'Portail paire', 'Entrée/sortie liées.', (ctx, W, H, t) => {
+  [[0.25,0.3],[0.75,0.7]].forEach(p => {
+    for (let ring = 0; ring < 3; ring++) { ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 2 - ring*0.5; ctx.globalAlpha = 0.8 - ring*0.2; ctx.beginPath(); ctx.arc(W*p[0], H*p[1], W*0.06 + ring*3, 0, Math.PI*2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+    glow(ctx, W*p[0], H*p[1], W*0.12, '#c69bff');
+  });
+});
+add('teleport', 'Unidirectionnel', 'Sens unique.', (ctx, W, H, t) => {
+  ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W*0.15, H*0.5, W*0.08, -Math.PI/2, Math.PI/2); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W*0.85, H*0.5, W*0.08, Math.PI/2, Math.PI*1.5); ctx.stroke();
+  arrow(ctx, W*0.25, H*0.5, W*0.75, H*0.5, '#c69bff');
+});
+add('teleport', 'Aléatoire', 'Envoie au hasard.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#c69bff');
+  ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) { const a = t*1.5 + i*Math.PI/3; const r = W*0.2 + Math.sin(t*3 + i)*W*0.05; ctx.beginPath(); ctx.arc(W*0.5 + Math.cos(a)*r, H*0.5 + Math.sin(a)*r, 3, 0, Math.PI*2); ctx.stroke(); }
+});
+add('teleport', 'Miroir', 'Inverse la vitesse.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.25, '#a9c5dc');
+  rect(ctx, W*0.35, H*0.35, W*0.3, H*0.3, 'rgba(200,220,255,0.3)', 4);
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(W*0.35, H*0.5); ctx.lineTo(W*0.65, H*0.5); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.35); ctx.lineTo(W*0.5, H*0.65); ctx.stroke();
+});
+add('teleport', 'Chaîne', 'Plusieurs portails.', (ctx, W, H, t) => {
+  const pts = [[0.2,0.3],[0.5,0.2],[0.8,0.4],[0.5,0.7],[0.2,0.6]];
+  ctx.strokeStyle = '#c69bff44'; ctx.lineWidth = 1;
+  ctx.beginPath(); pts.forEach((p, i) => { if (i === 0) ctx.moveTo(W*p[0], H*p[1]); else ctx.lineTo(W*p[0], H*p[1]); }); ctx.stroke();
+  pts.forEach(p => { glow(ctx, W*p[0], H*p[1], W*0.08, '#c69bff'); ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(W*p[0], H*p[1], W*0.04, 0, Math.PI*2); ctx.stroke(); });
+});
+add('teleport', 'Explosif', 'Explose à l\'arrivée.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.3, '#ff8a3d');
+  ctx.strokeStyle = '#ff8a3d'; ctx.lineWidth = 2;
+  const r = W*0.15 + Math.sin(t*3)*W*0.03;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, r, 0, Math.PI*2); ctx.stroke();
+  if (Math.sin(t*4) > 0.7) spark(ctx, W*0.5, H*0.5, W*0.2, '#fff');
+});
+add('teleport', 'Rappel', 'Ramène à l\'origine.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.35, '#34d399');
+  ctx.strokeStyle = '#34d399'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.12, 0, Math.PI*2); ctx.stroke();
+  for (let i = 0; i < 4; i++) { const a = i*Math.PI/2 + t; const r = W*0.2; arrow(ctx, W*0.5 + Math.cos(a)*r, H*0.5 + Math.sin(a)*r, W*0.5 + Math.cos(a)*W*0.13, H*0.5 + Math.sin(a)*W*0.13, '#34d399'); }
+});
+add('teleport', 'Clignotant', 'Intermittent.', (ctx, W, H, t) => {
+  if (Math.sin(t*3) > 0) {
+    glow(ctx, W*0.5, H*0.5, W*0.35, '#c69bff');
+    ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.15, 0, Math.PI*2); ctx.stroke();
+    ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.08, 0, Math.PI*2); ctx.stroke();
+  } else {
+    ctx.strokeStyle = '#c69bff44'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.15, 0, Math.PI*2); ctx.stroke();
+  }
+});
+add('teleport', 'Double', 'Boucle entre deux.', (ctx, W, H, t) => {
+  [[0.35,0.4],[0.65,0.6]].forEach(p => {
+    for (let r = 0; r < 2; r++) { ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(W*p[0], H*p[1], W*0.08 + r*0.05 + Math.sin(t*2 + r)*2, 0, Math.PI*2); ctx.stroke(); }
+  });
+});
+add('teleport', 'Court-circuit', 'Change de position.', (ctx, W, H, t) => {
+  const px = W*0.5 + Math.sin(t*2.5)*W*0.25, py = H*0.5 + Math.cos(t*1.8)*H*0.25;
+  glow(ctx, px, py, W*0.2, '#c69bff');
+  ctx.strokeStyle = '#c69bff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(px, py, W*0.08, 0, Math.PI*2); ctx.stroke();
+  spark(ctx, px, py, W*0.12, '#fff');
+});
+
+// ─── ZONES D'EFFET (10) ────────────────────────────────────
+add('zone', 'Dégâts', 'Inflige des dégâts.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#ff2a85');
+  ctx.fillStyle = 'rgba(255,42,133,' + (0.4 + Math.sin(t*2)*0.2) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+});
+add('zone', 'Soin', 'Régénère les PV.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#34d399');
+  ctx.fillStyle = 'rgba(52,211,153,' + (0.3 + Math.sin(t*2)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#a7f3d0';
+  ctx.fillRect(W*0.45, H*0.4, W*0.1, H*0.2);
+  ctx.fillRect(W*0.38, H*0.47, W*0.24, H*0.06);
+});
+add('zone', 'Vitesse', 'Accélère.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#fbbf24');
+  ctx.fillStyle = 'rgba(251,191,36,' + (0.3 + Math.sin(t*3)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  arrow(ctx, W*0.35, H*0.5, W*0.65, H*0.5, '#fff');
+});
+add('zone', 'Ralentissement', 'Freine.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#93c5fd');
+  ctx.fillStyle = 'rgba(147,197,253,' + (0.3 + Math.sin(t*1.5)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.1, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.5); ctx.lineTo(W*0.5, H*0.42); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.5); ctx.lineTo(W*0.55, H*0.5); ctx.stroke();
+});
+add('zone', 'Silence', 'Coupe les capacités.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#a855f7');
+  ctx.fillStyle = 'rgba(168,85,247,' + (0.3 + Math.sin(t*2)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.1, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.43, H*0.43); ctx.lineTo(W*0.57, H*0.57); ctx.stroke();
+});
+add('zone', 'Inversion', 'Inverse les contrôles.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#ff8a3d');
+  ctx.fillStyle = 'rgba(255,138,61,' + (0.3 + Math.sin(t*2)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  arrow(ctx, W*0.35, H*0.5, W*0.65, H*0.5, '#fff');
+  arrow(ctx, W*0.65, H*0.4, W*0.35, H*0.4, '#fff');
+});
+add('zone', 'Chaos', 'Effets aléatoires.', (ctx, W, H, t) => {
+  const colors = ['#ff2a85', '#fbbf24', '#a855f7', '#34d399', '#7ce7ff'];
+  for (let i = 0; i < 5; i++) { const a = t*2 + i*Math.PI*2/5; glow(ctx, W*0.5 + Math.cos(a)*W*0.15, H*0.5 + Math.sin(a)*H*0.15, W*0.1, colors[i]); }
+});
+add('zone', 'Safe', 'Aucun dégât.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#34d399');
+  ctx.fillStyle = 'rgba(52,211,153,' + (0.25 + Math.sin(t*1.5)*0.1) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#a7f3d0'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.28, 0, Math.PI*2); ctx.stroke();
+});
+add('zone', 'Mort', 'KO instantané.', (ctx, W, H, t) => {
+  const pulse = 0.5 + Math.sin(t*3)*0.3;
+  ctx.fillStyle = 'rgba(0,0,0,' + (0.7 + pulse*0.2) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,42,133,' + pulse + ')';
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.stroke();
+});
+add('zone', 'Gel', 'Fige les boules.', (ctx, W, H, t) => {
+  glow(ctx, W*0.5, H*0.5, W*0.4, '#93c5fd');
+  ctx.fillStyle = 'rgba(147,197,253,' + (0.3 + Math.sin(t*1.5)*0.15) + ')';
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.5, W*0.3, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+  for (let i = 0; i < 6; i++) { const a = i*Math.PI/3; ctx.beginPath(); ctx.moveTo(W*0.5, H*0.5); ctx.lineTo(W*0.5 + Math.cos(a)*W*0.12, H*0.5 + Math.sin(a)*W*0.12); ctx.stroke(); }
+});
+
+// ─── GÉNÉRATEURS (10) ──────────────────────────────────────
+add('spawner', 'Générateur de boules', 'Ajoute des boules.', (ctx, W, H, t) => {
+  rect(ctx, W*0.4, H*0.1, W*0.2, H*0.1, '#444', 3);
+  glow(ctx, W*0.5, H*0.15, W*0.15, '#fbbf24');
+  for (let i = 0; i < 3; i++) { const p = (t*0.5 + i*0.33) % 1; ball(ctx, W*0.5, H*0.2 + p*H*0.6, W*0.05*(1 - p*0.3)); }
+});
+add('spawner', 'Générateur d\'obstacles', 'Fait apparaître des blocs.', (ctx, W, H, t) => {
+  rect(ctx, W*0.4, H*0.85, W*0.2, H*0.1, '#444', 3);
+  glow(ctx, W*0.5, H*0.85, W*0.15, '#fbbf24');
+  for (let i = 0; i < 3; i++) { const p = ((t*0.4 + i*0.33)%1); const size = W*0.08 * (1 - p*0.5); ctx.fillStyle = '#fbbf24'; ctx.fillRect(W*0.5 - size/2, H*0.85 - p*H*0.6, size, size); }
+});
+add('spawner', 'Canon à balles', 'Tire vers le haut.', (ctx, W, H, t) => {
+  rect(ctx, W*0.4, H*0.85, W*0.2, H*0.1, '#666', 4);
+  glow(ctx, W*0.5, H*0.85, W*0.15, '#fbbf24');
+  for (let i = 0; i < 3; i++) { const p = (t*0.8 + i*0.33)%1; circle(ctx, W*0.5, H*0.85 - p*H*0.7, 3, '#ffdd44'); }
+});
+add('spawner', 'Lance-missiles', 'Missiles à tête chercheuse.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.85, W*0.15, H*0.1, '#666', 4);
+  glow(ctx, W*0.22, H*0.85, W*0.12, '#ff4466');
+  for (let i = 0; i < 3; i++) { const p = (t*0.6 + i*0.33)%1; circle(ctx, W*0.22 + Math.sin(p*6 + i)*W*0.15, H*0.85 - p*H*0.7, 3, '#ff4466'); }
+});
+add('spawner', 'Bombes', 'Dépose des bombes.', (ctx, W, H, t) => {
+  rect(ctx, W*0.85, H*0.1, W*0.1, H*0.1, '#444', 3);
+  for (let i = 0; i < 2; i++) { const p = (t*0.4 + i*0.5)%1; const y = H*0.15 + p*H*0.7; const blink = ((t*2 + i)%1) > 0.7; circle(ctx, W*0.9, y, 5, blink ? '#ff2a85' : '#333'); if (blink) glow(ctx, W*0.9, y, W*0.1, '#ff2a85'); }
+});
+add('spawner', 'Pickups', 'Objets à ramasser.', (ctx, W, H, t) => {
+  for (let i = 0; i < 4; i++) {
+    const p = (t*0.3 + i*0.25)%1;
+    const x = W*0.2 + (i/4)*W*0.6;
+    const y = H*0.5 + Math.sin(t*2 + i)*H*0.1;
+    const scale = Math.min(1, p*4) * (1 - Math.max(0, (p-0.9)*10));
+    if (scale > 0) { glow(ctx, x, y, W*0.12*scale, '#fbbf24'); circle(ctx, x, y, W*0.05*scale, '#fbbf24'); }
+  }
+});
+add('spawner', 'Ennemis', 'Ennemis temporaires.', (ctx, W, H, t) => {
+  rect(ctx, W*0.4, H*0.08, W*0.2, H*0.08, '#444', 3);
+  glow(ctx, W*0.5, H*0.12, W*0.2, '#ff4466');
+  for (let i = 0; i < 2; i++) { const p = (t*0.5 + i*0.5)%1; circle(ctx, W*0.5 + Math.sin(p*6)*W*0.2, H*0.2 + p*H*0.6, W*0.04, '#ff4466'); }
+});
+add('spawner', 'Canon à glace', 'Ralentit.', (ctx, W, H, t) => {
+  rect(ctx, W*0.1, H*0.45, W*0.1, H*0.1, '#666', 4);
+  glow(ctx, W*0.15, H*0.5, W*0.1, '#93c5fd');
+  for (let i = 0; i < 4; i++) { const p = (t*0.6 + i*0.25)%1; circle(ctx, W*0.2 + p*W*0.7, H*0.5, 3, '#93c5fd'); }
+});
+add('spawner', 'Canon à feu', 'Enflamme.', (ctx, W, H, t) => {
+  rect(ctx, W*0.1, H*0.45, W*0.1, H*0.1, '#666', 4);
+  glow(ctx, W*0.15, H*0.5, W*0.1, '#ff8a3d');
+  for (let i = 0; i < 4; i++) { const p = (t*0.6 + i*0.25)%1; const x = W*0.2 + p*W*0.7; glow(ctx, x, H*0.5, W*0.05, '#ff8a3d'); circle(ctx, x, H*0.5, 3, '#ffdd44'); }
+});
+add('spawner', 'Électrique', 'Éclairs.', (ctx, W, H, t) => {
+  rect(ctx, W*0.4, H*0.4, W*0.2, H*0.2, '#666', 4);
+  glow(ctx, W*0.5, H*0.5, W*0.25, '#7ce7ff');
+  for (let i = 0; i < 4; i++) { const a = (i*Math.PI/2 + t*2)%(Math.PI*2); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(W*0.5, H*0.5); ctx.lineTo(W*0.5 + Math.cos(a)*W*0.15, H*0.5 + Math.sin(a)*W*0.15); ctx.stroke(); }
+});
+
+// ─── INTERACTIFS (10) ──────────────────────────────────────
+add('interactive', 'Bouton', 'Activable par contact.', (ctx, W, H, t) => {
+  const pressed = Math.sin(t*2) > 0;
+  circle(ctx, W*0.5, H*0.5, W*0.15, '#444');
+  circle(ctx, W*0.5, H*0.5, W*0.12, pressed ? '#34d399' : '#ff4466');
+  if (pressed) glow(ctx, W*0.5, H*0.5, W*0.3, '#34d399');
+});
+add('interactive', 'Levier', 'Bascule.', (ctx, W, H, t) => {
+  const angle = Math.sin(t*1.5) > 0 ? -0.8 : 0.8;
+  rect(ctx, W*0.35, H*0.7, W*0.3, H*0.15, '#444', 4);
+  ctx.save(); ctx.translate(W*0.5, H*0.7); ctx.rotate(angle);
+  ctx.strokeStyle = '#888'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -H*0.25); ctx.stroke();
+  circle(ctx, 0, -H*0.25, W*0.05, Math.abs(angle) > 0.5 ? '#34d399' : '#ff4466');
+  ctx.restore();
+});
+add('interactive', 'Plaque', 'Détecte le passage.', (ctx, W, H, t) => {
+  const pressed = Math.sin(t*2.5) > 0;
+  rect(ctx, W*0.2, H*0.55, W*0.6, H*0.08, pressed ? '#34d399' : '#444', 4);
+  if (pressed) glow(ctx, W*0.5, H*0.6, W*0.3, '#34d399');
+});
+add('interactive', 'Interrupteur', 'On/off.', (ctx, W, H, t) => {
+  const on = Math.sin(t*1.2) > 0;
+  rect(ctx, W*0.3, H*0.4, W*0.4, H*0.2, '#222', 10);
+  const kx = on ? W*0.62 : W*0.38;
+  circle(ctx, kx, H*0.5, W*0.08, on ? '#34d399' : '#ff4466');
+  if (on) glow(ctx, W*0.5, H*0.5, W*0.25, '#34d399');
+});
+add('interactive', 'Caisse', 'Destructible.', (ctx, W, H, t) => {
+  rect(ctx, W*0.3, H*0.4, W*0.4, H*0.3, '#8a5a2a', 3);
+  ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W*0.3, H*0.4); ctx.lineTo(W*0.7, H*0.7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.7, H*0.4); ctx.lineTo(W*0.3, H*0.7); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.4); ctx.lineTo(W*0.5, H*0.7); ctx.stroke();
+});
+add('interactive', 'Baril explosif', 'Explose.', (ctx, W, H, t) => {
+  rect(ctx, W*0.35, H*0.4, W*0.3, H*0.35, '#8a2a1a', 3);
+  ctx.strokeStyle = '#5a0a0a'; ctx.lineWidth = 2;
+  ctx.strokeRect(W*0.35, H*0.5, W*0.3, H*0.05);
+  ctx.strokeRect(W*0.35, H*0.65, W*0.3, H*0.05);
+  if (Math.sin(t*3) > 0.7) glow(ctx, W*0.5, H*0.57, W*0.25, '#ff8a3d');
+});
+add('interactive', 'Coffre', 'Objet rare.', (ctx, W, H, t) => {
+  rect(ctx, W*0.25, H*0.45, W*0.5, H*0.25, '#8a5a2a', 4);
+  rect(ctx, W*0.25, H*0.38, W*0.5, H*0.1, '#a87a4a', 4);
+  circle(ctx, W*0.5, H*0.5, W*0.04, '#ffd38a');
+  const pulse = 0.5 + Math.sin(t*2)*0.3;
+  glow(ctx, W*0.5, H*0.5, W*0.2*pulse + W*0.15, '#fbbf24');
+});
+add('interactive', 'Porte', 'Ouvre avec mécanisme.', (ctx, W, H, t) => {
+  rect(ctx, W*0.25, H*0.3, W*0.5, H*0.5, '#4a3a2a', 4);
+  circle(ctx, W*0.5, H*0.55, W*0.06, '#888');
+  ctx.strokeStyle = '#ffdd44'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(W*0.5, H*0.55, W*0.03, 0, Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W*0.5, H*0.58); ctx.lineTo(W*0.5, H*0.62); ctx.stroke();
+});
+add('interactive', 'Clé', 'À collecter.', (ctx, W, H, t) => {
+  const bob = Math.sin(t*2)*H*0.03;
+  glow(ctx, W*0.5, H*0.5 + bob, W*0.2, '#fbbf24');
+  ctx.save(); ctx.translate(W*0.5, H*0.5 + bob); ctx.rotate(t*0.5);
+  ctx.fillStyle = '#ffd38a';
+  ctx.beginPath(); ctx.arc(-W*0.08, 0, W*0.06, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#0a0a0a';
+  ctx.beginPath(); ctx.arc(-W*0.08, 0, W*0.03, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffd38a';
+  ctx.fillRect(-W*0.02, -W*0.02, W*0.15, W*0.04);
+  ctx.fillRect(W*0.1, W*0.02, W*0.02, W*0.04);
+  ctx.restore();
+});
+add('interactive', 'Portail clef', 'S\'ouvre avec clé.', (ctx, W, H, t) => {
+  const open = Math.sin(t*1.5) > 0;
+  rect(ctx, W*0.25, H*0.3, W*0.5, H*0.5, open ? '#34d399' : '#4a3a2a', 4);
+  if (open) { glow(ctx, W*0.5, H*0.55, W*0.3, '#34d399'); circle(ctx, W*0.5, H*0.55, W*0.05, '#fff'); }
+});
+
+// ─── EFFETS VISUELS (8) ────────────────────────────────────
+add('visual', 'Brouillard', 'Réduit la visibilité.', (ctx, W, H, t) => {
+  for (let i = 0; i < 5; i++) { const x = W*0.5 + Math.cos(t + i)*W*0.15; const y = H*0.5 + Math.sin(t*0.7 + i)*H*0.15; glow(ctx, x, y, W*0.35, '#94a3b8'); }
+});
+add('visual', 'Fumée', 'Obscurcit.', (ctx, W, H, t) => {
+  for (let i = 0; i < 6; i++) { const x = W*0.5 + Math.sin(t*1.2 + i)*W*0.2; const y = H*0.9 - ((t*0.3 + i*0.15)%1)*H*0.8; ctx.fillStyle = 'rgba(60,60,80,' + (0.15 + Math.sin(t*2 + i)*0.1) + ')'; ctx.beginPath(); ctx.arc(x, y, W*0.15, 0, Math.PI*2); ctx.fill(); }
+});
+add('visual', 'Miroir', 'Reflète les trajectoires.', (ctx, W, H, t) => {
+  rect(ctx, W*0.3, H*0.3, W*0.4, H*0.4, 'rgba(180,200,240,0.4)', 2);
+  for (let i = 0; i < 3; i++) { const y = H*0.35 + i*H*0.1; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.3 + Math.sin(t*2 + i)*0.2; ctx.beginPath(); ctx.moveTo(W*0.32, y); ctx.lineTo(W*0.68, y); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  glow(ctx, W*0.5, H*0.5, W*0.25, '#a9c5dc');
+});
+add('visual', 'Sens unique', 'Traverse dans un sens.', (ctx, W, H, t) => {
+  ctx.strokeStyle = '#6b829c'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(W*0.3, H*0.5); ctx.lineTo(W*0.7, H*0.5); ctx.stroke();
+  arrow(ctx, W*0.35, H*0.4, W*0.65, H*0.4, '#34d399');
+  ctx.strokeStyle = '#ff446688'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(W*0.65, H*0.6); ctx.lineTo(W*0.35, H*0.6); ctx.stroke();
+});
+add('visual', 'Sol disparaissant', 'S\'efface.', (ctx, W, H, t) => {
+  const visible = ((t*0.5)%1) < 0.6;
+  if (visible) rect(ctx, W*0.15, H*0.7, W*0.7, H*0.1, '#8a7a5a', 4);
+  else { ctx.strokeStyle = '#8a7a5a33'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.strokeRect(W*0.15, H*0.7, W*0.7, H*0.1); ctx.setLineDash([]); }
+});
+add('visual', 'Sol basculant', 'Se penche.', (ctx, W, H, t) => {
+  const angle = Math.sin(t*1.5)*0.2;
+  ctx.save(); ctx.translate(W*0.5, H*0.65); ctx.rotate(angle);
+  rect(ctx, -W*0.35, -H*0.03, W*0.7, H*0.06, '#8a7a5a', 3);
+  ctx.restore();
+});
+add('visual', 'Trampoline', 'Rebond amplifié.', (ctx, W, H, t) => {
+  const bounce = Math.sin(t*4)*5;
+  rect(ctx, W*0.15, H*0.65 + bounce, W*0.7, H*0.06, '#ff8a3d', 10);
+  glow(ctx, W*0.5, H*0.68 + bounce, W*0.35, '#ff8a3d');
+  ball(ctx, W*0.5, H*0.4 + Math.abs(Math.sin(t*4))*-H*0.2, W*0.04);
+});
+add('visual', 'Sol collant', 'Ralentit.', (ctx, W, H, t) => {
+  rect(ctx, W*0.15, H*0.6, W*0.7, H*0.12, '#34d399', 4);
+  for (let i = 0; i < 8; i++) { const x = W*0.17 + (i/7)*W*0.66; const c = (t*1.5 + i*0.3)%1; circle(ctx, x, H*0.66, 3*Math.sin(c*Math.PI), '#a7f3d0'); }
+});
+
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let activeCat = 'all';
+let searchQuery = '';
+const tilesMap = []; // { el, canvas, ctx, item, time }
+let fsActive = false;
+let fsItem = null;
+let fsTime = 0;
+let fsFiltered = [];
+let fsIndex = 0;
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD SIDEBAR
+// ═══════════════════════════════════════════════════════════════
+const nav = document.getElementById('nav');
+
+function makeNavItem(key, label, color, count, isActive) {
+  const el = document.createElement('div');
+  el.className = 'nav-item' + (isActive ? ' active' : '') + (key === 'all' ? ' all' : '');
+  el.dataset.cat = key;
+  el.innerHTML = '<span class="dot" style="background:' + color + ';color:' + color + '"></span>' +
+                 '<span class="label">' + label + '</span>' +
+                 '<span class="count">' + count + '</span>';
+  el.addEventListener('click', () => setCategory(key));
+  return el;
+}
+
+// Item "Tout"
+nav.appendChild(makeNavItem('all', 'Tout', '#7ce7ff', ITEMS.length, true));
+
+// Catégories
+Object.entries(CATS).forEach(([key, cat]) => {
+  const count = ITEMS.filter(it => it.cat === key).length;
+  nav.appendChild(makeNavItem(key, cat.name, cat.color, count, false));
+});
+
+// ═══════════════════════════════════════════════════════════════
+// BUILD CONTENT
+// ═══════════════════════════════════════════════════════════════
+const content = document.getElementById('content');
+const mainTitle = document.getElementById('mainTitle');
+const mainCount = document.getElementById('mainCount');
+
+function buildContent() {
+  content.innerHTML = '';
+  tilesMap.length = 0;
+
+  const filtered = ITEMS.filter(it => {
+    const catOk = activeCat === 'all' || it.cat === activeCat;
+    const searchOk = !searchQuery || it.name.toLowerCase().includes(searchQuery) || it.desc.toLowerCase().includes(searchQuery);
+    return catOk && searchOk;
+  });
+
+  fsFiltered = filtered;
+
+  // Group par catégorie si "Tout", sinon un seul groupe
+  const groups = {};
+  filtered.forEach(it => {
+    if (!groups[it.cat]) groups[it.cat] = [];
+    groups[it.cat].push(it);
+  });
+
+  if (filtered.length === 0) {
+    content.innerHTML = '<div class="empty">Aucun objet ne correspond à cette recherche.</div>';
+    mainCount.textContent = '';
+    return;
+  }
+
+  mainCount.textContent = filtered.length + ' objet' + (filtered.length > 1 ? 's' : '');
+
+  Object.entries(groups).forEach(([catKey, items]) => {
+    const cat = CATS[catKey];
+    const section = document.createElement('section');
+    section.className = 'section';
+
+    const header = document.createElement('div');
+    header.className = 'sectionHeader';
+    header.innerHTML = '<span class="dot" style="background:' + cat.color + ';color:' + cat.color + '"></span>' +
+                       '<h3>' + cat.name + '</h3>' +
+                       '<span class="badge">' + items.length + '</span>';
+    section.appendChild(header);
+
+    const grid = document.createElement('div');
+    grid.className = 'sectionGrid';
+
+    items.forEach(item => {
+      const globalIndex = ITEMS.indexOf(item) + 1;
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.style.borderLeftColor = cat.color;
+      tile.dataset.itemIndex = ITEMS.indexOf(item);
+
+      const canvas = document.createElement('canvas');
+      canvas.className = 'tilePreview';
+      const ctx = canvas.getContext('2d');
+      tile.appendChild(canvas);
+
+      const num = document.createElement('div');
+      num.className = 'tileNum';
+      num.textContent = '#' + globalIndex;
+      tile.appendChild(num);
+
+      const footer = document.createElement('div');
+      footer.className = 'tileFooter';
+      footer.innerHTML = '<div class="tileName">' + item.name + '</div>';
+      tile.appendChild(footer);
+
+      tile.addEventListener('click', () => openFullscreen(ITEMS.indexOf(item)));
+
+      grid.appendChild(tile);
+      tilesMap.push({ el: tile, canvas, ctx, item, time: Math.random() * 10 });
+    });
+
+    section.appendChild(grid);
+    content.appendChild(section);
+  });
+
+  // Resize après render
+  requestAnimationFrame(resize);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+function setCategory(key) {
+  activeCat = key;
+  mainTitle.textContent = key === 'all' ? 'Tout' : CATS[key].name;
+  nav.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.cat === key);
+  });
+  buildContent();
+}
+
+// Search
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim();
+  buildContent();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER LOOP
+// ═══════════════════════════════════════════════════════════════
+function resize() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  tilesMap.forEach(t => {
+    const rect = t.el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      const cw = Math.floor(rect.width * dpr);
+      const ch = Math.floor(rect.height * dpr);
+      if (t.canvas.width !== cw || t.canvas.height !== ch) {
+        t.canvas.width = cw;
+        t.canvas.height = ch;
+      }
+    }
+  });
+  if (fsActive) {
+    resizeFS();
+  }
+}
+
+function resizeFS() {
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const body = document.getElementById('modalBody');
+  const rect = body.getBoundingClientRect();
+  // On garde 9:16
+  const maxH = rect.height - 40;
+  const maxW = rect.width - 160;
+  let w = maxW, h = w * 16 / 9;
+  if (h > maxH) { h = maxH; w = h * 9 / 16; }
+  const canvas = document.getElementById('modalCanvas');
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+}
+
+let lastT = performance.now();
+function loop(now) {
+  const dt = Math.min(0.05, (now - lastT) / 1000);
+  lastT = now;
+  const vh = window.innerHeight;
+
+  for (const t of tilesMap) {
+    const rect = t.el.getBoundingClientRect();
+    if (rect.bottom < -50 || rect.top > vh + 50) continue;
+    const w = t.canvas.width, h = t.canvas.height;
+    if (w === 0 || h === 0) continue;
+    t.time += dt;
+    t.ctx.clearRect(0, 0, w, h);
+    try { t.item.draw(t.ctx, w, h, t.time); } catch (e) {}
+  }
+
+  if (fsActive && fsItem) {
+    fsTime += dt;
+    const canvas = document.getElementById('modalCanvas');
+    const fsCtx = canvas.getContext('2d');
+    fsCtx.clearRect(0, 0, canvas.width, canvas.height);
+    try { fsItem.draw(fsCtx, canvas.width, canvas.height, fsTime); } catch (e) {}
+  }
+
+  requestAnimationFrame(loop);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FULLSCREEN MODAL
+// ═══════════════════════════════════════════════════════════════
+const modal = document.getElementById('modal');
+const modalClose = document.getElementById('modalClose');
+const modalPrev = document.getElementById('modalPrev');
+const modalNext = document.getElementById('modalNext');
+const modalTitle = document.getElementById('modalTitle');
+const modalCat = document.getElementById('modalCat');
+const modalDesc = document.getElementById('modalDesc');
+const modalCounter = document.getElementById('modalCounter');
+
+function openFullscreen(itemIndex) {
+  // Trouver l'index dans fsFiltered
+  const item = ITEMS[itemIndex];
+  fsIndex = fsFiltered.indexOf(item);
+  if (fsIndex < 0) fsIndex = 0;
+  updateFSItem();
+  fsActive = true;
+  fsTime = 0;
+  modal.classList.add('active');
+}
+
+function updateFSItem() {
+  fsItem = fsFiltered[fsIndex];
+  if (!fsItem) return;
+  const cat = CATS[fsItem.cat];
+  modalTitle.textContent = fsItem.name;
+  modalCat.textContent = cat.name;
+  modalCat.style.color = cat.color;
+  modalDesc.textContent = fsItem.desc;
+  modalCounter.textContent = (fsIndex + 1) + ' / ' + fsFiltered.length;
+  // Nouvelle instance de canvas pour éviter le cache
+  resizeFS();
+}
+
+function closeFS() {
+  fsActive = false;
+  fsItem = null;
+  modal.classList.remove('active');
+}
+
+modalClose.addEventListener('click', closeFS);
+modal.addEventListener('click', e => { if (e.target === modal) closeFS(); });
+
+modalPrev.addEventListener('click', e => {
+  e.stopPropagation();
+  if (fsFiltered.length === 0) return;
+  fsIndex = (fsIndex - 1 + fsFiltered.length) % fsFiltered.length;
+  updateFSItem();
+});
+
+modalNext.addEventListener('click', e => {
+  e.stopPropagation();
+  if (fsFiltered.length === 0) return;
+  fsIndex = (fsIndex + 1) % fsFiltered.length;
+  updateFSItem();
+});
+
+document.addEventListener('keydown', e => {
+  if (!fsActive) return;
+  if (e.key === 'Escape') closeFS();
+  else if (e.key === 'ArrowLeft') modalPrev.click();
+  else if (e.key === 'ArrowRight') modalNext.click();
+});
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('resize', resize);
+
+buildContent();
+
+requestAnimationFrame(() => {
+  setTimeout(resize, 100);
+  setTimeout(resize, 400);
+  requestAnimationFrame(loop);
+});
+
+console.log('BallYstik — ' + ITEMS.length + ' objets chargés dans ' + Object.keys(CATS).length + ' catégories');
+
+})();
+</script>
+</body>
+</html>

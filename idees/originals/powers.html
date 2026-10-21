@@ -1,0 +1,2248 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BallYstik — Arène des Pouvoirs</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #05070d; color: #e7eefb;
+    font-family: -apple-system, system-ui, sans-serif;
+    user-select: none;
+}
+
+#cardsView {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    transition: opacity 0.3s, transform 0.3s;
+}
+#cardsView.hidden { opacity: 0; transform: scale(0.95); pointer-events: none; }
+
+#header {
+    padding: 14px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap;
+    flex-shrink: 0;
+}
+#header h1 {
+    font-size: clamp(15px, 2vw, 20px);
+    font-weight: 900; letter-spacing: -0.03em;
+    background: linear-gradient(120deg, #7ce7ff, #ff8a3d, #c084fc);
+    -webkit-background-clip: text; background-clip: text;
+    color: transparent;
+}
+#header .count {
+    margin-left: auto; font-family: ui-monospace, monospace;
+    font-size: 11px; color: #4a5a72;
+}
+#filters {
+    display: flex; gap: 5px; flex-wrap: wrap;
+    padding: 10px 22px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    flex-shrink: 0;
+}
+.filter-btn {
+    padding: 5px 10px; border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #8a97ac; font-size: 10px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s;
+}
+.filter-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.filter-btn.active {
+    background: rgba(124,231,255,0.15);
+    border-color: rgba(124,231,255,0.5);
+    color: #fff;
+}
+#grid {
+    flex: 1; overflow-y: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 10px; padding: 14px 22px;
+    align-content: start;
+}
+@media (max-width: 600px) {
+    #grid { grid-template-columns: repeat(2, 1fr); gap: 8px; padding: 10px; }
+    #header, #filters { padding-left: 10px; padding-right: 10px; }
+}
+.tile {
+    position: relative; aspect-ratio: 1;
+    border-radius: 12px; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, #0f1520 0%, #05070d 100%);
+    border: 1px solid rgba(255,255,255,0.06);
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.tile:hover {
+    transform: translateY(-3px);
+    border-color: rgba(124,231,255,0.4);
+    box-shadow: 0 12px 32px -8px rgba(0,0,0,0.7);
+}
+.tile canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; display: block;
+}
+.tile .meta {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 24px 9px 7px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.95));
+    pointer-events: none;
+}
+.tile .cat {
+    font-size: 8px; font-weight: 800;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 2px; opacity: 0.85;
+}
+.tile .name {
+    font-size: 11px; font-weight: 800; color: #fff;
+    letter-spacing: -0.01em;
+}
+
+#arenaView {
+    position: fixed; inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at 50% 30%, #0a1018 0%, #05070d 70%);
+}
+#arenaView.active { display: flex; }
+
+#arenaFrame {
+    position: relative;
+    height: calc(100vh - 90px);
+    max-height: 900px;
+    aspect-ratio: 9/16;
+    max-width: 90vw;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #000;
+    box-shadow:
+        0 0 100px -20px rgba(124,231,255,0.25),
+        0 0 0 1px rgba(255,255,255,0.08),
+        0 30px 80px rgba(0,0,0,0.6);
+}
+#arenaCanvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%; display: block;
+}
+#arenaHUD {
+    position: absolute;
+    top: 14px; left: 14px; right: 14px;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+}
+.hud-left { display: flex; flex-direction: column; gap: 6px; }
+.hud-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.hud-weapon {
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.75);
+    border: 1px solid;
+    font-size: 13px; font-weight: 900;
+    backdrop-filter: blur(8px);
+    display: flex; align-items: center; gap: 8px;
+}
+.hud-weapon .icon {
+    width: 9px; height: 9px; border-radius: 50%;
+    box-shadow: 0 0 10px currentColor;
+}
+.hud-cat {
+    font-size: 9px; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 5px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.hud-hits {
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-family: ui-monospace, monospace;
+    font-size: 11px; font-weight: 700;
+    backdrop-filter: blur(8px);
+}
+.hud-hits .num { color: #7ce7ff; font-size: 16px; }
+.hud-desc {
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.08);
+    font-size: 10px; line-height: 1.4;
+    color: #a0aec0;
+    max-width: 200px;
+}
+#arenaControls {
+    display: flex; gap: 8px;
+    padding: 12px;
+    z-index: 10;
+}
+.ctrl-btn {
+    padding: 10px 18px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: #e7eefb;
+    font-size: 12px; font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.ctrl-btn:hover { background: rgba(255,255,255,0.12); }
+.ctrl-btn.primary {
+    background: rgba(124,231,255,0.15);
+    border-color: rgba(124,231,255,0.4);
+    color: #7ce7ff;
+}
+</style>
+</head>
+<body>
+
+<div id="cardsView">
+    <div id="header">
+        <h1>Arène des Pouvoirs — Démo réelle</h1>
+        <span class="count" id="count">0 pouvoirs</span>
+    </div>
+    <div id="filters"></div>
+    <div id="grid"></div>
+</div>
+
+<div id="arenaView">
+    <div id="arenaFrame">
+        <canvas id="arenaCanvas"></canvas>
+        <div id="arenaHUD">
+            <div class="hud-left">
+                <div class="hud-weapon" id="hudWeapon">
+                    <span class="icon" id="hudIcon"></span>
+                    <span id="hudName">Pouvoir</span>
+                </div>
+                <div class="hud-cat" id="hudCat"></div>
+                <div class="hud-desc" id="hudDesc"></div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-hits">HITS: <span class="num" id="hudHits">0</span></div>
+            </div>
+        </div>
+    </div>
+    <div id="arenaControls">
+        <button class="ctrl-btn" id="backBtn">← Retour</button>
+        <button class="ctrl-btn primary" id="replayBtn">↻ Rejouer</button>
+        <button class="ctrl-btn" id="nextBtn">Suivant →</button>
+    </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+const W = 1080, H = 1920;
+const BALL_R = 44;
+const MAX_SPEED = 1200;
+const WALL_PAD = 100;
+const ENEMY_HP = 100;
+
+const CATS = {
+    projectile: { name: 'Projectiles', color: '#7ce7ff' },
+    zone:       { name: 'Zones', color: '#ff6b1a' },
+    control:    { name: 'Contrôle', color: '#a855f7' },
+    transform:  { name: 'Transformation', color: '#22d3ee' },
+    mobility:   { name: 'Mobilité', color: '#fbbf24' },
+    summon:     { name: 'Invocation', color: '#c084fc' },
+    defense:    { name: 'Défense', color: '#34d399' }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+function glow(ctx, x, y, r, color, a) {
+    a = a === undefined ? 1 : a;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, color + 'aa');
+    g.addColorStop(0.5, color + '40');
+    g.addColorStop(1, color + '00');
+    ctx.globalAlpha = a;
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+function drawBallBody(ctx, x, y, r, color) {
+    const g = ctx.createRadialGradient(x, y, r*0.5, x, y, r*2.2);
+    g.addColorStop(0, color + '77');
+    g.addColorStop(1, color + '00');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r*2.2, 0, Math.PI*2); ctx.fill();
+    const bg = ctx.createRadialGradient(x - r*0.3, y - r*0.3, 0, x, y, r);
+    bg.addColorStop(0, '#fff');
+    bg.addColorStop(0.35, color);
+    bg.addColorStop(1, color);
+    ctx.fillStyle = bg;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, r-0.5, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.ellipse(x - r*0.35, y - r*0.35, r*0.25, r*0.15, -0.6, 0, Math.PI*2);
+    ctx.fill();
+}
+
+function spawnParticle(s, x, y, color, count, speed, size) {
+    for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = speed * (0.5 + Math.random() * 0.5);
+        s.particles.push({
+            x, y,
+            vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+            life: 0.4 + Math.random() * 0.3,
+            maxLife: 0.7,
+            color,
+            size: size * (0.7 + Math.random() * 0.5)
+        });
+    }
+}
+
+function spawnRing(s, x, y, color, maxR, life) {
+    s.rings.push({ x, y, color, maxR, life, maxLife: life });
+}
+
+function damageEnemy(s, e, dmg, kx, ky, fromX, fromY) {
+    if (!e.alive || e.invuln > 0) return;
+    e.hp -= dmg;
+    e.invuln = 0.08;
+    e.hitFlash = 1;
+    const dx = e.x - (fromX || s.hero.x);
+    const dy = e.y - (fromY || s.hero.y);
+    const d = Math.hypot(dx, dy) || 1;
+    e.vx += (dx/d) * (kx || 300);
+    e.vy += (dy/d) * (ky || 300);
+    s.hits++;
+    s.shake = Math.max(s.shake, Math.min(15, dmg));
+    if (e.hp <= 0) {
+        e.alive = false;
+        spawnParticle(s, e.x, e.y, e.color, 30, 500, 5);
+        spawnRing(s, e.x, e.y, e.color, 200, 0.6);
+        s.shake = Math.max(s.shake, 25);
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POWERS
+// ═══════════════════════════════════════════════════════════════
+const POWERS = [
+
+// ═══ PROJECTILES ═══
+{
+    name: 'Flèche', cat: 'projectile', color: '#00f2fe',
+    desc: 'Tire automatiquement vers l\'ennemi le plus proche.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#00f2fe');
+    },
+    tick(s, dt, t) {
+        chase(s, 1.2);
+        s.fireTimer = (s.fireTimer || 0) - dt;
+        if (s.fireTimer <= 0) {
+            s.fireTimer = 0.45;
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                const dx = nearest.x - s.hero.x, dy = nearest.y - s.hero.y;
+                const d = Math.hypot(dx, dy) || 1;
+                s.projectiles.push({
+                    type: 'arrow', x: s.hero.x, y: s.hero.y,
+                    vx: (dx/d)*1400, vy: (dy/d)*1400,
+                    life: 2, dmg: 15, bounces: 2,
+                    color: '#00f2fe', angle: Math.atan2(dy, dx)
+                });
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const p of s.projectiles) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.angle);
+            ctx.strokeStyle = '#cffaff';
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.moveTo(-25, 0); ctx.lineTo(15, 0); ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.moveTo(15, 0); ctx.lineTo(5, -8); ctx.lineTo(5, 8); ctx.closePath(); ctx.fill();
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Canon à plasma', cat: 'projectile', color: '#fb923c',
+    desc: 'Charge et tire un obus explosif.',
+    draw(ctx, cx, cy, r, t) {
+        const pulse = 0.5 + Math.sin(t*4)*0.3;
+        glow(ctx, cx, cy, r*1.8, '#fb923c', 0.5 + pulse*0.5);
+        drawBallBody(ctx, cx, cy, r*0.9, '#fb923c');
+        // Barrel
+        ctx.save(); ctx.translate(cx, cy); ctx.rotate(Math.sin(t*0.7)*0.4);
+        ctx.fillStyle = '#3a2410';
+        ctx.fillRect(r*0.5, -6, r*0.9, 12);
+        ctx.fillStyle = '#fed7aa';
+        ctx.fillRect(r*1.1, -4, 8, 8);
+        ctx.restore();
+    },
+    tick(s, dt, t) {
+        chase(s, 0.9);
+        s.fireTimer = (s.fireTimer || 0) - dt;
+        if (s.fireTimer <= 0) {
+            s.fireTimer = 1.1;
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                const dx = nearest.x - s.hero.x, dy = nearest.y - s.hero.y;
+                const d = Math.hypot(dx, dy) || 1;
+                s.projectiles.push({
+                    type: 'plasma', x: s.hero.x, y: s.hero.y,
+                    vx: (dx/d)*900, vy: (dy/d)*900,
+                    life: 2, dmg: 25, splash: 130, bounces: 0,
+                    color: '#fb923c'
+                });
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const p of s.projectiles) {
+            glow(ctx, p.x, p.y, 40, '#fb923c');
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 12, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#fb923c';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI*2); ctx.fill();
+        }
+    }
+},
+
+{
+    name: 'Missile', cat: 'projectile', color: '#fbbf24',
+    desc: 'Missile à tête chercheuse.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#fbbf24');
+    },
+    tick(s, dt, t) {
+        chase(s, 1.1);
+        s.fireTimer = (s.fireTimer || 0) - dt;
+        if (s.fireTimer <= 0) {
+            s.fireTimer = 0.9;
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                s.projectiles.push({
+                    type: 'missile', x: s.hero.x, y: s.hero.y,
+                    vx: 0, vy: 0,
+                    targetId: nearest,
+                    life: 3, dmg: 30, splash: 100,
+                    color: '#fbbf24'
+                });
+            }
+        }
+        // Missiles follow
+        for (const p of s.projectiles) {
+            if (p.type !== 'missile') continue;
+            const tg = p.targetId;
+            if (!tg || !tg.alive) continue;
+            const dx = tg.x - p.x, dy = tg.y - p.y;
+            const d = Math.hypot(dx, dy) || 1;
+            p.vx += (dx/d) * 1500 * dt;
+            p.vy += (dy/d) * 1500 * dt;
+            const sp = Math.hypot(p.vx, p.vy);
+            if (sp > 700) { p.vx = p.vx/sp*700; p.vy = p.vy/sp*700; }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const p of s.projectiles) {
+            if (p.type !== 'missile') continue;
+            const angle = Math.atan2(p.vy, p.vx);
+            ctx.save();
+            ctx.translate(p.x, p.y); ctx.rotate(angle);
+            ctx.fillStyle = '#fbbf24';
+            ctx.shadowColor = '#fbbf24'; ctx.shadowBlur = 20;
+            ctx.beginPath();
+            ctx.moveTo(15, 0); ctx.lineTo(-10, -6); ctx.lineTo(-6, 0); ctx.lineTo(-10, 6);
+            ctx.closePath(); ctx.fill();
+            ctx.restore();
+            // Smoke trail
+            if (Math.random() < 0.5) {
+                s.particles.push({
+                    x: p.x, y: p.y, vx: (Math.random()-0.5)*50, vy: (Math.random()-0.5)*50,
+                    life: 0.4, maxLife: 0.4, color: '#fbbf24', size: 6
+                });
+            }
+        }
+    }
+},
+
+{
+    name: 'Boomerang', cat: 'projectile', color: '#22d3ee',
+    desc: 'Lance un projectile qui revient vers elle.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#22d3ee');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.fireTimer = (s.fireTimer || 0) - dt;
+        if (s.fireTimer <= 0) {
+            s.fireTimer = 1.4;
+            const ang = Math.atan2(s.hero.vy, s.hero.vx) || 0;
+            s.projectiles.push({
+                type: 'boomerang', x: s.hero.x, y: s.hero.y,
+                vx: Math.cos(ang)*900, vy: Math.sin(ang)*900,
+                phase: 'out', life: 4, dmg: 12,
+                color: '#22d3ee', spin: 0
+            });
+        }
+        for (const p of s.projectiles) {
+            if (p.type !== 'boomerang') continue;
+            p.spin += dt * 15;
+            if (p.phase === 'out') {
+                p.vx *= 0.97; p.vy *= 0.97;
+                if (Math.hypot(p.vx, p.vy) < 100) p.phase = 'return';
+            } else {
+                const dx = s.hero.x - p.x, dy = s.hero.y - p.y;
+                const d = Math.hypot(dx, dy) || 1;
+                p.vx += (dx/d) * 2000 * dt;
+                p.vy += (dy/d) * 2000 * dt;
+                if (d < 60) p.life = 0;
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const p of s.projectiles) {
+            if (p.type !== 'boomerang') continue;
+            ctx.save();
+            ctx.translate(p.x, p.y); ctx.rotate(p.spin);
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 6;
+            ctx.shadowColor = '#22d3ee'; ctx.shadowBlur = 20;
+            ctx.beginPath(); ctx.arc(0, 0, 25, 0.3, Math.PI - 0.3); ctx.stroke();
+            ctx.beginPath(); ctx.arc(0, 0, 25, Math.PI + 0.3, 2*Math.PI - 0.3); ctx.stroke();
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Laser', cat: 'projectile', color: '#ff2a85',
+    desc: 'Rayon continu qui suit l\'ennemi.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#ff2a85');
+        // Lens
+        ctx.fillStyle = '#fff';
+        ctx.shadowColor = '#ff2a85'; ctx.shadowBlur = 20;
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.3, 0, Math.PI*2); ctx.fill();
+        ctx.shadowBlur = 0;
+    },
+    tick(s, dt, t) {
+        // Slow orbit
+        const a = t * 0.5;
+        s.hero.vx += Math.cos(a + Math.PI/2) * 200 * dt;
+        s.hero.vy += Math.sin(a + Math.PI/2) * 200 * dt;
+        // Damage along beam
+        let nearest = null, nd = Infinity;
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+            if (d < nd) { nd = d; nearest = e; }
+        }
+        if (nearest) {
+            const dx = nearest.x - s.hero.x, dy = nearest.y - s.hero.y;
+            const d = Math.hypot(dx, dy) || 1;
+            s.laserAngle = Math.atan2(dy, dx);
+            s.laserTarget = nearest;
+            // Damage all enemies in the beam path
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const ex = e.x - s.hero.x, ey = e.y - s.hero.y;
+                const proj = ex * Math.cos(s.laserAngle) + ey * Math.sin(s.laserAngle);
+                if (proj < 0) continue;
+                const perp = Math.abs(-ex * Math.sin(s.laserAngle) + ey * Math.cos(s.laserAngle));
+                if (perp < e.r + 25 && proj < 800) {
+                    damageEnemy(s, e, 0.8, 50, 50);
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.laserAngle) return;
+        const len = 1200;
+        const ex = s.hero.x + Math.cos(s.laserAngle) * len;
+        const ey = s.hero.y + Math.sin(s.laserAngle) * len;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,42,133,0.3)';
+        ctx.lineWidth = 20;
+        ctx.shadowColor = '#ff2a85'; ctx.shadowBlur = 30;
+        ctx.beginPath(); ctx.moveTo(s.hero.x, s.hero.y); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.strokeStyle = '#ff2a85';
+        ctx.lineWidth = 8;
+        ctx.beginPath(); ctx.moveTo(s.hero.x, s.hero.y); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(s.hero.x, s.hero.y); ctx.lineTo(ex, ey); ctx.stroke();
+        // Impact
+        if (s.laserTarget && s.laserTarget.alive) {
+            glow(ctx, s.laserTarget.x, s.laserTarget.y, 80, '#ff2a85');
+        }
+        ctx.restore();
+    }
+},
+
+// ═══ ZONES ═══
+{
+    name: 'Flaque de lave', cat: 'zone', color: '#ff6b1a',
+    desc: 'Laisse des flaques qui brûlent les ennemis.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#ff6b1a');
+        // Flames
+        for (let i = 0; i < 6; i++) {
+            const a = (i/6)*Math.PI*2 + t*2;
+            const d = r * (1.3 + Math.sin(t*6+i)*0.15);
+            const g = ctx.createRadialGradient(cx+Math.cos(a)*d, cy+Math.sin(a)*d, 0, cx+Math.cos(a)*d, cy+Math.sin(a)*d, r*0.4);
+            g.addColorStop(0, '#fff6a0');
+            g.addColorStop(0.6, '#ff8800');
+            g.addColorStop(1, 'rgba(200,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(cx+Math.cos(a)*d, cy+Math.sin(a)*d, r*0.4, 0, Math.PI*2); ctx.fill();
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.hero.trail = s.hero.trail || [];
+        s.hero.trail.push({ x: s.hero.x, y: s.hero.y, life: 2.5 });
+        for (const tr of s.hero.trail) tr.life -= dt;
+        s.hero.trail = s.hero.trail.filter(p => p.life > 0);
+        for (const tr of s.hero.trail) {
+            for (const e of s.enemies) {
+                if (!e.alive || e.invuln > 0.04) continue;
+                if (Math.hypot(e.x - tr.x, e.y - tr.y) < e.r + 30) {
+                    damageEnemy(s, e, 0.4, 20, 20);
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.trail) return;
+        for (const p of s.hero.trail) {
+            const a = Math.min(1, p.life);
+            const size = 45 * a;
+            const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+            g.addColorStop(0, `rgba(255,250,180,${a*0.7})`);
+            g.addColorStop(0.5, `rgba(255,150,0,${a*0.4})`);
+            g.addColorStop(1, 'rgba(200,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(p.x, p.y, size, 0, Math.PI*2); ctx.fill();
+        }
+    }
+},
+
+{
+    name: 'Poison', cat: 'zone', color: '#84cc16',
+    desc: 'Nuage toxique qui suit et inflige des DOT.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#84cc16');
+    },
+    tick(s, dt, t) {
+        chase(s, 0.9);
+        if (!s.hero.cloudTimer) s.hero.cloudTimer = 0;
+        s.hero.cloudTimer -= dt;
+        if (s.hero.cloudTimer <= 0) {
+            s.hero.cloudTimer = 0.3;
+            s.hero.cloud = s.hero.cloud || [];
+            s.hero.cloud.push({ x: s.hero.x, y: s.hero.y, life: 3 });
+        }
+        s.hero.cloud = s.hero.cloud || [];
+        for (const c of s.hero.cloud) c.life -= dt;
+        s.hero.cloud = s.hero.cloud.filter(p => p.life > 0);
+        for (const c of s.hero.cloud) {
+            for (const e of s.enemies) {
+                if (!e.alive || e.invuln > 0.04) continue;
+                if (Math.hypot(e.x - c.x, e.y - c.y) < e.r + 80) {
+                    damageEnemy(s, e, 0.3, 10, 10);
+                    e.vx *= 0.97; e.vy *= 0.97;
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.cloud) return;
+        for (const c of s.hero.cloud) {
+            const a = Math.min(1, c.life);
+            for (let i = 0; i < 4; i++) {
+                const a2 = t*1.5 + i*Math.PI/2;
+                const d = 40 + Math.sin(t*2 + i)*15;
+                const cx = c.x + Math.cos(a2)*d;
+                const cy = c.y + Math.sin(a2)*d;
+                const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, 40);
+                g.addColorStop(0, `rgba(132,204,22,${a*0.5})`);
+                g.addColorStop(1, 'rgba(132,204,22,0)');
+                ctx.fillStyle = g;
+                ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI*2); ctx.fill();
+            }
+        }
+    }
+},
+
+{
+    name: 'Zone de gel', cat: 'zone', color: '#7ce7ff',
+    desc: 'Zone qui gèle et ralentit les ennemis.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#7ce7ff');
+        // Crystals
+        for (let i = 0; i < 6; i++) {
+            const a = t*1.5 + i*Math.PI/3;
+            const px = cx + Math.cos(a)*r*1.6;
+            const py = cy + Math.sin(a)*r*1.6;
+            ctx.save(); ctx.translate(px, py); ctx.rotate(a + t*2);
+            ctx.fillStyle = '#cffaff';
+            ctx.beginPath();
+            ctx.moveTo(0, -r*0.25); ctx.lineTo(r*0.125, 0); ctx.lineTo(0, r*0.25); ctx.lineTo(-r*0.125, 0);
+            ctx.closePath(); ctx.fill();
+            ctx.restore();
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.hero.gelTrail = s.hero.gelTrail || [];
+        s.hero.gelTrail.push({ x: s.hero.x, y: s.hero.y, life: 2 });
+        for (const tr of s.hero.gelTrail) tr.life -= dt;
+        s.hero.gelTrail = s.hero.gelTrail.filter(p => p.life > 0);
+        for (const tr of s.hero.gelTrail) {
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                if (Math.hypot(e.x - tr.x, e.y - tr.y) < e.r + 50) {
+                    e.vx *= 0.93; e.vy *= 0.93;
+                    if (e.invuln <= 0.04) damageEnemy(s, e, 0.3, 0, 0);
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.gelTrail) return;
+        for (const p of s.hero.gelTrail) {
+            const a = Math.min(1, p.life);
+            ctx.save();
+            ctx.globalAlpha = a * 0.4;
+            ctx.fillStyle = '#7ce7ff';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 55, 0, Math.PI*2); ctx.fill();
+            ctx.globalAlpha = a * 0.8;
+            ctx.strokeStyle = '#cffaff';
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 3; i++) {
+                const ang = i * Math.PI / 3 + t;
+                ctx.beginPath();
+                ctx.moveTo(p.x - Math.cos(ang)*20, p.y - Math.sin(ang)*20);
+                ctx.lineTo(p.x + Math.cos(ang)*20, p.y + Math.sin(ang)*20);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Mines', cat: 'zone', color: '#ef4444',
+    desc: 'Dépose des mines qui explosent au contact.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r, '#ef4444');
+        // Spikes
+        for (let i = 0; i < 8; i++) {
+            const a = (i/8)*Math.PI*2 + t*0.5;
+            ctx.strokeStyle = '#ff6666';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(a)*r*0.9, cy + Math.sin(a)*r*0.9);
+            ctx.lineTo(cx + Math.cos(a)*r*1.3, cy + Math.sin(a)*r*1.3);
+            ctx.stroke();
+        }
+        // Blinking LED
+        if (Math.sin(t*8) > 0) {
+            glow(ctx, cx, cy, r*0.4, '#ffdd44');
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.mineTimer = (s.mineTimer || 0) - dt;
+        if (s.mineTimer <= 0) {
+            s.mineTimer = 0.7;
+            s.mines.push({ x: s.hero.x, y: s.hero.y, life: 5, phase: 0 });
+        }
+        for (let i = s.mines.length - 1; i >= 0; i--) {
+            const m = s.mines[i];
+            m.life -= dt;
+            m.phase += dt * 3;
+            if (m.life <= 0) { s.mines.splice(i, 1); continue; }
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                if (Math.hypot(e.x - m.x, e.y - m.y) < e.r + 40) {
+                    // Explode
+                    for (const e2 of s.enemies) {
+                        if (!e2.alive) continue;
+                        if (Math.hypot(e2.x - m.x, e2.y - m.y) < 160) {
+                            damageEnemy(s, e2, 30, 500, 500, m.x, m.y);
+                        }
+                    }
+                    spawnParticle(s, m.x, m.y, '#ef4444', 20, 600, 6);
+                    spawnRing(s, m.x, m.y, '#ef4444', 180, 0.4);
+                    s.mines.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const m of s.mines) {
+            const pulse = 0.7 + Math.sin(m.phase) * 0.3;
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, m.life / 1);
+            ctx.fillStyle = '#3a0808';
+            ctx.beginPath(); ctx.arc(m.x, m.y, 20 * pulse, 0, Math.PI*2); ctx.fill();
+            if (Math.sin(m.phase * 2) > 0) {
+                glow(ctx, m.x, m.y, 25, '#ffdd44', 0.8);
+            }
+            ctx.restore();
+        }
+    }
+},
+
+// ═══ CONTRÔLE ═══
+{
+    name: 'Aimant', cat: 'control', color: '#f472b6',
+    desc: 'Attire les ennemis vers elle.',
+    draw(ctx, cx, cy, r, t) {
+        // Field waves
+        for (let i = 0; i < 3; i++) {
+            const phase = (t*0.8 + i/3)%1;
+            ctx.strokeStyle = `rgba(244,114,182,${(1-phase)*0.6})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(cx, cy, r + phase*r*2, 0, Math.PI*2); ctx.stroke();
+        }
+        drawBallBody(ctx, cx, cy, r, '#f472b6');
+    },
+    tick(s, dt, t) {
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = s.hero.x - e.x, dy = s.hero.y - e.y;
+            const d = Math.hypot(dx, dy);
+            if (d > 0 && d < 600) {
+                const f = 400 * (1 - d/600);
+                e.vx += (dx/d) * f * dt;
+                e.vy += (dy/d) * f * dt;
+            }
+        }
+        chase(s, 0.3);
+    },
+    fx(ctx, s, t) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(244,114,182,0.15)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath(); ctx.arc(s.hero.x, s.hero.y, 600, 0, Math.PI*2); ctx.stroke();
+        ctx.restore();
+    }
+},
+
+{
+    name: 'Répulsif', cat: 'control', color: '#f97316',
+    desc: 'Dôme pulsant qui repousse violemment.',
+    draw(ctx, cx, cy, r, t) {
+        const pulse = 1 + Math.sin(t*4)*0.15;
+        const domeR = r * 2 * pulse;
+        ctx.strokeStyle = `rgba(249,115,22,${0.7+Math.sin(t*4)*0.3})`;
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#f97316'; ctx.shadowBlur = 25;
+        ctx.beginPath(); ctx.arc(cx, cy, domeR, 0, Math.PI*2); ctx.stroke();
+        ctx.shadowBlur = 0;
+        drawBallBody(ctx, cx, cy, r*0.7, '#f97316');
+    },
+    tick(s, dt, t) {
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = e.x - s.hero.x, dy = e.y - s.hero.y;
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < s.hero.r * 3) {
+                e.vx += (dx/d) * 900 * dt;
+                e.vy += (dy/d) * 900 * dt;
+                if (e.invuln <= 0.04) damageEnemy(s, e, 0.3, 100, 100);
+            }
+        }
+        chase(s, 0.4);
+    },
+    fx(ctx, s, t) {
+        const pulse = 1 + Math.sin(t*4)*0.15;
+        glow(ctx, s.hero.x, s.hero.y, s.hero.r * 3.5 * pulse, '#f97316', 0.3);
+    }
+},
+
+{
+    name: 'Trou noir', cat: 'control', color: '#8b5cf6',
+    desc: 'Aspire fortement tout ce qui s\'approche.',
+    draw(ctx, cx, cy, r, t) {
+        ctx.save(); ctx.translate(cx, cy); ctx.scale(1, 0.25); ctx.rotate(t*1.5);
+        for (let i = 0; i < 3; i++) {
+            ctx.strokeStyle = `rgba(${200-i*40}, ${100+i*40}, 255, ${0.8-i*0.2})`;
+            ctx.lineWidth = 4-i;
+            ctx.beginPath(); ctx.arc(0, 0, r*(1.3+i*0.3), 0, Math.PI*1.8); ctx.stroke();
+        }
+        ctx.restore();
+        ctx.fillStyle = '#000';
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.9, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#c084fc'; ctx.lineWidth = 3;
+        ctx.shadowColor = '#c084fc'; ctx.shadowBlur = 25;
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.9, 0, Math.PI*2); ctx.stroke();
+        ctx.shadowBlur = 0;
+    },
+    tick(s, dt, t) {
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = s.hero.x - e.x, dy = s.hero.y - e.y;
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < 700) {
+                const f = 1000 * (1 - d/700);
+                e.vx += (dx/d) * f * dt;
+                e.vy += (dy/d) * f * dt;
+            }
+            if (d < e.r + s.hero.r + 20 && e.invuln <= 0.04) {
+                damageEnemy(s, e, 0.4, 0, 0);
+            }
+        }
+        const a = t * 0.5;
+        s.hero.vx += Math.cos(a + Math.PI/2) * 100 * dt;
+        s.hero.vy += Math.sin(a + Math.PI/2) * 100 * dt;
+    },
+    fx(ctx, s, t) {
+        glow(ctx, s.hero.x, s.hero.y, 500, '#8b5cf6', 0.15);
+    }
+},
+
+{
+    name: 'Vortex', cat: 'control', color: '#d946ef',
+    desc: 'Fait tourner les ennemis autour d\'elle.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#d946ef');
+    },
+    tick(s, dt, t) {
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = e.x - s.hero.x, dy = e.y - s.hero.y;
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < 500 && d > 60) {
+                const tx = -dy/d, ty = dx/d;
+                e.vx += tx * 800 * dt;
+                e.vy += ty * 800 * dt;
+                e.vx += (s.hero.x - e.x)/d * 200 * dt;
+                e.vy += (s.hero.y - e.y)/d * 200 * dt;
+            }
+            if (d < e.r + s.hero.r + 30 && e.invuln <= 0.04) {
+                damageEnemy(s, e, 0.5, 100, 100);
+            }
+        }
+        chase(s, 0.4);
+    },
+    fx(ctx, s, t) {
+        for (let i = 0; i < 6; i++) {
+            const a = t * 3 + i * Math.PI/3;
+            const d = 100 + Math.sin(t*2 + i)*50;
+            ctx.strokeStyle = `rgba(217,70,239,${0.4 - i*0.05})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(s.hero.x, s.hero.y, d, a, a + Math.PI/3);
+            ctx.stroke();
+        }
+    }
+},
+
+// ═══ TRANSFORMATION ═══
+{
+    name: 'Fantôme', cat: 'transform', color: '#a0a0c0',
+    desc: 'Traverse les murs, effrayant les ennemis.',
+    draw(ctx, cx, cy, r, t) {
+        ctx.save();
+        ctx.globalAlpha = 0.6;
+        const gg = ctx.createRadialGradient(cx, cy-r*0.3, r*0.2, cx, cy, r*1.1);
+        gg.addColorStop(0, 'rgba(200,200,255,0.9)');
+        gg.addColorStop(1, 'rgba(80,80,120,0.2)');
+        ctx.fillStyle = gg;
+        ctx.beginPath();
+        ctx.arc(cx, cy-r*0.2, r*0.9, Math.PI, 0);
+        ctx.lineTo(cx+r*0.9, cy+r*0.5);
+        for (let i = 4; i >= 0; i--) {
+            const x = cx - r*0.9 + (i/4)*r*1.8;
+            ctx.lineTo(x, cy+r*0.5 + Math.sin(t*3+i*Math.PI/2)*r*0.1);
+        }
+        ctx.closePath(); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.beginPath(); ctx.arc(cx-r*0.35, cy-r*0.3, r*0.15, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx+r*0.35, cy-r*0.3, r*0.15, 0, Math.PI*2); ctx.fill();
+    },
+    tick(s, dt, t) {
+        s._ghostMode = true;
+        chase(s, 1);
+    }
+},
+
+{
+    name: 'Géant', cat: 'transform', color: '#dc2626',
+    desc: 'La boule grossit, plus de dégâts mais plus lente.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*1.6, '#dc2626');
+        // Muscles
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 4; i++) {
+            const a = i * Math.PI/2 + Math.PI/4;
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(a)*r*0.6, cy + Math.sin(a)*r*0.6, r*0.4, a + Math.PI, a + 2*Math.PI);
+            ctx.stroke();
+        }
+    },
+    tick(s, dt, t) {
+        s.hero._scale = 1.6;
+        chase(s, 0.7);
+        // Big AoE contact
+        for (const e of s.enemies) {
+            if (!e.alive || e.invuln > 0.04) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r * 1.6 + e.r) {
+                damageEnemy(s, e, 0.8, 700, 700);
+            }
+        }
+    }
+},
+
+{
+    name: 'Boule de feu', cat: 'transform', color: '#ff6b1a',
+    desc: 'La boule est en feu. Brûle au contact.',
+    draw(ctx, cx, cy, r, t) {
+        const fg = ctx.createRadialGradient(cx, cy, r*0.2, cx, cy, r*1.2);
+        fg.addColorStop(0, '#fff9c0');
+        fg.addColorStop(0.4, '#ffaa00');
+        fg.addColorStop(0.8, '#ff4400');
+        fg.addColorStop(1, '#8a0000');
+        ctx.fillStyle = fg;
+        ctx.beginPath(); ctx.arc(cx, cy, r*1.2, 0, Math.PI*2); ctx.fill();
+        for (let i = 0; i < 8; i++) {
+            const a = (i/8)*Math.PI*2 + t*2;
+            const d = r * (1.2 + Math.sin(t*6+i)*0.2);
+            const fx = cx + Math.cos(a)*d, fy = cy + Math.sin(a)*d;
+            const g = ctx.createRadialGradient(fx, fy, 0, fx, fy, r*0.4);
+            g.addColorStop(0, '#fff6a0');
+            g.addColorStop(0.6, '#ff8800');
+            g.addColorStop(1, 'rgba(200,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.arc(fx, fy, r*0.4, 0, Math.PI*2); ctx.fill();
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        for (const e of s.enemies) {
+            if (!e.alive || e.invuln > 0.04) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 15) {
+                damageEnemy(s, e, 1.5, 300, 300);
+            }
+        }
+    }
+},
+
+{
+    name: 'Boule de glace', cat: 'transform', color: '#7ce7ff',
+    desc: 'Gèle les ennemis au contact.',
+    draw(ctx, cx, cy, r, t) {
+        const ig = ctx.createRadialGradient(cx, cy, r*0.2, cx, cy, r*1.1);
+        ig.addColorStop(0, '#fff');
+        ig.addColorStop(0.4, '#a0e8ff');
+        ig.addColorStop(0.8, '#4a8aaf');
+        ig.addColorStop(1, '#1a3a4f');
+        ctx.fillStyle = ig;
+        ctx.beginPath(); ctx.arc(cx, cy, r*1.1, 0, Math.PI*2); ctx.fill();
+        for (let i = 0; i < 6; i++) {
+            const a = t*1.5 + i*Math.PI/3;
+            const px = cx + Math.cos(a)*r*1.6;
+            const py = cy + Math.sin(a)*r*1.6;
+            ctx.save(); ctx.translate(px, py); ctx.rotate(a + t*2);
+            ctx.fillStyle = '#cffaff';
+            ctx.beginPath();
+            ctx.moveTo(0, -r*0.25); ctx.lineTo(r*0.125, 0); ctx.lineTo(0, r*0.25); ctx.lineTo(-r*0.125, 0);
+            ctx.closePath(); ctx.fill();
+            ctx.restore();
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 30) {
+                e.vx *= 0.85; e.vy *= 0.85;
+                if (e.invuln <= 0.04) damageEnemy(s, e, 0.5, 100, 100);
+            }
+        }
+    }
+},
+
+{
+    name: 'Électrique', cat: 'transform', color: '#a78bfa',
+    desc: 'Arcs électriques qui foudroient.',
+    draw(ctx, cx, cy, r, t) {
+        for (let i = 0; i < 5; i++) {
+            const baseA = (i/5)*Math.PI*2 + t*1.5;
+            if (Math.sin(t*20+i*3) <= 0) continue;
+            ctx.strokeStyle = '#e0d0ff';
+            ctx.lineWidth = 2;
+            ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.moveTo(cx+Math.cos(baseA)*r, cy+Math.sin(baseA)*r);
+            for (let j = 0; j < 6; j++) {
+                const p = (j+1)/7, dist = r + p*r*1.8;
+                const jitter = baseA + (Math.random()-0.5)*0.6;
+                ctx.lineTo(cx+Math.cos(jitter)*dist, cy+Math.sin(jitter)*dist);
+            }
+            ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        const eg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        eg.addColorStop(0, '#fff');
+        eg.addColorStop(0.3, '#d0b0ff');
+        eg.addColorStop(1, '#5a2a9e');
+        ctx.fillStyle = eg;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.zapTimer = (s.zapTimer || 0) - dt;
+        if (s.zapTimer <= 0) {
+            s.zapTimer = 0.6;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < 400) {
+                    damageEnemy(s, e, 15, 200, 200);
+                    s.beams.push({ x1: s.hero.x, y1: s.hero.y, x2: e.x, y2: e.y, life: 0.25, color: '#e0d0ff' });
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const b of s.beams) {
+            ctx.save();
+            ctx.globalAlpha = b.life / 0.25;
+            ctx.strokeStyle = b.color;
+            ctx.lineWidth = 6;
+            ctx.shadowColor = '#a78bfa'; ctx.shadowBlur = 25;
+            ctx.beginPath(); ctx.moveTo(b.x1, b.y1);
+            for (let i = 1; i < 8; i++) {
+                const p = i/8;
+                ctx.lineTo(b.x1 + (b.x2-b.x1)*p + (Math.random()-0.5)*30,
+                           b.y1 + (b.y2-b.y1)*p + (Math.random()-0.5)*30);
+            }
+            ctx.lineTo(b.x2, b.y2);
+            ctx.stroke();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+},
+
+// ═══ MOBILITÉ ═══
+{
+    name: 'Dash', cat: 'mobility', color: '#fbbf24',
+    desc: 'Bonds rapides qui infligent des dégâts.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#fbbf24');
+    },
+    tick(s, dt, t) {
+        chase(s, 1.5);
+        // Speed trail
+        if (Math.random() < 0.5) {
+            s.particles.push({
+                x: s.hero.x, y: s.hero.y,
+                vx: (Math.random()-0.5)*100, vy: (Math.random()-0.5)*100,
+                life: 0.3, maxLife: 0.3, color: '#fbbf24', size: 5
+            });
+        }
+        for (const e of s.enemies) {
+            if (!e.alive || e.invuln > 0.04) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 15) {
+                damageEnemy(s, e, 0.5, 500, 500);
+            }
+        }
+    }
+},
+
+{
+    name: 'Téléportation', cat: 'mobility', color: '#c084fc',
+    desc: 'Se téléporte près des ennemis en laissant un portail.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#c084fc');
+    },
+    tick(s, dt, t) {
+        s.tpTimer = (s.tpTimer || 0) - dt;
+        if (s.tpTimer <= 0) {
+            s.tpTimer = 1.3;
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                spawnRing(s, s.hero.x, s.hero.y, '#c084fc', 100, 0.4);
+                s.hero.x = nearest.x + (Math.random()-0.5)*100;
+                s.hero.y = nearest.y + (Math.random()-0.5)*100;
+                spawnRing(s, s.hero.x, s.hero.y, '#c084fc', 100, 0.4);
+                damageEnemy(s, nearest, 20, 300, 300);
+            }
+        }
+    }
+},
+
+{
+    name: 'Bélier', cat: 'mobility', color: '#ef4444',
+    desc: 'Charge en ligne droite vers l\'ennemi.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.9, '#ef4444');
+        // Horns
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+        for (const sgn of [-1, 1]) {
+            const a = sgn * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(a - Math.PI/2)*r*0.9, cy + Math.sin(a - Math.PI/2)*r*0.9);
+            ctx.quadraticCurveTo(
+                cx + Math.cos(a - Math.PI/2)*r*1.3,
+                cy + Math.sin(a - Math.PI/2)*r*1.3 - r*0.3,
+                cx + Math.cos(a - Math.PI/2)*r*1.2,
+                cy + Math.sin(a - Math.PI/2)*r*1.2 - r*0.6
+            );
+            ctx.stroke();
+        }
+    },
+    tick(s, dt, t) {
+        s.chargeTimer = (s.chargeTimer || 0) - dt;
+        if (s.chargeTimer <= 0) {
+            s.chargeTimer = 1.8;
+            s.charging = true;
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                const dx = nearest.x - s.hero.x, dy = nearest.y - s.hero.y;
+                const d = Math.hypot(dx, dy) || 1;
+                s.hero.vx = (dx/d) * 1800;
+                s.hero.vy = (dy/d) * 1800;
+            }
+        }
+        if (s.charging) {
+            s.chargeTime = (s.chargeTime || 0) + dt;
+            if (s.chargeTime > 0.5) {
+                s.charging = false;
+                s.chargeTime = 0;
+            }
+            // Damage on contact
+            for (const e of s.enemies) {
+                if (!e.alive || e.invuln > 0.04) continue;
+                if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 20) {
+                    damageEnemy(s, e, 30, 800, 800);
+                    s.shake = 30;
+                }
+            }
+        } else {
+            chase(s, 0.4);
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.charging) return;
+        for (let i = 0; i < 5; i++) {
+            const p = i / 5;
+            const sp = Math.hypot(s.hero.vx, s.hero.vy) || 1;
+            const tx = s.hero.x - (s.hero.vx/sp) * p * 100;
+            const ty = s.hero.y - (s.hero.vy/sp) * p * 100;
+            ctx.globalAlpha = 0.6 * (1 - p);
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath(); ctx.arc(tx, ty, s.hero.r * (0.6 - p*0.3), 0, Math.PI*2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+},
+
+{
+    name: 'Câble', cat: 'mobility', color: '#f59e0b',
+    desc: 'Pendule ancré au plafond, oscille en arc.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#f59e0b');
+    },
+    tick(s, dt, t) {
+        const anchorX = W/2, anchorY = 200;
+        const dx = anchorX - s.hero.x, dy = anchorY - s.hero.y;
+        const d = Math.hypot(dx, dy) || 1;
+        s.hero.vx += (dx/d) * 700 * dt;
+        s.hero.vy += (dy/d) * 700 * dt;
+        // Gravity
+        s.hero.vy += 800 * dt;
+        for (const e of s.enemies) {
+            if (!e.alive || e.invuln > 0.04) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 15) {
+                damageEnemy(s, e, 0.4, 600, 600);
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        const anchorX = W/2, anchorY = 200;
+        ctx.save();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 4;
+        ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 12;
+        ctx.beginPath();
+        ctx.moveTo(anchorX, anchorY);
+        ctx.lineTo(s.hero.x, s.hero.y);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath(); ctx.arc(anchorX, anchorY, 12, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+},
+
+// ═══ INVOCATION ═══
+{
+    name: 'Clone', cat: 'summon', color: '#22d3ee',
+    desc: 'Crée un clone qui combat à ses côtés.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#22d3ee');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.hero.clones = s.hero.clones || [];
+        if (s.hero.clones.length < 1) {
+            s.hero.clones.push({ x: s.hero.x + 100, y: s.hero.y, life: 999 });
+        }
+        for (const c of s.hero.clones) {
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - c.x, e.y - c.y);
+                if (d < nd) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                const dx = nearest.x - c.x, dy = nearest.y - c.y;
+                const d = Math.hypot(dx, dy) || 1;
+                c.x += (dx/d) * 500 * dt;
+                c.y += (dy/d) * 500 * dt;
+                if (d < 40 + nearest.r && nearest.invuln <= 0.04) {
+                    damageEnemy(s, nearest, 0.5, 200, 200);
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.clones) return;
+        for (const c of s.hero.clones) {
+            ctx.save();
+            ctx.globalAlpha = 0.6;
+            drawBallBody(ctx, c.x, c.y, s.hero.r * 0.8, '#22d3ee');
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Essaim', cat: 'summon', color: '#14b8a6',
+    desc: '2 mini-clones orbitent et attaquent.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#14b8a6');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.hero.clones = s.hero.clones || [];
+        if (s.hero.clones.length < 2) {
+            for (let i = s.hero.clones.length; i < 2; i++) {
+                s.hero.clones.push({ x: s.hero.x, y: s.hero.y, angle: i * Math.PI });
+            }
+        }
+        for (const c of s.hero.clones) {
+            c.angle += dt * 3;
+            c.x = s.hero.x + Math.cos(c.angle) * 120;
+            c.y = s.hero.y + Math.sin(c.angle) * 120;
+            for (const e of s.enemies) {
+                if (!e.alive || e.invuln > 0.04) continue;
+                if (Math.hypot(e.x - c.x, e.y - c.y) < e.r + 30) {
+                    damageEnemy(s, e, 0.6, 200, 200);
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.clones) return;
+        for (const c of s.hero.clones) {
+            drawBallBody(ctx, c.x, c.y, s.hero.r * 0.5, '#14b8a6');
+        }
+    }
+},
+
+{
+    name: 'Mirage', cat: 'summon', color: '#f472b6',
+    desc: '3 illusions fixes qui attirent les ennemis.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#f472b6');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.illusions = s.illusions || [];
+        s.illuTimer = (s.illuTimer || 0) - dt;
+        if (s.illuTimer <= 0 && s.illusions.length < 3) {
+            s.illuTimer = 1;
+            s.illusions.push({
+                x: s.hero.x + (Math.random()-0.5) * 500,
+                y: s.hero.y + (Math.random()-0.5) * 500,
+                life: 4
+            });
+        }
+        for (let i = s.illusions.length - 1; i >= 0; i--) {
+            s.illusions[i].life -= dt;
+            if (s.illusions[i].life <= 0) s.illusions.splice(i, 1);
+        }
+    },
+    fx(ctx, s, t) {
+        if (!s.illusions) return;
+        for (const ill of s.illusions) {
+            const alpha = Math.min(1, ill.life) * 0.5;
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            drawBallBody(ctx, ill.x, ill.y, s.hero.r * 0.8, '#f472b6');
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Tourelle', cat: 'summon', color: '#a3e635',
+    desc: 'Pose une tourelle qui tire automatiquement.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r*0.85, '#a3e635');
+    },
+    tick(s, dt, t) {
+        chase(s, 0.8);
+        s.turrets = s.turrets || [];
+        s.turretTimer = (s.turretTimer || 0) - dt;
+        if (s.turretTimer <= 0 && s.turrets.length < 2) {
+            s.turretTimer = 2.5;
+            s.turrets.push({ x: s.hero.x, y: s.hero.y, life: 5, fireTimer: 0, angle: 0 });
+        }
+        for (let i = s.turrets.length - 1; i >= 0; i--) {
+            const tur = s.turrets[i];
+            tur.life -= dt;
+            if (tur.life <= 0) { s.turrets.splice(i, 1); continue; }
+            let nearest = null, nd = Infinity;
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                const d = Math.hypot(e.x - tur.x, e.y - tur.y);
+                if (d < nd && d < 800) { nd = d; nearest = e; }
+            }
+            if (nearest) {
+                tur.angle = Math.atan2(nearest.y - tur.y, nearest.x - tur.x);
+                tur.fireTimer -= dt;
+                if (tur.fireTimer <= 0) {
+                    tur.fireTimer = 0.5;
+                    damageEnemy(s, nearest, 10, 100, 100, tur.x, tur.y);
+                    s.beams.push({
+                        x1: tur.x, y1: tur.y, x2: nearest.x, y2: nearest.y,
+                        life: 0.15, color: '#a3e635'
+                    });
+                }
+            }
+        }
+    },
+    fx(ctx, s, t) {
+        for (const tur of s.turrets) {
+            ctx.save();
+            ctx.translate(tur.x, tur.y);
+            // Base
+            ctx.fillStyle = '#365314';
+            ctx.beginPath(); ctx.arc(0, 0, 30, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#a3e635';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // Barrel
+            ctx.rotate(tur.angle);
+            ctx.fillStyle = '#a3e635';
+            ctx.fillRect(20, -6, 30, 12);
+            ctx.restore();
+        }
+        for (const b of s.beams) {
+            ctx.save();
+            ctx.globalAlpha = b.life / 0.15;
+            ctx.strokeStyle = b.color;
+            ctx.lineWidth = 4;
+            ctx.shadowColor = b.color; ctx.shadowBlur = 15;
+            ctx.beginPath(); ctx.moveTo(b.x1, b.y1); ctx.lineTo(b.x2, b.y2); ctx.stroke();
+            ctx.restore();
+        }
+    }
+},
+
+// ═══ DÉFENSE ═══
+{
+    name: 'Bouclier', cat: 'defense', color: '#60a5fa',
+    desc: 'Dôme protecteur qui absorbe les coups.',
+    draw(ctx, cx, cy, r, t) {
+        const pulse = 1 + Math.sin(t*3)*0.05;
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = 'rgba(96,165,250,0.15)';
+        ctx.beginPath(); ctx.arc(cx, cy, r*2.2*pulse, 0, Math.PI*2); ctx.fill();
+        ctx.strokeStyle = '#60a5fa';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#60a5fa'; ctx.shadowBlur = 25;
+        ctx.beginPath(); ctx.arc(cx, cy, r*2.2*pulse, 0, Math.PI*2); ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.restore();
+        drawBallBody(ctx, cx, cy, r*0.85, '#60a5fa');
+    },
+    tick(s, dt, t) {
+        chase(s, 0.6);
+        // Shield blocks nearby enemies
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+            if (d < s.hero.r * 2.2 + e.r) {
+                const dx = e.x - s.hero.x, dy = e.y - s.hero.y;
+                const dd = Math.hypot(dx, dy) || 1;
+                e.vx += (dx/dd) * 500 * dt;
+                e.vy += (dy/dd) * 500 * dt;
+            }
+        }
+    }
+},
+
+{
+    name: 'Épines', cat: 'defense', color: '#ef4444',
+    desc: 'Renvoie les dégâts, piques autour de la boule.',
+    draw(ctx, cx, cy, r, t) {
+        for (let i = 0; i < 12; i++) {
+            const a = (i/12)*Math.PI*2 + t*0.5;
+            ctx.save(); ctx.translate(cx, cy); ctx.rotate(a);
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(-r*0.1, r*0.85);
+            ctx.lineTo(0, r*1.4);
+            ctx.lineTo(r*0.1, r*0.85);
+            ctx.closePath(); ctx.fill();
+            ctx.restore();
+        }
+        drawBallBody(ctx, cx, cy, r, '#ef4444');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        // Damage all contacts heavily
+        for (const e of s.enemies) {
+            if (!e.alive || e.invuln > 0.04) continue;
+            if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < s.hero.r + e.r + 25) {
+                damageEnemy(s, e, 1.2, 600, 600);
+            }
+        }
+    }
+},
+
+{
+    name: 'Régénération', cat: 'defense', color: '#34d399',
+    desc: 'Soigne en continu, laisse une traînée verte.',
+    draw(ctx, cx, cy, r, t) {
+        // Green plus symbols floating up
+        for (let i = 0; i < 4; i++) {
+            const phase = (t*1.5 + i*0.3) % 1;
+            const y = cy - phase * 80;
+            const x = cx + Math.sin(t*2 + i)*20;
+            ctx.strokeStyle = `rgba(52,211,153,${1-phase})`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(x - 8, y); ctx.lineTo(x + 8, y);
+            ctx.moveTo(x, y - 8); ctx.lineTo(x, y + 8);
+            ctx.stroke();
+        }
+        drawBallBody(ctx, cx, cy, r*0.85, '#34d399');
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        s.hero.hp = Math.min(s.hero.maxHp, s.hero.hp + 15 * dt);
+        s.hero.gelTrail = s.hero.gelTrail || [];
+        s.hero.gelTrail.push({ x: s.hero.x, y: s.hero.y, life: 1.5 });
+        for (const tr of s.hero.gelTrail) tr.life -= dt;
+        s.hero.gelTrail = s.hero.gelTrail.filter(p => p.life > 0);
+    },
+    fx(ctx, s, t) {
+        if (!s.hero.gelTrail) return;
+        for (const p of s.hero.gelTrail) {
+            const a = Math.min(1, p.life/1.5);
+            ctx.save();
+            ctx.globalAlpha = a * 0.3;
+            ctx.fillStyle = '#34d399';
+            ctx.beginPath(); ctx.arc(p.x, p.y, 30, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Sonar', cat: 'defense', color: '#22d3ee',
+    desc: 'Ondes qui révèlent et marquent les ennemis.',
+    draw(ctx, cx, cy, r, t) {
+        for (let i = 0; i < 4; i++) {
+            const phase = ((t*1.5 + i/4)%1);
+            ctx.strokeStyle = `rgba(34,211,238,${(1-phase)*0.8})`;
+            ctx.lineWidth = 3*(1-phase) + 1;
+            ctx.beginPath(); ctx.arc(cx, cy, r + phase*r*2.5, 0, Math.PI*2); ctx.stroke();
+        }
+        drawBallBody(ctx, cx, cy, r*0.85, '#22d3ee');
+    },
+    tick(s, dt, t) {
+        chase(s, 0.9);
+        s.sonarTimer = (s.sonarTimer || 0) - dt;
+        if (s.sonarTimer <= 0) {
+            s.sonarTimer = 1.5;
+            s.waves.push({ x: s.hero.x, y: s.hero.y, r: 0, maxR: 800, hitSet: new Set(), color: '#22d3ee' });
+        }
+        for (const w of s.waves) {
+            w.r += 600 * dt;
+            for (const e of s.enemies) {
+                if (!e.alive || w.hitSet.has(e)) continue;
+                const d = Math.hypot(e.x - w.x, e.y - w.y);
+                if (Math.abs(d - w.r) < 40) {
+                    w.hitSet.add(e);
+                    damageEnemy(s, e, 10, 200, 200);
+                }
+            }
+        }
+        s.waves = s.waves.filter(w => w.r < w.maxR);
+    },
+    fx(ctx, s, t) {
+        for (const w of s.waves) {
+            ctx.save();
+            ctx.globalAlpha = 1 - w.r / w.maxR;
+            ctx.strokeStyle = w.color;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(w.x, w.y, w.r, 0, Math.PI*2); ctx.stroke();
+            ctx.restore();
+        }
+    }
+},
+
+{
+    name: 'Bombe posthume', cat: 'defense', color: '#dc2626',
+    desc: 'Explose violemment à la mort.',
+    draw(ctx, cx, cy, r, t) {
+        drawBallBody(ctx, cx, cy, r, '#dc2626');
+        // Warning indicator
+        if (Math.sin(t*6) > 0) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(cx, cy, r*1.4, 0, Math.PI*2); ctx.stroke();
+        }
+    },
+    tick(s, dt, t) {
+        chase(s, 1);
+        // Passive: explodes on death - simulated by periodic blast
+        s.bombTimer = (s.bombTimer || 0) - dt;
+        if (s.bombTimer <= 0) {
+            s.bombTimer = 3;
+            // Fake "death" explosion
+            for (const e of s.enemies) {
+                if (!e.alive) continue;
+                if (Math.hypot(e.x - s.hero.x, e.y - s.hero.y) < 400) {
+                    damageEnemy(s, e, 25, 800, 800);
+                }
+            }
+            spawnRing(s, s.hero.x, s.hero.y, '#dc2626', 400, 0.6);
+            spawnParticle(s, s.hero.x, s.hero.y, '#dc2626', 30, 800, 8);
+            s.shake = 30;
+        }
+    }
+},
+
+{
+    name: 'Champ magnétique', cat: 'defense', color: '#0ea5e9',
+    desc: 'Courbe les trajectoires autour d\'elle.',
+    draw(ctx, cx, cy, r, t) {
+        for (let i = 0; i < 8; i++) {
+            const angle = (i/8)*Math.PI*2;
+            const len = r * (1.8 + Math.sin(t*2+i)*0.3);
+            const px = cx + Math.cos(angle)*len, py = cy + Math.sin(angle)*len;
+            ctx.strokeStyle = `rgba(14,165,233,${0.5+Math.sin(t*3+i)*0.3})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(cx + Math.cos(angle)*r*0.7, cy + Math.sin(angle)*r*0.7);
+            ctx.quadraticCurveTo(
+                cx + Math.cos(angle+0.4)*len*0.7, cy + Math.sin(angle+0.4)*len*0.7,
+                px, py
+            );
+            ctx.stroke();
+        }
+        drawBallBody(ctx, cx, cy, r*0.85, '#0ea5e9');
+    },
+    tick(s, dt, t) {
+        chase(s, 0.9);
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = e.x - s.hero.x, dy = e.y - s.hero.y;
+            const d = Math.hypot(dx, dy);
+            if (d > 0 && d < 500) {
+                const nx = -dy/d, ny = dx/d;
+                e.vx += nx * 400 * dt;
+                e.vy += ny * 400 * dt;
+            }
+        }
+    }
+}
+
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ARENA STATE
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('arenaCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = W;
+canvas.height = H;
+
+let state = null;
+let currentPowerIndex = 0;
+let view = 'cards';
+let lastTime = performance.now();
+
+class ArenaBall {
+    constructor(x, y, color, isHero) {
+        this.x = x; this.y = y;
+        this.vx = (Math.random()-0.5) * 300;
+        this.vy = (Math.random()-0.5) * 300;
+        this.r = BALL_R;
+        this.color = color;
+        this.alive = true;
+        this.hp = 100;
+        this.maxHp = 100;
+        this.invuln = 0;
+        this.hitFlash = 0;
+        this.isHero = isHero;
+        this.trail = [];
+    }
+    cap() {
+        const s = Math.hypot(this.vx, this.vy);
+        if (s > MAX_SPEED) { this.vx = this.vx/s*MAX_SPEED; this.vy = this.vy/s*MAX_SPEED; }
+    }
+}
+
+function resetArena(index) {
+    const power = POWERS[index];
+    state = {
+        hero: new ArenaBall(W/2, H/2 + 400, power.color, true),
+        enemies: [
+            new ArenaBall(W/2 - 300, H/2 - 300, '#00f2fe', false),
+            new ArenaBall(W/2 + 300, H/2 - 300, '#fbbf24', false),
+            new ArenaBall(W/2, H/2 - 200, '#a855f7', false)
+        ],
+        particles: [],
+        rings: [],
+        projectiles: [],
+        beams: [],
+        waves: [],
+        mines: [],
+        turrets: [],
+        illusions: [],
+        trail: [],
+        time: 0,
+        hits: 0,
+        currentPower: power,
+        currentIndex: index,
+        shake: 0,
+        running: true
+    };
+    state.hero.cap();
+    for (const e of state.enemies) e.cap();
+}
+
+function chase(s, mult) {
+    let nearest = null, nd = Infinity;
+    for (const e of s.enemies) {
+        if (!e.alive) continue;
+        const d = Math.hypot(e.x - s.hero.x, e.y - s.hero.y);
+        if (d < nd) { nd = d; nearest = e; }
+    }
+    if (nearest) {
+        const dx = nearest.x - s.hero.x, dy = nearest.y - s.hero.y;
+        const d = Math.hypot(dx, dy) || 1;
+        s.hero.vx += (dx/d) * 800 * mult * 0.016;
+        s.hero.vy += (dy/d) * 800 * mult * 0.016;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UPDATE
+// ═══════════════════════════════════════════════════════════════
+function updateArena(dt) {
+    const s = state;
+    if (!s) return;
+    s.time += dt;
+
+    // Power tick
+    if (s.currentPower.tick) {
+        try { s.currentPower.tick(s, dt, s.time); } catch(e) { console.error(e); }
+    }
+
+    // Update all balls
+    const allBalls = [s.hero, ...s.enemies];
+    for (const b of allBalls) {
+        if (!b.alive) continue;
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.cap();
+
+        // Wall collision
+        if (!s._ghostMode || !b.isHero) {
+            if (b.x - b.r < WALL_PAD) { b.x = WALL_PAD + b.r; b.vx = Math.abs(b.vx) * 0.9; }
+            if (b.x + b.r > W - WALL_PAD) { b.x = W - WALL_PAD - b.r; b.vx = -Math.abs(b.vx) * 0.9; }
+            if (b.y - b.r < WALL_PAD) { b.y = WALL_PAD + b.r; b.vy = Math.abs(b.vy) * 0.9; }
+            if (b.y + b.r > H - WALL_PAD) { b.y = H - WALL_PAD - b.r; b.vy = -Math.abs(b.vy) * 0.9; }
+        } else {
+            if (b.x < -b.r) b.x = W + b.r;
+            if (b.x > W + b.r) b.x = -b.r;
+            if (b.y < -b.r) b.y = H + b.r;
+            if (b.y > H + b.r) b.y = -b.r;
+        }
+
+        if (b.invuln > 0) b.invuln -= dt;
+        if (b.hitFlash > 0) b.hitFlash = Math.max(0, b.hitFlash - dt * 5);
+
+        b.trail.push({ x: b.x, y: b.y });
+        if (b.trail.length > 6) b.trail.shift();
+    }
+
+    // Enemy AI - wander and occasionally attack hero
+    for (const e of s.enemies) {
+        if (!e.alive) continue;
+        e.aiTimer = (e.aiTimer || 0) - dt;
+        if (e.aiTimer <= 0) {
+            e.aiTimer = 1 + Math.random() * 2;
+            const dx = s.hero.x - e.x, dy = s.hero.y - e.y;
+            const d = Math.hypot(dx, dy) || 1;
+            if (d < 800) {
+                e.vx += (dx/d) * 300;
+                e.vy += (dy/d) * 300;
+            } else {
+                e.vx += (Math.random()-0.5) * 600;
+                e.vy += (Math.random()-0.5) * 600;
+            }
+        }
+    }
+
+    // Hero-enemy collision (only if not ghost)
+    if (!s._ghostMode) {
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            const dx = e.x - s.hero.x, dy = e.y - s.hero.y;
+            const d = Math.hypot(dx, dy);
+            const minD = s.hero.r + e.r;
+            if (d < minD && d > 0.01) {
+                const nx = dx/d, ny = dy/d;
+                const overlap = (minD - d) / 2;
+                s.hero.x -= nx * overlap;
+                s.hero.y -= ny * overlap;
+                e.x += nx * overlap;
+                e.y += ny * overlap;
+            }
+        }
+    }
+
+    // Enemy-enemy collision
+    for (let i = 0; i < s.enemies.length; i++) {
+        for (let j = i+1; j < s.enemies.length; j++) {
+            const a = s.enemies[i], b = s.enemies[j];
+            if (!a.alive || !b.alive) continue;
+            const dx = b.x - a.x, dy = b.y - a.y;
+            const d = Math.hypot(dx, dy);
+            if (d < a.r + b.r && d > 0.01) {
+                const nx = dx/d, ny = dy/d;
+                const overlap = (a.r + b.r - d) / 2;
+                a.x -= nx*overlap; a.y -= ny*overlap;
+                b.x += nx*overlap; b.y += ny*overlap;
+            }
+        }
+    }
+
+    // Update projectiles
+    for (let i = s.projectiles.length - 1; i >= 0; i--) {
+        const p = s.projectiles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.life -= dt;
+
+        // Wall bounce for arrows
+        if (p.bounces > 0) {
+            if (p.x < WALL_PAD || p.x > W - WALL_PAD) { p.vx = -p.vx; p.bounces--; }
+            if (p.y < WALL_PAD || p.y > H - WALL_PAD) { p.vy = -p.vy; p.bounces--; }
+        }
+
+        // Hit enemies
+        let hit = false;
+        for (const e of s.enemies) {
+            if (!e.alive) continue;
+            if (Math.hypot(e.x - p.x, e.y - p.y) < e.r + 20) {
+                if (p.splash) {
+                    for (const e2 of s.enemies) {
+                        if (!e2.alive) continue;
+                        if (Math.hypot(e2.x - p.x, e2.y - p.y) < p.splash) {
+                            damageEnemy(s, e2, p.dmg, 500, 500, p.x, p.y);
+                        }
+                    }
+                    spawnParticle(s, p.x, p.y, p.color, 20, 500, 6);
+                    spawnRing(s, p.x, p.y, p.color, p.splash, 0.4);
+                    s.shake = 15;
+                } else {
+                    damageEnemy(s, e, p.dmg, 200, 200, p.x, p.y);
+                }
+                hit = true;
+                break;
+            }
+        }
+        if (hit || p.life <= 0 || p.x < -50 || p.x > W+50 || p.y < -50 || p.y > H+50) {
+            s.projectiles.splice(i, 1);
+        }
+    }
+
+    // Update particles
+    for (let i = s.particles.length - 1; i >= 0; i--) {
+        const p = s.particles[i];
+        p.life -= dt;
+        if (p.life <= 0) { s.particles.splice(i, 1); continue; }
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.96;
+        p.vy *= 0.96;
+    }
+
+    // Update rings
+    for (let i = s.rings.length - 1; i >= 0; i--) {
+        s.rings[i].life -= dt;
+        if (s.rings[i].life <= 0) s.rings.splice(i, 1);
+    }
+
+    // Update beams
+    for (let i = s.beams.length - 1; i >= 0; i--) {
+        s.beams[i].life -= dt;
+        if (s.beams[i].life <= 0) s.beams.splice(i, 1);
+    }
+
+    // Shake
+    if (s.shake > 0) s.shake = Math.max(0, s.shake - dt * 40);
+
+    // Respawn dead enemies
+    for (const e of s.enemies) {
+        if (!e.alive) {
+            e.respawnTimer = (e.respawnTimer || 0) + dt;
+            if (e.respawnTimer > 1.5) {
+                e.alive = true;
+                e.hp = e.maxHp;
+                e.x = W/2 + (Math.random()-0.5) * 700;
+                e.y = W/2 + (Math.random()-0.5) * 600;
+                e.vx = (Math.random()-0.5) * 400;
+                e.vy = (Math.random()-0.5) * 400;
+                e.invuln = 0.5;
+                e.respawnTimer = 0;
+            }
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+function renderArena() {
+    const s = state;
+    if (!s) return;
+
+    ctx.save();
+    if (s.shake > 0) {
+        ctx.translate((Math.random()-0.5)*s.shake, (Math.random()-0.5)*s.shake);
+    }
+
+    ctx.fillStyle = '#080a10';
+    ctx.fillRect(-50, -50, W+100, H+100);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(90, 130, 210, 0.06)';
+    ctx.lineWidth = 1;
+    for (let x = WALL_PAD; x < W-WALL_PAD; x += 60) {
+        ctx.beginPath(); ctx.moveTo(x, WALL_PAD); ctx.lineTo(x, H-WALL_PAD); ctx.stroke();
+    }
+    for (let y = WALL_PAD; y < H-WALL_PAD; y += 60) {
+        ctx.beginPath(); ctx.moveTo(WALL_PAD, y); ctx.lineTo(W-WALL_PAD, y); ctx.stroke();
+    }
+
+    // Border
+    ctx.strokeStyle = '#00f2fe';
+    ctx.lineWidth = 5;
+    ctx.shadowColor = '#00f2fe'; ctx.shadowBlur = 20;
+    ctx.strokeRect(WALL_PAD, WALL_PAD, W-WALL_PAD*2, H-WALL_PAD*2);
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(WALL_PAD, WALL_PAD, W-WALL_PAD*2, H-WALL_PAD*2);
+
+    // Power fx (behind balls)
+    if (s.currentPower.fx) {
+        try { s.currentPower.fx(ctx, s, s.time); } catch(e) {}
+    }
+
+    // Projectiles
+    for (const p of s.projectiles) {
+        if (p.type === 'arrow') continue;
+        if (p.type === 'boomerang') continue;
+        if (p.type === 'missile') continue;
+        ctx.save();
+        glow(ctx, p.x, p.y, 40, p.color);
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 14, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+
+    // Enemies
+    for (const e of s.enemies) {
+        if (!e.alive) continue;
+        for (let i = 0; i < e.trail.length; i++) {
+            const t = e.trail[i];
+            const a = (i / e.trail.length) * 0.2;
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.fillStyle = e.color;
+            ctx.beginPath(); ctx.arc(t.x, t.y, e.r * (i/e.trail.length) * 0.6, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+        ctx.save();
+        if (e.hitFlash > 0) {
+            ctx.shadowColor = '#fff'; ctx.shadowBlur = e.hitFlash * 40;
+        }
+        drawBallBody(ctx, e.x, e.y, e.r, e.color);
+        ctx.restore();
+        // HP bar
+        const hp = e.hp / e.maxHp;
+        const bw = e.r * 2.4, bh = 5;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
+        ctx.fillRect(e.x - bw/2 - 2, e.y - e.r - 18, bw + 4, bh + 4);
+        ctx.fillStyle = hp > 0.5 ? '#34d399' : hp > 0.25 ? '#fbbf24' : '#ef4444';
+        ctx.fillRect(e.x - bw/2, e.y - e.r - 16, bw * hp, bh);
+    }
+
+    // Hero
+    if (s.hero.alive) {
+        for (let i = 0; i < s.hero.trail.length; i++) {
+            const t = s.hero.trail[i];
+            const a = (i / s.hero.trail.length) * 0.3;
+            ctx.save();
+            ctx.globalAlpha = a;
+            ctx.fillStyle = s.hero.color;
+            ctx.beginPath(); ctx.arc(t.x, t.y, s.hero.r * (i/s.hero.trail.length) * 0.7, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+        try {
+            s.currentPower.draw(ctx, s.hero.x, s.hero.y, s.hero.r, s.time);
+        } catch(e) {
+            drawBallBody(ctx, s.hero.x, s.hero.y, s.hero.r, s.hero.color);
+        }
+    }
+
+    // Particles
+    for (const p of s.particles) {
+        const a = p.life / p.maxLife;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size * a, 0, Math.PI*2); ctx.fill();
+        ctx.restore();
+    }
+
+    // Rings
+    for (const r of s.rings) {
+        const a = r.life / r.maxLife;
+        ctx.save();
+        ctx.globalAlpha = a;
+        ctx.strokeStyle = r.color;
+        ctx.lineWidth = 4 * a;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.maxR * (1-a), 0, Math.PI*2);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+const grid = document.getElementById('grid');
+const filters = document.getElementById('filters');
+const cardsView = document.getElementById('cardsView');
+const arenaView = document.getElementById('arenaView');
+const cards = [];
+let activeFilter = 'all';
+
+document.getElementById('count').textContent = POWERS.length + ' pouvoirs';
+
+filters.appendChild(makeFilterBtn('all', 'Toutes', POWERS.length, true));
+Object.keys(CATS).forEach(key => {
+    const c = POWERS.filter(p => p.cat === key).length;
+    if (c > 0) filters.appendChild(makeFilterBtn(key, CATS[key].name, c, false));
+});
+
+function makeFilterBtn(key, label, num, active) {
+    const b = document.createElement('button');
+    b.className = 'filter-btn' + (active ? ' active' : '');
+    b.dataset.cat = key;
+    b.textContent = label + ' (' + num + ')';
+    return b;
+}
+
+filters.addEventListener('click', e => {
+    const b = e.target.closest('.filter-btn');
+    if (!b) return;
+    activeFilter = b.dataset.cat;
+    filters.querySelectorAll('.filter-btn').forEach(x => x.classList.toggle('active', x === b));
+    rebuildGrid();
+});
+
+function rebuildGrid() {
+    grid.innerHTML = '';
+    cards.length = 0;
+    POWERS.forEach((p, i) => {
+        if (activeFilter !== 'all' && p.cat !== activeFilter) return;
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        const cv = document.createElement('canvas');
+        tile.appendChild(cv);
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        meta.innerHTML = '<div class="cat" style="color:' + CATS[p.cat].color + '">' + CATS[p.cat].name + '</div>' +
+                         '<div class="name">' + p.name + '</div>';
+        tile.appendChild(meta);
+        tile.addEventListener('click', () => openArena(i));
+        grid.appendChild(tile);
+        cards.push({ el: tile, canvas: cv, ctx: cv.getContext('2d'), power: p, t: Math.random() * 5 });
+    });
+    requestAnimationFrame(resizeCards);
+}
+
+function resizeCards() {
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    cards.forEach(c => {
+        const rect = c.el.getBoundingClientRect();
+        if (rect.width > 0) {
+            const w = Math.floor(rect.width * dpr);
+            const h = Math.floor(rect.height * dpr);
+            if (c.canvas.width !== w || c.canvas.height !== h) {
+                c.canvas.width = w;
+                c.canvas.height = h;
+            }
+        }
+    });
+}
+
+function openArena(index) {
+    currentPowerIndex = index;
+    resetArena(index);
+    const p = POWERS[index];
+    document.getElementById('hudName').textContent = p.name;
+    document.getElementById('hudName').style.color = p.color;
+    document.getElementById('hudIcon').style.background = p.color;
+    document.getElementById('hudIcon').style.color = p.color;
+    document.getElementById('hudWeapon').style.borderColor = p.color;
+    document.getElementById('hudCat').textContent = CATS[p.cat].name;
+    document.getElementById('hudCat').style.color = CATS[p.cat].color;
+    document.getElementById('hudDesc').textContent = p.desc;
+    document.getElementById('hudHits').textContent = '0';
+    cardsView.classList.add('hidden');
+    arenaView.classList.add('active');
+    view = 'arena';
+}
+
+function closeArena() {
+    cardsView.classList.remove('hidden');
+    arenaView.classList.remove('active');
+    view = 'cards';
+    state = null;
+}
+
+document.getElementById('backBtn').addEventListener('click', closeArena);
+document.getElementById('replayBtn').addEventListener('click', () => resetArena(currentPowerIndex));
+document.getElementById('nextBtn').addEventListener('click', () => openArena((currentPowerIndex + 1) % POWERS.length));
+
+// ═══════════════════════════════════════════════════════════════
+// LOOP
+// ═══════════════════════════════════════════════════════════════
+function loop(now) {
+    const dt = Math.min(0.05, (now - lastTime) / 1000);
+    lastTime = now;
+
+    if (view === 'cards') {
+        const vh = window.innerHeight;
+        for (const c of cards) {
+            const rect = c.el.getBoundingClientRect();
+            if (rect.bottom < -50 || rect.top > vh + 50) continue;
+            const { ctx, canvas } = c;
+            if (canvas.width === 0) continue;
+            c.t += dt;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const r = Math.min(canvas.width, canvas.height) * 0.14;
+            try { c.power.draw(ctx, cx, cy, r, c.t); } catch(e) {}
+        }
+    }
+
+    if (view === 'arena' && state) {
+        updateArena(dt);
+        renderArena();
+        document.getElementById('hudHits').textContent = state.hits;
+    }
+
+    requestAnimationFrame(loop);
+}
+
+window.addEventListener('resize', resizeCards);
+document.addEventListener('keydown', e => {
+    if (view !== 'arena') return;
+    if (e.key === 'Escape') closeArena();
+    else if (e.key === 'r' || e.key === 'R') resetArena(currentPowerIndex);
+    else if (e.key === 'ArrowRight') openArena((currentPowerIndex + 1) % POWERS.length);
+    else if (e.key === 'ArrowLeft') openArena((currentPowerIndex - 1 + POWERS.length) % POWERS.length);
+});
+
+rebuildGrid();
+requestAnimationFrame(() => {
+    setTimeout(resizeCards, 100);
+    setTimeout(resizeCards, 400);
+    requestAnimationFrame(loop);
+});
+
+})();
+</script>
+</body>
+</html>

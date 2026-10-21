@@ -130,6 +130,7 @@
             // Arène
             if (!world.arena || world.arena.canvas !== world.canvas) {
                 world.arena = new window.Arena(world.canvas, {
+                    prng: world.prng,
                     padding: 16,
                     cornerRadius: 44,
                     obstacles: obstacleCountForMap(this.options.arenaMap || 'neon', this.options),
@@ -145,6 +146,7 @@
                     arenaRight: this.options.arenaRight
                 });
             } else {
+                world.arena.prng = world.prng;
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
                 world.arena.shrinkEnabled = this.options.shrinkEnabled !== false;
                 world.arena.shrinkStart = this.options.shrinkStart;
@@ -404,7 +406,7 @@
             };
 
             world.spawnCloneFor = function (origin, opts) {
-                const angle = Math.random() * Math.PI * 2;
+                const angle = world.prng.next() * Math.PI * 2;
                 const dist = origin.radius * 3;
                 const clone = self._createBall(
                     world,
@@ -420,8 +422,8 @@
                 clone.isClone = true;
                 clone.cloneLifetime = opts.lifetime ?? 5;
                 clone.alpha = opts.opacity ?? 0.55;
-                clone.vx = (Math.random() - 0.5) * 300;
-                clone.vy = (Math.random() - 0.5) * 300;
+                clone.vx = (world.prng.next() - 0.5) * 300;
+                clone.vy = (world.prng.next() - 0.5) * 300;
                 clone.abilitySlots = [];
                 world.balls.push(clone);
                 return clone.id;
