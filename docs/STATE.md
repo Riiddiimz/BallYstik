@@ -2,7 +2,7 @@
 
 ## Current Phase
 - Branche active : `gem_check`
-- Phase en cours : Phase 4 — Mode Duel à Distance
+- Phase en cours : Phase 6 — Modes conceptuels & Polish
 
 ## Done
 - Audit complet du codebase, identification des 7 points de vigilance (B1 à B7)
@@ -20,9 +20,20 @@
   - Déblocage et exposition des 3 maps mécaniques cachées : `reactor`, `crossfire`, `void`
   - Intégration de 2 maps spectaculaires issues de `idees/map_neon.html` : `sablier` et `cyber_core`
   - Rendu personnalisé, obstacles dédiés et fiches descriptives dans l'arène et l'UI (total 12 maps actives)
+- Phase 4 terminée :
+  - Implémentation du mode « Duel à Distance » (`js/arena/mode-ranged-duel.js`)
+  - Barrière énergétique infranchissable aux combattants mais perméable aux tirs
+  - 3 types de projectiles (Rapide, Lourd explosif, Rebondissant) et orbes de munitions
+  - IA autonome d'esquive verticale prédictive et ramassage d'orbes
+- Phase 5 terminée :
+  - Implémentation du mode « Guerre de Territoire » (`js/arena/mode-territory-war.js`)
+  - Grille dynamique de 160 dalles à conquérir par impact physique
+  - Méga-bombes à détonation en chaîne et conversion de zone
+  - Jauge HUD en direct avec calcul du pourcentage de possession et victoire par domination
 
 ## In Progress / Next
-- Phase 4 : Implémenter le mode « Duel à Distance » (`js/arena/mode-ranged-duel.js`) avec cloison physique séparatrice, système de munitions/projectiles et IA de visée/esquive.
+- Phase 6 : Documentation des modes de jeu (`docs/GAME_MODES.md`), conception de modes supplémentaires (Boss Rush, Course aux Cibles, Sumo Ring).
+- Phase 7 : Tests navigateur, mise à jour de la documentation générale (`AI_CONTEXT_BRANCHES.md`, `PROJECT.md`).
 
 ## Open Issues
 - `PROJECT.md` contient encore des références à l'ancienne architecture modulaire à nettoyer en Phase 7.
