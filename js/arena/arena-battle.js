@@ -628,9 +628,11 @@
             if (world.arena && typeof world.arena.constrainPoint === 'function') {
                 for (const pickup of this.pickupSystem.items) {
                     const point = world.arena.constrainPoint(pickup.x, pickup.y, pickup.radius || 16);
-                    pickup.x = point.x;
-                    pickup.y = point.y;
-                    pickup.baseY = point.y;
+                    if (point.x !== pickup.x || point.y !== pickup.y) {
+                        pickup.x = point.x;
+                        pickup.y = point.y;
+                        pickup.baseY = point.y;
+                    }
                 }
             }
 
