@@ -623,16 +623,14 @@
 
             // Pickups : conserve leur système, mais évite qu'un spawn reste hors du cercle Vortex.
             this.pickupSystem.update(dt, world);
-            if (isVortexMap(world.arena.mapStyle)) {
+            // Contrainte de position fournie par la map active : fonctionne aussi pour
+            // les futures maps non rectangulaires sans ajouter de condition ici.
+            if (world.arena && typeof world.arena.constrainPoint === 'function') {
                 for (const pickup of this.pickupSystem.items) {
-                    const dx = pickup.x - world.arena.vortexCx, dy = pickup.y - world.arena.vortexCy;
-                    const dist = Math.hypot(dx, dy) || 1;
-                    const limit = world.arena.vortexRadius - (pickup.radius || 16);
-                    if (dist > limit) {
-                        pickup.x = world.arena.vortexCx + dx / dist * limit;
-                        pickup.y = world.arena.vortexCy + dy / dist * limit;
-                        pickup.baseY = pickup.y;
-                    }
+                    const point = world.arena.constrainPoint(pickup.x, pickup.y, pickup.radius || 16);
+                    pickup.x = point.x;
+                    pickup.y = point.y;
+                    pickup.baseY = point.y;
                 }
             }
 
