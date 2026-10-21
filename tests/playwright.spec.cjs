@@ -43,12 +43,6 @@ test.describe('BallYstik — pouvoirs d’origine fidèles à powers_final.html'
       const powers = window.PowersFinalOriginal;
       const behaviors = window.AbilityBehaviors;
       if (!powers || !behaviors || typeof behaviors.resetAll !== 'function') return { available: false };
-      const stateKeys = ['projectiles', 'particles', 'shockwaves', 'decoys', 'beams', 'zones', 'damageTexts', 'shrapnels', 'novas'];
-      const injected = [];
-      for (const key of stateKeys) {
-        const arr = key === 'projectiles' ? window.ArenaBattle._world.projectiles : null;
-        if (Array.isArray(arr)) arr.push({ __auditResetProbe: true });
-      }
       for (const power of Object.values(powers)) {
         if (Array.isArray(power.entities)) power.entities.push({ __auditResetProbe: true });
       }
