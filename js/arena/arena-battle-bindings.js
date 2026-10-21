@@ -76,8 +76,9 @@
         },
 
         loadOptions() {
+            let saved = {};
             try {
-                const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+                saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
                 Object.entries(SLIDERS).forEach(([id, cfg]) => {
                     const el = document.getElementById(id);
                     if (el && saved[cfg[0]] != null) {
