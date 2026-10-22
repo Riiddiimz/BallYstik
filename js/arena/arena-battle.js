@@ -34,13 +34,12 @@
         arenaMap: 'neon'
     };
 
-    const isVortexMap = map => map === 'vortex' || map === 'vortex_test';
+    const isVortexMap = map => map === 'vortex';
     const isSourceMap = map => /^source_(neon|refonte)_\d+$/.test(map);
     const obstacleCountForMap = (map, options) => {
         if (map === 'sanctuaire') return 8;
         if (map === 'cyber_core') return 5;
-        if (map === 'sablier') return 4;
-        if (['neon_grid', 'volcan', 'nexus', 'reactor', 'crossfire', 'void'].includes(map)) return 3;
+        if (['neon_grid', 'volcan', 'nexus', 'reactor', 'crossfire'].includes(map)) return 3;
         if (isVortexMap(map)) return options.vortexObstacles;
         return options.obstacles;
     };
@@ -542,24 +541,6 @@
                         this._keepBaseSpeed(ball);
                         world.spawnParticle(ball.x, laneY, { color: '#fbbf24', count: 15, speed: 210, life: 0.45, spread: Math.PI * 2, size: 2.5 });
                         world.addShockwave(ball.x, laneY, { radius: 34, color: '#ff2a85', life: 0.28 });
-                    }
-                }
-            } else if (style === 'void') {
-                const wells = [
-                    { x: arena.x + arena.w * 0.28, y: arena.y + arena.h * 0.32, power: 115 },
-                    { x: arena.x + arena.w * 0.72, y: arena.y + arena.h * 0.68, power: 115 }
-                ];
-                for (const ball of world.balls) {
-                    if (!ball.alive) continue;
-                    for (const well of wells) {
-                        const dx = well.x - ball.x, dy = well.y - ball.y;
-                        const dist2 = dx * dx + dy * dy;
-                        if (dist2 < 180 * 180 && dist2 > 1) {
-                            const dist = Math.sqrt(dist2);
-                            const force = well.power * (1 - dist / 180);
-                            ball.vx += dx / dist * force * dt;
-                            ball.vy += dy / dist * force * dt;
-                        }
                     }
                 }
             }
