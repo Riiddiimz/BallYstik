@@ -50,7 +50,7 @@ const world={
  get beams(){return state.beams;},get zones(){return state.zones;},set zones(v){state.zones=v;},
  get damageTexts(){return state.damageTexts;},get shrapnels(){return state.shrapnels;},get novas(){return state.novas;},
  set shake(v){state.shake=v;},get shake(){return state.shake;},
- damage(target,attacker,amount,source,opts){const t=realBall(target),a=realBall(attacker);return realWorld?.damage?realWorld.damage(t,a,amount,source,{ignoreInvuln:!!opts?.ignoreInvuln}):0;},
+ damage(target,attacker,amount,source,opts){const t=realBall(target),a=realBall(attacker);return realWorld?.damage?realWorld.damage(t,a,amount,source,{...(opts||{}),ignoreInvuln:!!opts?.ignoreInvuln}):0;},
 };
 function spawnDamageText(x,y,val,source){state.damageTexts.push({x,y,val:String(val),color:'#ffffff',life:.9,maxLife:.9,vx:rand(-20,20),vy:-110,scale:.4});}
 function damageBall(b,amount,source,ignoreInvuln){if(!b?.alive)return 0;return world.damage(b,null,amount,source,{ignoreInvuln:!!ignoreInvuln});}
