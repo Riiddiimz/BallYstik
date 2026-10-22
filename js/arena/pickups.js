@@ -264,10 +264,15 @@
         }
 
         update(dt, world) {
-            this.spawnTimer -= dt;
-            if (this.spawnTimer <= 0) {
-                this.spawnTimer = this.spawnInterval;
-                this._trySpawn(world);
+            // Intervalle à 0 = désactivation explicite des nouveaux spawns.
+            if (Number(this.spawnInterval) > 0) {
+                this.spawnTimer -= dt;
+                if (this.spawnTimer <= 0) {
+                    this.spawnTimer = this.spawnInterval;
+                    this._trySpawn(world);
+                }
+            } else {
+                this.spawnTimer = 0;
             }
 
             for (let i = this.items.length - 1; i >= 0; i--) {
