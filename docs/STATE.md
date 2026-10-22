@@ -2,7 +2,7 @@
 
 ## Current Phase
 - Branche active : `gem_check`
-- Phase en cours : Mission Accomplie — Toutes les phases du plan sont implémentées, testées et documentées.
+- Phase en cours : maintenance des maps et première passe d'équilibrage des pouvoirs.
 
 ## Done
 - Audit complet du codebase, identification des 7 points de vigilance (B1 à B7)
@@ -17,9 +17,9 @@
   - Ajout du menu déroulant « Mode de jeu » dans `index.html` avec fiches descriptives
   - Synchronisation et persistance des options de mode dans `arena-battle-bindings.js`
 - Phase 3 terminée :
-  - Déblocage et exposition des 3 maps mécaniques cachées : `reactor`, `crossfire`, `void`
-  - Intégration de 2 maps spectaculaires issues de `idees/map_neon.html` : `sablier` et `cyber_core`
-  - Rendu personnalisé, obstacles dédiés et fiches descriptives dans l'arène et l'UI (total 12 maps actives)
+  - Intégration des maps originales de `idees/map_neon.html` et des maps thématiques dans la liste jouable.
+  - Les aperçus fidèles par iframe ont été retirés car les maps sont intégrées au moteur.
+  - Retrait de la sélection des maps `void` (Néant), `sablier` (Goulot) et `vortex_test` (WebGL). Le Vortex standard et la map source originale nommée « Le Sablier » restent distincts.
 - Phase 4 terminée :
   - Implémentation du mode « Duel à Distance » (`js/arena/mode-ranged-duel.js`)
   - Barrière énergétique infranchissable aux combattants mais perméable aux tirs
@@ -43,3 +43,18 @@
 ## Open Issues
 - Aucun bug bloquant. Toutes les mécaniques et nouveaux modes respectent le déterminisme seed Mulberry32.
 
+
+
+## Dernière session — 2026-10-22
+
+### Réalisé sur `gem_check`
+- Suppression des deux blocs de prévisualisation iframe des prototypes originaux et de leur script UI ; les cartes intégrées restent disponibles dans la sélection Maps.
+- Retrait de la sélection de « Le Néant (Singularité) », « Le Sablier (Goulot) » et « Vortex Test (WebGL) ».
+- Ajout de la valeur `0` au curseur de fréquence des orbes ; à `0`, aucun nouvel orbe automatique n'est généré, mais les orbes déjà présents restent actifs.
+- Première passe de réduction des dégâts sur les pouvoirs de burst/contrôle et ajustement de la réflexion du Prisme.
+- Documentation des valeurs dans `docs/POWER_BALANCE.md`.
+
+### Validation à faire
+- Vérification statique des changements via les fichiers GitHub.
+- Les tests navigateur et Playwright ne sont pas exécutés depuis cet accès ; il faut les lancer dans l'environnement de test du dépôt.
+- Tester en priorité le curseur de fréquence à `0`, le retour à une fréquence positive, les 14 pouvoirs et le multiplicateur de dégâts de fin de partie.
