@@ -1398,7 +1398,7 @@ function explodeBomb(x,y,ownerId){
   burstParticles(x,y,'#ffffff', 14, 260*world.dpr, 0.45);
   world.shake = Math.max(world.shake, 10*world.dpr);
   for(let i=0;i<8;i++){
-    const ang = (i/10)*TAU + rand(-0.1, 0.1);
+    const ang = (i/8)*TAU + rand(-0.1, 0.1);
     world.projectiles.push({
       type:'shrapnel', x, y,
       vx: Math.cos(ang)*380*world.dpr,
