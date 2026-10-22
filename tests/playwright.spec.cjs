@@ -85,8 +85,6 @@ test('les contrôles principaux du combat sont présents', async ({ page }) => {
     await expect(page.locator('#playPauseBtn')).toBeVisible();
     await expect(page.locator('#activeSeedBadge')).toBeAttached();
   });
-});
-
 test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 693 });
   await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
