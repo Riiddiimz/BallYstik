@@ -207,7 +207,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
         powerId, canvasWidth: bridge.canvas.width, canvasHeight: bridge.canvas.height,
         aspectRatio: bridge.canvas.width / bridge.canvas.height,
         active: slot.data.active, beam: !!slot.data.beam, projectileCount: world.projectiles.length,
-        zoneCount: slot.data.zones.length, portal: !!slot.data.portal,
+        zoneCount: window.ArenaBattle?._world?.zones?.length ?? 0, portal: !!slot.data.portal,
         clones: world.balls.filter(b => b.isPowerDecoy && b.alive).length, realImpactFragments, bombBlastVisible: !!slot.data.blastFlash,
         radius: ball.radius, mirror: slot.data.mirror
       };
@@ -248,7 +248,7 @@ test('les 10 boutons SPAWN créent le bon pickup dans le vrai moteur', async ({ 
     await expect.poll(() => page.evaluate(powerId =>
       window.ArenaBattle.pickupSystem.items.some(p => p.meta && p.meta.id === powerId),
     id), { message: id + ': le bouton doit créer un pickup dans le moteur' }).toBe(true);
-    await expect(page.locator('#powerSpawnStatus')).toContainText(name);
+    // Le statut HTML a été retiré de l'interface compacte ; la présence du pickup dans le moteur est l'assertion fonctionnelle.
   }
 });
 
