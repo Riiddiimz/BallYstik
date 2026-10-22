@@ -269,8 +269,15 @@
                             <option value="vortex">Vortex Spirale</option>
                             <option value="vortex_test">Vortex Test (WebGL)</option>
                             <option value="sanctuaire">Sanctuaire du Chaos</option>
+                            <optgroup label="Maps originales — Map Neon">
+                                <option value="source_neon_0">L'Hexagone</option><option value="source_neon_1">La Croix</option><option value="source_neon_2">Le Diamant</option><option value="source_neon_3">Le Stade</option><option value="source_neon_4">Le Sablier</option><option value="source_neon_5">Cyber Core</option><option value="source_neon_6">Anomalie Spatiale</option><option value="source_neon_7">Forge Magmatique</option><option value="source_neon_8">Labo Quantique</option><option value="source_neon_9">Sanctuaire Aurora</option><option value="source_neon_10">Néon Arena</option>
+                            </optgroup>
+                            <optgroup label="Maps thématiques — Refonte">
+                                <option value="source_refonte_0">Jungle Vivante</option><option value="source_refonte_1">Volcan en Éruption</option><option value="source_refonte_2">Océan Fantastique</option><option value="source_refonte_3">Désert Ancien</option>
+                            </optgroup>
                         </select>
                     </div>
+                    <div id="sourceMapSettings" hidden class="space-y-1 rounded-xl border border-cyan-500/30 bg-zinc-950/50 p-2.5"><p class="text-[10px] font-bold uppercase tracking-wider text-cyan-300">Map originale intégrée</p><p id="sourceMapDescription" class="text-[10px] text-zinc-400 leading-snug">Rendu et obstacles des fichiers source ; boules et dégâts du moteur principal.</p></div>
                     <div id="vortexMapSettings" hidden class="space-y-2.5 rounded-xl border border-purple-500/30 bg-zinc-950/50 p-2.5">
                         <p class="text-[10px] font-bold uppercase tracking-wider text-purple-300">Vortex Spirale</p>
                         <div>
@@ -479,6 +486,7 @@
          Modular Application Scripts (in execution order)
          ==================================================================== -->
     <!-- Audio UI -->
+    <script src="js/arena/source-maps-runtime.js?v=playable-source-maps-20261022"></script>
     <script src="js/audio.js"></script>
 
     <!-- Arena Brawl — modules autonomes -->

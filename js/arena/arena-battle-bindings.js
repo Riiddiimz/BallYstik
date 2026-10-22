@@ -155,6 +155,9 @@
 
         syncMapSettings() {
             const map = document.getElementById('arenaMapSelect')?.value || 'neon';
+            const sourceMapSettings=document.getElementById('sourceMapSettings'),sourceMapDescription=document.getElementById('sourceMapDescription'),sourceOption=document.getElementById('arenaMapSelect')?.selectedOptions?.[0];
+            if(sourceMapSettings)sourceMapSettings.hidden=!/^source_(neon|refonte)_\d+$/.test(map);
+            if(sourceMapDescription&&sourceOption?.dataset.sourceDescription)sourceMapDescription.textContent=sourceOption.dataset.sourceDescription;
             const defaultSettings = document.getElementById('defaultMapSettings');
             const vortexSettings = document.getElementById('vortexMapSettings');
             const sanctuaireSettings = document.getElementById('sanctuaireMapSettings');

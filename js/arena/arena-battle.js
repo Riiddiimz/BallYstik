@@ -35,6 +35,7 @@
     };
 
     const isVortexMap = map => map === 'vortex' || map === 'vortex_test';
+    const isSourceMap = map => /^source_(neon|refonte)_\d+$/.test(map);
     const obstacleCountForMap = (map, options) => {
         if (map === 'sanctuaire') return 8;
         if (map === 'cyber_core') return 5;
@@ -73,7 +74,7 @@
                 const arena = this._world.arena;
                 const nextMap = this.options.arenaMap || 'neon';
                 const mapChanged = arena.mapStyle !== nextMap;
-                arena.shrinkEnabled = this.options.shrinkEnabled !== false;
+                arena.shrinkEnabled = !isSourceMap(nextMap) && this.options.shrinkEnabled !== false;
                 arena.shrinkStart = Number(this.options.shrinkStart);
                 arena.shrinkRate = Number(this.options.shrinkRate);
                 arena.shrinkMax = Number(this.options.shrinkMax);
@@ -148,7 +149,7 @@
                     obstacles: obstacleCountForMap(this.options.arenaMap || 'neon', this.options),
                     obstaclePositions: isVortexMap(this.options.arenaMap || 'neon') ? null : this.options.obstaclePositions,
                     mapStyle: this.options.arenaMap || 'neon',
-                    shrink: this.options.shrinkEnabled !== false,
+                    shrink: !isSourceMap(this.options.arenaMap || 'neon') && this.options.shrinkEnabled !== false,
                     shrinkStart: this.options.shrinkStart,
                     shrinkRate: this.options.shrinkRate,
                     shrinkMax: this.options.shrinkMax,
@@ -160,7 +161,7 @@
             } else {
                 world.arena.prng = world.prng;
                 world.arena.mapStyle = this.options.arenaMap || 'neon';
-                world.arena.shrinkEnabled = this.options.shrinkEnabled !== false;
+                world.arena.shrinkEnabled = !isSourceMap(this.options.arenaMap || 'neon') && this.options.shrinkEnabled !== false;
                 world.arena.shrinkStart = this.options.shrinkStart;
                 world.arena.shrinkRate = this.options.shrinkRate;
                 world.arena.shrinkMax = this.options.shrinkMax;
@@ -218,7 +219,8 @@
                 const x = cx + Math.cos(a) * ringR;
                 const y = cy + Math.sin(a) * ringR;
 
-                const ball = this._createBall(world, x, y, colors[i % colors.length]);
+                const point = arena.constrainPoint(x, y, 14);
+                const ball = this._createBall(world, point.x, point.y, colors[i % colors.length]);
                 ball.team = i; // 1 équipe = 1 boule (FFA)
                 world.balls.push(ball);
             }
@@ -858,7 +860,7 @@
                 // Les effets de collision/capacité ne doivent pas faire dériver la vitesse de base.
                 if (!ball.status.isStunned() && !(ball._obstacleBoostTimer > 0)) {
                     if (isVortexMap(world.arena.mapStyle)) this._clampVortexSpeed(ball);
-                    else this._keepBaseSpeed(ball);
+                    else if (!isSourceMap(world.arena.mapStyle)) this._keepBaseSpeed(ball);
                 }
 
                 // Health update

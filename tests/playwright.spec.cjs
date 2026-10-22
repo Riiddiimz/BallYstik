@@ -1,5 +1,23 @@
 const { test, expect } = require('@playwright/test');
 
+test.describe('Maps sources intégrées au moteur Arena Brawl', () => {
+  test('les 15 maps originales sont proposées dans le menu Maps', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    const select=page.locator('#arenaMapSelect');
+    await expect(select.locator('optgroup[label*="Map Neon"] option')).toHaveCount(11);
+    await expect(select.locator('optgroup[label*="Refonte"] option')).toHaveCount(4);
+  });
+  test('chaque map source expose son rendu et sa géométrie de collision', async ({ page }) => {
+    const errors=[];page.on('pageerror',e=>errors.push(e.message));
+    await page.goto('http://127.0.0.1:4173',{waitUntil:'domcontentloaded'});
+    await expect.poll(()=>page.evaluate(()=>window.BallYstikSourceMaps?.ready===true),{timeout:15000}).toBe(true);
+    const results=await page.evaluate(()=>Array.from(document.querySelectorAll('#arenaMapSelect option')).filter(o=>/^source_(neon|refonte)_\d+$/.test(o.value)).map(o=>{const g=window.BallYstikSourceMaps.getGeometry(o.value,390,693,1,.5);return{id:o.value,name:g?.name,boundary:g?.boundary?.type,renderable:window.BallYstikSourceMaps.isSourceMap(o.value)}}));
+    expect(results).toHaveLength(15);
+    expect(results.every(r=>r.name&&r.boundary&&r.renderable)).toBe(true);
+    expect(errors).toEqual([]);
+  });
+});
+
 test.describe('BallYstik — pouvoirs d’origine fidèles à powers_final.html', () => {
   test('charge la simulation et présente les 14 pouvoirs validés', async ({ page }) => {
     const pageErrors = [];

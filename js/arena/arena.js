@@ -79,6 +79,9 @@
 
         _recompute() {
             const c = this.canvas;
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) {
+                this.shrinkEnabled=false;this.shrinkOffset=0;this.frameX=this.x=0;this.frameY=this.y=c.height*.16;this.frameW=this.w=c.width*.86;this.frameH=this.h=c.height*.74;return;
+            }
             if (this._isVortexMap()) {
                 // La carte Spirale respecte les mêmes marges configurées que l'arène :
                 // haut 16 %, bas 10 %, gauche 0 %, droite 14 % par défaut.
@@ -141,6 +144,7 @@
 
         _buildObstacles(count, customPositions = null) {
             this.obstacles = [];
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) return;
             if (this._isVortexMap()) {
                 // Le curseur contrôle le nombre TOTAL d'obstacles, cœur central inclus.
                 // 0 désactive donc aussi le cœur central.
@@ -345,6 +349,7 @@
         // Une map de forme spéciale peut surcharger ces méthodes pour définir son espace jouable.
         isPointInside(x, y, padding = 0) {
             if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) return window.BallYstikSourceMaps.isPointInside(this.mapStyle,x,y,this.canvas,this.time,padding);
             if (this._isVortexMap()) {
                 const limit = Math.max(0, this.vortexRadius - padding);
                 return Math.hypot(x - this.vortexCx, y - this.vortexCy) <= limit;
@@ -354,6 +359,7 @@
         }
 
         constrainPoint(x, y, padding = 0) {
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) return window.BallYstikSourceMaps.constrainPoint(this.mapStyle,x,y,this.canvas,this.time,padding);
             if (!Number.isFinite(x) || !Number.isFinite(y)) {
                 return { x: this.x + this.w / 2, y: this.y + this.h / 2 };
             }
@@ -373,6 +379,7 @@
         }
 
         isInsideDangerZone(ball) {
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) return false;
             if (this._isVortexMap() || !this.shrinkEnabled) return false;
             // La zone dangereuse reste à l'intérieur des murs de l'arène configurée.
             const maxInset = Math.min(this.w, this.h) * this.shrinkMax;
@@ -389,6 +396,10 @@
         }
 
         resolveBall(ball, dt = 1 / 60) {
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) {
+                const hit=window.BallYstikSourceMaps.resolveBall(this.mapStyle,ball,this.canvas,this.time,dt,this);
+                if(hit||window.BallYstikSourceMaps.getGeometry(this.mapStyle,this.canvas.width,this.canvas.height,Math.min(window.devicePixelRatio||1,2),this.time))return hit;
+            }
             if (this._isVortexMap()) return this._resolveVortexBall(ball, dt);
             const r = Math.max(0, Number(ball.radius) || 0);
             const left = this.x, right = this.x + this.w;
@@ -789,6 +800,9 @@ void main() {
         }
 
         render(ctx) {
+            if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) {
+                if(window.BallYstikSourceMaps.render(this.mapStyle,ctx,this.canvas.width,this.canvas.height,Math.min(window.devicePixelRatio||1,2),this.time))return;
+            }
             if (this.mapStyle === 'vortex_test') {
                 this._renderVortexTest(ctx);
                 return;
