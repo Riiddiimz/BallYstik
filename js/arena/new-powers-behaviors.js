@@ -103,7 +103,7 @@ POWERS.judgment_ray = {
           b.life = 0.6;
           const target = world.balls.find(x => x.id === b.targetId && x.alive);
           if(target){
-            damageBall(target, 38, 'judgment_ray');
+            damageBall(target, 26, 'judgment_ray');
             world.shockwaves.push({ x:target.x, y:target.y, r:0, maxR: 70*world.dpr, color:'#67e8f9', life:0.4, maxLife:0.4, width:4 });
             world.shockwaves.push({ x:target.x, y:target.y, r:0, maxR: 40*world.dpr, color:'#ffffff', life:0.25, maxLife:0.25, width:2 });
             burstParticles(target.x, target.y, '#67e8f9', 26, 400*world.dpr, 0.65);
@@ -211,7 +211,7 @@ POWERS.star_hunter = {
       vy: Math.sin(ang)*180*world.dpr,
       targetId: target.id,
       life: 2.8, maxLife: 2.8, trail: [],
-      color: '#fb923c', damage: 26,
+      color: '#fb923c', damage: 22,
       angle: ang, speed: 180*world.dpr, ownerId: ball.id,
     });
   },
@@ -325,7 +325,7 @@ POWERS.magma_rift = {
         const cx = z.x1 + vx*t, cy = z.y1 + vy*t;
         const d = Math.hypot(px-cx, py-cy);
         if(d < z.width/2 + b.r){
-          damageBall(b, 12*dt, 'magma_rift');
+          damageBall(b, 8*dt, 'magma_rift');
         }
       }
     }
@@ -433,7 +433,7 @@ POWERS.singularity = {
           const d = Math.hypot(b.x - z.x, b.y - z.y);
           if(d < 220*world.dpr){
             const falloff = 1 - d/(220*world.dpr);
-            damageBall(b, 50*falloff, 'singularity');
+            damageBall(b, 28*falloff, 'singularity');
             const ang = Math.atan2(b.y - z.y, b.x - z.x);
             b.vx += Math.cos(ang) * 440*world.dpr * falloff;
             b.vy += Math.sin(ang) * 440*world.dpr * falloff;
@@ -789,8 +789,8 @@ POWERS.chain_lightning = {
         b.vx = -ux * pullSpeed; b.vy = -uy * pullSpeed;
         const minDist = a.r + b.r + 4*world.dpr;
         if(dist < minDist || e.linkTimer <= 0){
-          damageBall(a, 28, 'chain_lightning', true);
-          damageBall(b, 28, 'chain_lightning', true);
+          damageBall(a, 18, 'chain_lightning', true);
+          damageBall(b, 18, 'chain_lightning', true);
           const sx = (a.x + b.x)/2, sy = (a.y + b.y)/2;
           world.shake = Math.max(world.shake, 16*world.dpr);
           burstParticles(sx, sy, '#fbbf24', 50, 540*world.dpr, 0.9);
@@ -994,7 +994,7 @@ POWERS.crystal_prison = {
         if(e.phaseTimer <= 0){
           e.phase = 'shatter'; e.phaseTimer = e.shatterDur;
           victim._frozen = false;
-          damageBall(victim, 36, 'crystal_prison', true);
+          damageBall(victim, 22, 'crystal_prison', true);
           burstParticles(e.x, e.y, '#7dd3fc', 52, 540*world.dpr, 0.9);
           burstParticles(e.x, e.y, '#ffffff', 26, 380*world.dpr, 0.6);
           burstParticles(e.x, e.y, '#a5e8ff', 20, 440*world.dpr, 0.7);
@@ -1123,7 +1123,7 @@ POWERS.explosive_flower = {
             if(proj < 0 || proj > far) continue;
             const perp = Math.abs(-dx*Math.sin(ang) + dy*Math.cos(ang));
             if(perp < 32*world.dpr){
-              damageBall(b, 18, 'explosive_flower');
+              damageBall(b, 16, 'explosive_flower');
               b.vx += Math.cos(ang)*200*world.dpr;
               b.vy += Math.sin(ang)*200*world.dpr;
             }
@@ -1228,7 +1228,7 @@ POWERS.imprisonment_seal = {
           if(d < e.radius + b.r){
             if(!e.trappedIds.has(b.id)){
               e.trappedIds.add(b.id);
-              damageBall(b, 10, 'imprisonment_seal');
+              damageBall(b, 8, 'imprisonment_seal');
             }
             if(d > e.radius - b.r){
               const nx = dx/d, ny = dy/d;
@@ -1397,14 +1397,14 @@ function explodeBomb(x,y,ownerId){
   burstParticles(x,y,'#a5f3fc', 24, 380*world.dpr, 0.65);
   burstParticles(x,y,'#ffffff', 14, 260*world.dpr, 0.45);
   world.shake = Math.max(world.shake, 10*world.dpr);
-  for(let i=0;i<10;i++){
+  for(let i=0;i<8;i++){
     const ang = (i/10)*TAU + rand(-0.1, 0.1);
     world.projectiles.push({
       type:'shrapnel', x, y,
       vx: Math.cos(ang)*380*world.dpr,
       vy: Math.sin(ang)*380*world.dpr,
       life: 0.65, maxLife: 0.65,
-      ownerId, color:'#a5f3fc', damage: 9, angle: ang,
+      ownerId, color:'#a5f3fc', damage: 5, angle: ang,
     });
   }
   for(const b of world.balls){
@@ -1412,7 +1412,7 @@ function explodeBomb(x,y,ownerId){
     const d = Math.hypot(b.x-x, b.y-y);
     if(d < 150*world.dpr){
       const f = 1 - d/(150*world.dpr);
-      damageBall(b, 24*f, 'bomb_shrapnel');
+      damageBall(b, 16*f, 'bomb_shrapnel');
     }
   }
 }
@@ -1488,7 +1488,7 @@ function ballCollisions(){
         }
         if(!a._cT || world.time > a._cT[b.id]){
           a._cT = a._cT || {}; b._cT = b._cT || {};
-          const mult = a.colossus > 0 ? 1.6 : 1;
+          const mult = a.colossus > 0 ? 1.35 : 1;
           damageBall(b, 4*mult, 'contact');
           damageBall(a, 4, 'contact');
           a._cT[b.id] = world.time + 0.5;
@@ -1511,7 +1511,7 @@ function updateNovas(dt){
         const ang = Math.atan2(b.y - s.sourceY, b.x - s.sourceX);
         b.vx += Math.cos(ang) * s.knockback;
         b.vy += Math.sin(ang) * s.knockback;
-        damageBall(b, 15, 'seismic_nova');
+        damageBall(b, 14, 'seismic_nova');
       }
     }
   }
@@ -1704,8 +1704,8 @@ Object.keys(POWERS).forEach(id=>{
   },
   onTakeDamage(target,attacker,amount,w,slot){
    if(id==='prism_reflector'&&target&&target.prism>0){
-    if(attacker&&attacker.alive)world.damage(attacker,target,amount*.65,'prism_reflector',{ignoreInvuln:true,noPowerReflect:true});
-    return amount*.25;
+    if(attacker&&attacker.alive)world.damage(attacker,target,amount*.45,'prism_reflector',{ignoreInvuln:true,noPowerReflect:true});
+    return amount*.4;
    }
    return amount;
   },
