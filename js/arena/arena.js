@@ -245,17 +245,6 @@
                     this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
                     this.obstacles.push({ x: cx - 90, y: cy + gap, r });
                 }
-            } else if (map === 'void') {
-                // Le passage central reste dégagé entre deux singularités latérales.
-                if (count === 1) this.obstacles.push({ x: cx, y: cy - gap, r: r + 5 });
-                else if (count === 2) {
-                    this.obstacles.push({ x: cx, y: cy - gap, r });
-                    this.obstacles.push({ x: cx, y: cy + gap, r });
-                } else {
-                    this.obstacles.push({ x: cx - 90, y: cy - gap, r });
-                    this.obstacles.push({ x: cx + 90, y: cy, r: r + 4 });
-                    this.obstacles.push({ x: cx - 90, y: cy + gap, r });
-                }
             } else {
                 // Sur la carte Défaut, centre l'obstacle au milieu des murs réels
                 // de l'arène, même si les marges haut/bas/gauche/droite sont asymétriques.
@@ -586,138 +575,6 @@
             return hit;
         }
 
-        _initVortexTestShader() {
-            if (this._vortexTestShaderAttempted) return !!this.vortexTestProgram;
-            this._vortexTestShaderAttempted = true;
-            try {
-                const canvas = document.createElement('canvas');
-                canvas.width = 360;
-                canvas.height = 640;
-                const gl = canvas.getContext('webgl', { alpha: false, antialias: false, preserveDrawingBuffer: false });
-                if (!gl) return false;
-                const vertexSource = `attribute vec2 aPos;
-varying vec2 vUV;
-void main() {
-    vUV = aPos * 0.5 + 0.5;
-    gl_Position = vec4(aPos, 0.0, 1.0);
-}`;
-                const fragmentSource = "\nprecision highp float;\nvarying vec2 vUV;\nuniform float uTime;\nuniform vec2 uRes;\n\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat hash3(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 45.164))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p), f = fract(p);\n  f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i+vec2(1,0)), f.x), mix(hash(i+vec2(0,1)), hash(i+vec2(1,1)), f.x), f.y);\n}\nfloat noise3(vec3 p) {\n  vec3 i = floor(p), f = fract(p);\n  f = f*f*(3.0-2.0*f);\n  return mix(mix(mix(hash3(i), hash3(i+vec3(1,0,0)), f.x),\n                 mix(hash3(i+vec3(0,1,0)), hash3(i+vec3(1,1,0)), f.x), f.y),\n             mix(mix(hash3(i+vec3(0,0,1)), hash3(i+vec3(1,0,1)), f.x),\n                 mix(hash3(i+vec3(0,1,1)), hash3(i+vec3(1,1,1)), f.x), f.y), f.z);\n}\nfloat fbm(vec2 p) {\n  float s = 0.0, a = 0.5;\n  for (int i = 0; i < 5; i++) { s += a * noise(p); p *= 2.03; a *= 0.5; }\n  return s;\n}\nfloat fbm3(vec3 p) {\n  float s = 0.0, a = 0.5;\n  for (int i = 0; i < 4; i++) { s += a * noise3(p); p *= 2.05; a *= 0.5; }\n  return s;\n}\nfloat sdRoundRect(vec2 p, vec2 b, float r) {\n  vec2 q = abs(p) - b + r;\n  return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - r;\n}\nfloat sdHexagon(vec2 p, float r) {\n  vec3 k = vec3(-0.8660254, 0.5, 0.57735);\n  p = abs(p);\n  p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;\n  p -= vec2(clamp(p.x, -k.z*r, k.z*r), r);\n  return length(p) * sign(p.y);\n}\nfloat sdDiamond(vec2 p, float r) { return abs(p.x) + abs(p.y) - r; }\nfloat sdCross(vec2 p, vec2 b, float t) {\n  vec2 q = abs(p);\n  vec2 c = vec2(min(q.x, q.y), max(q.x, q.y));\n  float d = max(c.x - t, c.y - b.y);\n  return length(max(vec2(d, c.y - b.y), 0.0)) + min(max(d, c.y - b.y), 0.0);\n}\nfloat sdSeg(vec2 p, vec2 a, vec2 b, float r) {\n  vec2 pa = p - a, ba = b - a;\n  float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);\n  return length(pa - ba * h) - r;\n}\nvec2 aspectUV() {\n  vec2 a = vec2(9.0 / 16.0, 1.0);\n  return (vUV - 0.5) * a + 0.5;\n}\nfloat vignette(vec2 uv) {\n  return 1.0 - length((uv - 0.5) * vec2(0.85, 1.0)) * 0.7;\n}\n\nvoid main() {\n  vec2 uvA = aspectUV(); vec2 p = uvA - 0.5;\n  float r = length(p);\n  float a = atan(p.y, p.x);\n  vec3 col = vec3(0.05, 0.01, 0.08);\n  col += vec3(0.6, 0.1, 1.0) * (sin(a * 6.0 + r * 25.0 - uTime * 3.0) * 0.5 + 0.5) * 0.15 * smoothstep(0.5, 0.0, r);\n  col += vec3(0.9, 0.3, 1.0) * (1.0 - smoothstep(0.0, 0.15, r)) * 0.4;\n  for (int i = 0; i < 12; i++) {\n    float fi = float(i);\n    float pa = fi * 0.52 + uTime * 2.0;\n    float pr = fract(hash(vec2(fi, 0.0)) + uTime * 0.15) * 0.45;\n    vec2 pp = vec2(cos(pa), sin(pa)) * pr;\n    col += vec3(0.8, 0.4, 1.0) * smoothstep(0.006, 0.0, length(p - pp)) * 0.7;\n  }\n  col += vec3(0.8, 0.4, 1.0) * smoothstep(0.008, 0.0, abs(r - 0.44)) * 1.2;\n  col *= vignette(uvA);\n  gl_FragColor = vec4(col, 1.0);\n}\n";
-                const compile = (type, source) => {
-                    const item = gl.createShader(type);
-                    gl.shaderSource(item, source);
-                    gl.compileShader(item);
-                    if (!gl.getShaderParameter(item, gl.COMPILE_STATUS)) {
-                        console.warn('[BallYstik] Vortex Test shader compile failed:', gl.getShaderInfoLog(item));
-                        gl.deleteShader(item);
-                        return null;
-                    }
-                    return item;
-                };
-                const vertex = compile(gl.VERTEX_SHADER, vertexSource);
-                const fragment = compile(gl.FRAGMENT_SHADER, fragmentSource);
-                if (!vertex || !fragment) return false;
-                const program = gl.createProgram();
-                gl.attachShader(program, vertex);
-                gl.attachShader(program, fragment);
-                gl.linkProgram(program);
-                if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-                    console.warn('[BallYstik] Vortex Test shader link failed:', gl.getProgramInfoLog(program));
-                    gl.deleteProgram(program);
-                    return false;
-                }
-                const buffer = gl.createBuffer();
-                gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]), gl.STATIC_DRAW);
-                this.vortexTestCanvas = canvas;
-                this.vortexTestGL = gl;
-                this.vortexTestProgram = program;
-                this.vortexTestUniforms = {
-                    buffer,
-                    aPos: gl.getAttribLocation(program, 'aPos'),
-                    uTime: gl.getUniformLocation(program, 'uTime'),
-                    uRes: gl.getUniformLocation(program, 'uRes')
-                };
-                return true;
-            } catch (error) {
-                console.warn('[BallYstik] Vortex Test WebGL unavailable; using 2D fallback.', error);
-                return false;
-            }
-        }
-
-        _renderVortexTest(ctx) {
-            const cx = this.vortexCx, cy = this.vortexCy, R = this.vortexRadius, t = this.time;
-            if (this._initVortexTestShader()) {
-                const gl = this.vortexTestGL;
-                const canvas = this.vortexTestCanvas;
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                gl.clearColor(0.02, 0.005, 0.03, 1);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.useProgram(this.vortexTestProgram);
-                gl.bindBuffer(gl.ARRAY_BUFFER, this.vortexTestUniforms.buffer);
-                gl.enableVertexAttribArray(this.vortexTestUniforms.aPos);
-                gl.vertexAttribPointer(this.vortexTestUniforms.aPos, 2, gl.FLOAT, false, 0, 0);
-                gl.uniform1f(this.vortexTestUniforms.uTime, t);
-                if (this.vortexTestUniforms.uRes) gl.uniform2f(this.vortexTestUniforms.uRes, canvas.width, canvas.height);
-                gl.drawArrays(gl.TRIANGLES, 0, 6);
-                ctx.drawImage(canvas, 0, 0, this.canvas.width, this.canvas.height);
-            } else {
-                // Fallback sûr : rendu Canvas 2D existant, sans bloquer le match.
-                this._renderVortex(ctx);
-                return;
-            }
-
-            // Le shader ne gère que le décor : la limite et les obstacles restent en 2D.
-            const borderPulse = 0.85 + 0.15 * Math.sin(t * 1.6);
-            ctx.save();
-            ctx.strokeStyle = 'rgba(192, 132, 252, ' + (0.6 * borderPulse) + ')';
-            ctx.lineWidth = 3;
-            ctx.shadowColor = '#a855f7';
-            ctx.shadowBlur = 26 * borderPulse;
-            ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.stroke();
-            ctx.shadowBlur = 0;
-            ctx.strokeStyle = 'rgba(255,255,255,0.55)';
-            ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.arc(cx, cy, R - 1, 0, Math.PI * 2); ctx.stroke();
-            ctx.restore();
-
-            for (const o of this.obstacles) {
-                const pulse = o.hitPulse || 0;
-                const beat = 0.5 + 0.5 * Math.sin(t * 3 + (o.baseAngle || 0) * 3);
-                ctx.save();
-                ctx.globalAlpha = 0.55 + pulse * 0.45;
-                ctx.shadowColor = pulse > 0 ? '#f3e8ff' : '#a855f7';
-                ctx.shadowBlur = 18 + pulse * 22 + beat * 5;
-                ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 3 + pulse * 5 + beat * 1.5, 0, Math.PI * 2);
-                ctx.strokeStyle = pulse > 0 ? '#f3e8ff' : 'rgba(168,85,247,0.6)';
-                ctx.lineWidth = 2 + pulse * 2.5; ctx.stroke();
-                ctx.globalAlpha = 1;
-                const grad = ctx.createRadialGradient(o.x - o.r * 0.4, o.y - o.r * 0.4, 1, o.x, o.y, o.r);
-                grad.addColorStop(0, pulse > 0 ? '#f3e8ff' : '#4c1d95');
-                grad.addColorStop(0.7, '#2a0e4d');
-                grad.addColorStop(1, '#1a0832');
-                ctx.fillStyle = grad;
-                ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = pulse > 0 ? '#ffffff' : '#c084fc';
-                ctx.lineWidth = 1.8 + pulse * 2; ctx.stroke();
-                ctx.fillStyle = pulse > 0 ? '#fff7ae' : '#a855f7';
-                ctx.shadowColor = ctx.fillStyle;
-                ctx.shadowBlur = 8 + pulse * 20 + beat * 3;
-                ctx.beginPath(); ctx.arc(o.x, o.y, 3 + beat * 1.5 + pulse * 4, 0, Math.PI * 2); ctx.fill();
-                ctx.restore();
-            }
-            for (const f of this.hitFlashes) {
-                const fade = f.life / f.maxLife;
-                ctx.save();
-                ctx.globalAlpha = fade;
-                ctx.shadowColor = '#c084fc';
-                ctx.shadowBlur = 24;
-                ctx.beginPath(); ctx.arc(f.x, f.y, 6 + (1 - fade) * 14, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(233,213,255,0.85)';
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
         _renderVortex(ctx) {
             const cx = this.vortexCx, cy = this.vortexCy, R = this.vortexRadius, t = this.time;
             ctx.fillStyle = '#080611';
@@ -857,21 +714,7 @@ void main() {
                 ctx.setLineDash(phase < 2.8 ? [10, 10] : []);
                 ctx.beginPath(); ctx.moveTo(x, laneY); ctx.lineTo(x + w, laneY); ctx.stroke();
                 ctx.setLineDash([]);
-            } else if (this.mapStyle === 'void') {
-                for (let i = 0; i < 2; i++) {
-                    const cx = frameX + frameW * (i ? 0.72 : 0.28), cy = frameY + frameH * (i ? 0.68 : 0.32);
-                    ctx.globalAlpha = 0.24 + 0.1 * Math.sin(this.time * 3 + i);
-                    ctx.strokeStyle = i ? '#c084fc' : '#00f2fe';
-                    ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16;
-                    for (let j = 0; j < 3; j++) {
-                        ctx.beginPath();
-                        ctx.arc(cx, cy, 15 + j * 11 + 3 * Math.sin(this.time * 2 + j), this.time * (i ? -0.8 : 0.8) + j, this.time * (i ? -0.8 : 0.8) + j + Math.PI * 1.4);
-                        ctx.stroke();
-                    }
-                    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(cx, cy, 3.5, 0, Math.PI * 2); ctx.fill();
-                }
-            }
-            else if (this.mapStyle === 'neon_grid') {
+            } else if (this.mapStyle === 'neon_grid') {
                 const pulse = 0.5 + 0.5 * Math.sin(this.time * 3.2);
                 const glow = ctx.createLinearGradient(frameX, frameY, frameX + frameW, frameY + frameH);
                 glow.addColorStop(0, 'rgba(0,242,254,0.08)'); glow.addColorStop(0.5, 'rgba(24,36,86,0.02)'); glow.addColorStop(1, 'rgba(255,45,214,0.10)');
