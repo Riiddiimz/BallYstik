@@ -7,6 +7,27 @@ test.describe('Maps sources intégrées au moteur Arena Brawl', () => {
     await expect(select.locator('optgroup[label*="Map Neon"] option')).toHaveCount(11);
     await expect(select.locator('optgroup[label*="Refonte"] option')).toHaveCount(4);
   });
+  test('une map source est réellement sélectionnable et rendue par le moteur principal', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    await expect.poll(() => page.evaluate(() => window.BallYstikSourceMaps?.ready === true), { timeout: 15000 }).toBe(true);
+    for (const id of ['source_neon_0', 'source_refonte_3']) {
+      await page.locator('#arenaMapSelect').selectOption(id);
+      await expect.poll(() => page.evaluate(() => window.ArenaBattle?._world?.arena?.mapStyle)).toBe(id);
+      const result = await page.evaluate(() => {
+        const arena = window.ArenaBattle._world.arena;
+        const ctx = document.getElementById('simCanvas').getContext('2d');
+        arena.render(ctx);
+        return {
+          mapStyle: arena.mapStyle,
+          genericObstacles: arena.obstacles.length,
+          backgroundDrawn: ctx.getImageData(0, 0, 1, 1).data[3] > 0
+        };
+      });
+      expect(result.mapStyle).toBe(id);
+      expect(result.genericObstacles).toBe(0);
+      expect(result.backgroundDrawn).toBe(true);
+    }
+  });
   test('chaque map source expose son rendu et sa géométrie de collision', async ({ page }) => {
     const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.goto('http://127.0.0.1:4173',{waitUntil:'domcontentloaded'});

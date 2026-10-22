@@ -51,6 +51,9 @@ jobs:
           cat /tmp/ballystik-http.log
           exit 1
 
+      - name: Run source-map Playwright tests
+        run: npx playwright test tests/playwright.spec.cjs --grep "Maps sources" --reporter=list
+
       - name: Run browser smoke tests
         run: npx playwright test tests/playwright.spec.cjs --reporter=list
 
