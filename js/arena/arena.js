@@ -74,7 +74,7 @@
         }
 
         _isVortexMap(style = this.mapStyle) {
-            return style === 'vortex' || style === 'vortex_test';
+            return style === 'vortex';
         }
 
         _recompute() {
@@ -183,13 +183,12 @@
                 this.obstacles.push(...spiralPoints.slice(0, requested - 1));
                 return;
             }
-            if (['neon_grid', 'volcan', 'nexus', 'sablier', 'cyber_core'].includes(this.mapStyle)) {
+            if (['neon_grid', 'volcan', 'nexus', 'cyber_core'].includes(this.mapStyle)) {
                 const fx = this.frameX, fy = this.frameY, fw = this.frameW, fh = this.frameH;
                 const layouts = {
                     neon_grid: [{x:.28,y:.34,r:24},{x:.72,y:.50,r:27},{x:.32,y:.70,r:24}],
                     volcan: [{x:.30,y:.30,r:27},{x:.68,y:.52,r:24},{x:.34,y:.74,r:27}],
                     nexus: [{x:.30,y:.36,r:23},{x:.70,y:.64,r:23},{x:.50,y:.50,r:27}],
-                    sablier: [{x:.28,y:.50,r:26},{x:.72,y:.50,r:26},{x:.50,y:.26,r:22},{x:.50,y:.74,r:22}],
                     cyber_core: [{x:.50,y:.50,r:36},{x:.26,y:.30,r:18},{x:.74,y:.70,r:18},{x:.26,y:.70,r:18},{x:.74,y:.30,r:18}]
                 };
                 const list = layouts[this.mapStyle] || [];
@@ -802,10 +801,6 @@ void main() {
         render(ctx) {
             if (window.BallYstikSourceMaps?.isSourceMap(this.mapStyle)) {
                 if(window.BallYstikSourceMaps.render(this.mapStyle,ctx,this.canvas.width,this.canvas.height,Math.min(window.devicePixelRatio||1,2),this.time))return;
-            }
-            if (this.mapStyle === 'vortex_test') {
-                this._renderVortexTest(ctx);
-                return;
             }
             if (this._isVortexMap()) {
                 this._renderVortex(ctx);
