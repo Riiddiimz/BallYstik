@@ -405,3 +405,30 @@ test('la map Sanctuaire du Chaos est sélectionnable et reste dans les limites d
   }
   expect(pageErrors).toEqual([]);
 });
+
+
+test('la fréquence des orbes peut être désactivée et les anciennes maps sont retirées', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  const interval = page.locator('#abPickupInterval');
+  await expect(interval).toHaveAttribute('min', '0');
+  await interval.evaluate(el => {
+    el.value = '0';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await expect(page.locator('#abPickupIntervalVal')).toHaveText('Désactivée');
+
+  const result = await page.evaluate(() => {
+    const select = document.getElementById('arenaMapSelect');
+    const system = new window.PickupSystem({ next: () => 0.5 });
+    system.setConfig({ spawnInterval: 0 });
+    system.update(10, { arena: { x: 0, y: 0, w: 100, h: 100 }, balls: [] });
+    return {
+      zeroIntervalSpawns: system.items.length,
+      retiredMapsPresent: ['void', 'sablier', 'vortex_test'].filter(id =>
+        Array.from(select.options).some(option => option.value === id)
+      )
+    };
+  });
+  expect(result.zeroIntervalSpawns).toBe(0);
+  expect(result.retiredMapsPresent).toEqual([]);
+});
