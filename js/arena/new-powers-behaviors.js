@@ -1677,13 +1677,14 @@ function renderProjectiles(c){
 let lastT = 0;
 
 
-const cooldowns={judgment_ray:2.4,star_hunter:2.8,bomb_shrapnel:3.2,seismic_nova:3.0,magma_rift:4.5,singularity:5.0,quantum_jump:4.2,colossus:5.0,prism_reflector:3.8,multiplication:5.5,chain_lightning:3.8,crystal_prison:4.6,explosive_flower:4.0,imprisonment_seal:4.5};
+// Chaque pouvoir est déclenché une seule fois à son acquisition. Les effets persistants
+// continuent via original.update, mais aucun recast automatique n'est effectué.
 let lastUpdate=new WeakMap();let lastPowerRender=new WeakMap();let lastSystemUpdate=null;
 function syncWorld(w){realWorld=w;state.time=world.time||state.time;}
 Object.keys(POWERS).forEach(id=>{
  const original=POWERS[id];
  window.AbilityBehaviors[id]={
-  attach(ball,w,slot){syncWorld(w);slot.data={cooldown:cooldowns[id]||4,originalId:id};try{original.cast(proxyBall(ball));if(window.audioSynth)window.audioSynth.playFx('power',{powerId:id,volume:.16});}catch(e){console.warn('[Powers Final cast]',id,e);}},
+  attach(ball,w,slot){syncWorld(w);slot.data={originalId:id,used:true};try{original.cast(proxyBall(ball));if(window.audioSynth)window.audioSynth.playFx('power',{powerId:id,volume:.20});}catch(e){console.warn('[Powers Final cast]',id,e);}},
   update(ball,w,slot,dt){
    syncWorld(w);
    const frame=world.time;
@@ -1698,9 +1699,8 @@ Object.keys(POWERS).forEach(id=>{
      updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
     }catch(e){console.warn('[Powers Final effects update]',e);}
    }
-   const d=slot.data||(slot.data={cooldown:cooldowns[id]||4,originalId:id});
-   d.cooldown-=dt;
-   if(d.cooldown<=0){d.cooldown=cooldowns[id]||4;try{original.cast(proxyBall(ball));if(window.audioSynth)window.audioSynth.playFx('power',{powerId:id,volume:.16});}catch(e){console.warn('[Powers Final recast]',id,e);}}
+   // Pas de recast : le pouvoir ne s'active qu'à l'acquisition.
+   // Les animations et effets déjà créés restent mis à jour normalement.
   },
   onTakeDamage(target,attacker,amount,w,slot){
    if(id==='prism_reflector'&&target&&target.prism>0){
