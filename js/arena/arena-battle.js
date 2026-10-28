@@ -391,7 +391,9 @@
                     if (!window.AbilityRegistry.isNewPower(meta.id)) return false;
                     const active = world.balls.some(b =>
                         b.abilitySlots.some(slot => slot.meta && slot.meta.id === meta.id));
-                    if (active) return false;
+                    const alreadyUsed = world.balls.some(b =>
+                        b._usedAbilityIds instanceof Set && b._usedAbilityIds.has(meta.id));
+                    if (active || alreadyUsed) return false;
                     const waiting = self.pickupSystem && self.pickupSystem.items.some(p =>
                         p.meta && p.meta.id === meta.id);
                     return !waiting;
@@ -399,13 +401,12 @@
             };
 
             world.grantAbility = function (ball, meta) {
-                // Empile ou remplace le plus ancien
+                // Un pouvoir ne peut être acquis et déclenché qu'une fois par boule et par combat.
                 const existing = ball.abilitySlots.find(sl => sl.meta.id === meta.id);
-                if (existing) {
-                    existing.timeLeft = meta.duration > 0 ? meta.duration : existing.timeLeft;
-                    existing.maxTime = existing.timeLeft;
-                    return;
-                }
+                if (existing) return;
+                if (!(ball._usedAbilityIds instanceof Set)) ball._usedAbilityIds = new Set();
+                if (ball._usedAbilityIds.has(meta.id)) return;
+                ball._usedAbilityIds.add(meta.id);
                 if (ball.abilitySlots.length >= self.options.maxSlots) {
                     // Retire le plus ancien
                     const old = ball.abilitySlots.shift();
