@@ -138,6 +138,45 @@ class AudioSynth {
                 break;
         }
     }
+    // Effets courts générés en Web Audio : aucun fichier externe à charger.
+    playFx(name = 'hit', opts = {}) {
+        if (!this.ctx || this.muted || this.volume <= 0) return;
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        const osc = this.ctx.createOscillator();
+        const amount = Math.max(0.001, Math.min(1, opts.volume ?? 0.22)) * this.volume;
+        const powerId = String(opts.powerId || name);
+        let hash = 0;
+        for (let i = 0; i < powerId.length; i++) hash = (hash * 31 + powerId.charCodeAt(i)) >>> 0;
+        const base = 180 + (hash % 420);
+        const duration = name === 'power' ? 0.24 : name === 'collision' ? 0.09 : 0.14;
+        const startFreq = name === 'collision' ? 130 + (hash % 90) : name === 'hit' ? 260 : base;
+        const endFreq = name === 'collision' ? 65 : name === 'hit' ? 110 : base * 1.8;
+        osc.type = name === 'collision' ? 'triangle' : name === 'hit' ? 'sawtooth' : 'sine';
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(35, endFreq), now + duration);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(amount, now + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration + 0.015);
+        if (name === 'power') {
+            const overtone = this.ctx.createOscillator();
+            const overtoneGain = this.ctx.createGain();
+            overtone.type = 'triangle';
+            overtone.frequency.setValueAtTime(base * 1.5, now);
+            overtone.frequency.exponentialRampToValueAtTime(base * 2.2, now + duration * 0.8);
+            overtoneGain.gain.setValueAtTime(amount * 0.28, now);
+            overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            overtone.connect(overtoneGain);
+            overtoneGain.connect(this.ctx.destination);
+            overtone.start(now);
+            overtone.stop(now + duration + 0.015);
+        }
+    }
+
 }
 
 // Global audio synth instance
