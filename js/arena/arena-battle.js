@@ -459,6 +459,10 @@
         _killBall(ball, killer, world, source) {
             if (!ball.alive) return;
             ball.alive = false;
+            if (window.audioSynth && typeof window.audioSynth.playFx === 'function') {
+                const survivors = world.balls.filter(other => other.alive && !other.isClone).length;
+                window.audioSynth.playFx('ko', { volume: survivors <= 1 ? 0.42 : 0.25, powerId: 'ko-' + ball.id });
+            }
 
             // Vrai ralenti après chaque KO, plus long lors de l'élimination finale.
             // Le contrôleur ralentit l'accumulation du temps de jeu sans changer le dt physique.
@@ -795,10 +799,16 @@
                             this._keepBaseSpeed(other);
                         }
 
-                        // Son bref de rebond, limité pour éviter une saturation audio.
+                        // Signature sonore selon le matériau touché, avec limiteur anti-saturation.
                         if (window.audioSynth && self.elapsedTime >= (ball._nextBounceSoundAt || 0)) {
-                            window.audioSynth.playFx('collision', { volume: 0.12 });
-                            ball._nextBounceSoundAt = self.elapsedTime + 0.10;
+                            const impactType = hit && hit.obstacle ? 'obstacle' : 'wall';
+                            const impactSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
+                            const impactVolume = Math.min(0.24, 0.075 + impactSpeed / 2200);
+                            window.audioSynth.playFx(impactType, {
+                                volume: impactVolume,
+                                powerId: String(ball.id || 0) + ':' + impactType + ':' + Math.floor(self.elapsedTime * 8)
+                            });
+                            ball._nextBounceSoundAt = self.elapsedTime + (impactType === 'obstacle' ? 0.13 : 0.16);
                         }
 
                         // Contact damage
