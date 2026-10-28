@@ -432,3 +432,65 @@ test('la fréquence des orbes peut être désactivée et les anciennes maps sont
   expect(result.zeroIntervalSpawns).toBe(0);
   expect(result.retiredMapsPresent).toEqual([]);
 });
+
+
+test.describe('Audio et activation unique des pouvoirs', () => {
+  test('les 14 pouvoirs déclenchent chacun leur signature sonore une seule fois', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    const result = await page.evaluate(() => {
+      const ids = Object.keys(window.PowersFinalOriginal || {});
+      const world = window.ArenaBattle?._world;
+      const ball = world?.balls?.find(item => item.alive);
+      if (ids.length !== 14 || !world || !ball || !window.AbilityBehaviors) {
+        return { ready: false, ids: ids.length, hasWorld: !!world, hasBall: !!ball };
+      }
+      const calls = [];
+      const originalAudio = window.audioSynth;
+      window.audioSynth = { playFx: (name, opts) => calls.push({ name, powerId: opts?.powerId }) };
+      try {
+        const slots = [];
+        for (const id of ids) {
+          const slot = { meta: { id }, data: null };
+          slots.push(slot);
+          window.AbilityBehaviors[id].attach(ball, world, slot);
+        }
+        const initialPowerSounds = calls.filter(call => call.name === 'power');
+        for (let frame = 1; frame <= 20; frame++) {
+          for (const slot of slots) window.AbilityBehaviors[slot.meta.id].update(ball, world, slot, 0.25);
+        }
+        return {
+          ready: true,
+          expected: ids.length,
+          initialPowerSounds: initialPowerSounds.length,
+          uniquePowerIds: new Set(initialPowerSounds.map(call => call.powerId)).size,
+          laterPowerSounds: calls.filter(call => call.name === 'power').length - initialPowerSounds.length
+        };
+      } finally {
+        window.audioSynth = originalAudio;
+      }
+    });
+    expect(result.ready, JSON.stringify(result)).toBe(true);
+    expect(result.initialPowerSounds).toBe(14);
+    expect(result.uniquePowerIds).toBe(14);
+    expect(result.laterPowerSounds).toBe(0);
+  });
+
+  test('les sons de collision, rebord, obstacle, impact et élimination sont routés séparément', async ({ page }) => {
+    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+    const result = await page.evaluate(() => {
+      const world = window.ArenaBattle?._world;
+      if (!world || typeof world.playSound !== 'function') return { ready: false };
+      const calls = [];
+      const originalAudio = window.audioSynth;
+      window.audioSynth = { playFx: name => calls.push(name) };
+      try {
+        for (const name of ['collision', 'wall', 'obstacle', 'hit', 'ko', 'power']) world.playSound(name);
+        return { ready: true, calls };
+      } finally {
+        window.audioSynth = originalAudio;
+      }
+    });
+    expect(result.ready).toBe(true);
+    expect(result.calls).toEqual(['collision', 'wall', 'obstacle', 'hit', 'ko', 'power']);
+  });
+});
