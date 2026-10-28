@@ -377,7 +377,8 @@
             world.playSound = function (name, opts) {
                 try {
                     if (window.audioSynth && window.audioSynth.playFx) {
-                        const mapped = name === 'hit' ? 'hit' : name === 'power' ? 'power' : name === 'collision' ? 'collision' : 'power';
+                        const supported = new Set(['hit', 'power', 'collision', 'wall', 'obstacle', 'ko']);
+                        const mapped = supported.has(name) ? name : 'hit';
                         window.audioSynth.playFx(mapped, opts || {});
                     }
                 } catch (e) {}
