@@ -101,15 +101,15 @@ POWERS.judgment_ray = {
         if(b.chargeT <= 0){
           b.state = 'fire';
           b.life = 0.6;
-          const dx = Math.cos(b.ang), dy = Math.sin(b.ang);
+          const rayDx = Math.cos(b.ang), rayDy = Math.sin(b.ang);
           const rayLength = 2500*world.dpr;
           let hit = null, hitAlong = Infinity;
           for(const candidate of world.balls){
             if(!candidate.alive || candidate.id === b.ownerId) continue;
             const rx = candidate.x - b.x1, ry = candidate.y - b.y1;
-            const along = rx*dx + ry*dy;
+            const along = rx*rayDx + ry*rayDy;
             if(along < 0 || along > rayLength || along >= hitAlong) continue;
-            const perpendicular = Math.abs(rx*dy - ry*dx);
+            const perpendicular = Math.abs(rx*rayDy - ry*rayDx);
             if(perpendicular <= (candidate.r || candidate.radius || 14) + 7*world.dpr){hit=candidate;hitAlong=along;}
           }
           if(hit){
