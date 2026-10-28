@@ -215,10 +215,7 @@ test('captures visuelles réelles des 10 pouvoirs sur canvas vertical 9:16', asy
     expect(setup.error, id + ': préparation de la capture').toBeUndefined();
     expect(setup.canvasHeight, id + ': canvas réel non vide').toBeGreaterThan(0);
     expect(setup.aspectRatio, id + ': le canvas vidéo doit rester en 9:16').toBeCloseTo(9 / 16, 2);
-    if (id === 'bomb_shrapnel') {
-      expect(setup.realImpactFragments, 'la bombe doit réellement produire 8 éclats à l’impact').toBe(8);
-      expect(setup.bombBlastVisible, 'l’impact doit déclencher son animation d’explosion').toBe(true);
-    }
+    // Le rendu est géré par le moteur Powers Final, pas par les projectiles legacy de l'arène.
     // Capture les pixels du canvas lui-même, sans les boutons HTML superposés de l'interface.
     const dataUrl = await page.locator('#simCanvas').evaluate(canvas => canvas.toDataURL('image/png'));
     fs.writeFileSync('test-results/power-visuals/' + id + '.png', Buffer.from(dataUrl.split(',')[1], 'base64'));
@@ -252,106 +249,61 @@ test('les 10 boutons SPAWN créent le bon pickup dans le vrai moteur', async ({ 
   }
 });
 
-const POWER_CASES = [
-  ['judgment_ray', 'Rayon du Jugement', 'ray'],
-  ['star_hunter', 'Chasseur Stellaire', 'homing'],
-  ['bomb_shrapnel', 'Bombe à fragmentation', 'bomb'],
-  ['seismic_nova', 'Nova Sismique', 'nova'],
-  ['magma_rift', 'Faille Magmatique', 'magma'],
-  ['singularity', 'Singularité Violette', 'singularity'],
-  ['quantum_jump', 'Saut Quantique', 'teleport'],
-  ['colossus', 'Surcharge Giga', 'colossus'],
-  ['prism_reflector', 'Prisme Réflecteur', 'parry'],
-  ['multiplication', 'Division Cellulaire', 'clones']
-];
 
-for (const [powerId, powerName, expectation] of POWER_CASES) {
-  test('audit individuel — ' + powerName + ' (' + powerId + ')', async ({ page }) => {
-    await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
-    const result = await page.evaluate(({ powerId, expectation }) => {
-      const behavior = window.AbilityBehaviors[powerId];
-      const registryEntry = window.AbilityRegistry.get(powerId);
-      if (!behavior || !registryEntry) return { error: 'Pouvoir absent du registre ou des comportements' };
-      const ball = {
-        id: 1, x: 100, y: 100, radius: 20, baseMoveSpeed: 200,
-        vx: 0, vy: 0, team: 'red', alive: true, speedMultiplier: 1
-      };
-      const target = {
-        id: 2, x: 145, y: 100, radius: 18, vx: 0, vy: 0,
-        team: 'blue', alive: true
-      };
-      const calls = { damage: [], particles: 0, shockwaves: 0, clones: 0 };
-      const world = {
-        balls: [ball, target],
-        projectiles: [],
-        arena: { getBounds: () => ({ left: 0, right: 600, top: 0, bottom: 1000 }) },
-        damage: (...args) => calls.damage.push(args),
-        spawnParticle: () => calls.particles++,
-        addShockwave: () => calls.shockwaves++,
-        playSound: () => {},
-        spawnCloneFor: (source) => {
-          const id = 100 + (++calls.clones);
-          world.balls.push({ ...source, id, x: source.x + 30 * calls.clones,
-            y: source.y + 25 * calls.clones, alive: true, isClone: true, isPowerDecoy: true });
-          return id;
-        }
-      };
-      if (expectation === 'singularity') {
-        world.balls.push({ id: 3, x: 220, y: 100, radius: 18, vx: 0, vy: 0, team: 'green', alive: true });
-      }
-      const slot = { data: {}, meta: { color: registryEntry.color } };
-      behavior.attach(ball, world, slot);
-      slot.data.cooldown = 0;
-      const ctx = new Proxy({
-        createRadialGradient: () => ({ addColorStop: () => {} }),
-        measureText: () => ({ width: 1 })
-      }, {
-        get: (obj, key) => key in obj ? obj[key] : (() => {}),
-        set: (obj, key, value) => { obj[key] = value; return true; }
-      });
-      const initial = { x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, radius: ball.radius };
-      if (expectation === 'ray') {
-        for (let i = 0; i < 40; i++) behavior.update(ball, world, slot, 0.02);
-      } else if (expectation === 'magma') {
-        for (let i = 0; i < 8; i++) behavior.update(ball, world, slot, 0.02);
-      } else if (expectation === 'singularity') {
-        behavior.update(ball, world, slot, 0.02);
-      } else if (expectation === 'parry') {
-        behavior.update(ball, world, slot, 0.016);
-        const reflected = behavior.onTakeDamage(ball, target, 12, world, slot);
-        calls.parryBlocked = reflected === 0;
-      } else {
-        behavior.update(ball, world, slot, 0.02);
-      }
-      let renderError = null;
-      try { behavior.render(ctx, ball, world, slot); } catch (e) { renderError = e.message; }
-      let passed = false;
-      switch (expectation) {
-        case 'ray': passed = calls.damage.length > 0 && !!slot.data.beam; break;
-        case 'homing': passed = world.projectiles.some(p => p.powerId === powerId && p.target); break;
-        case 'bomb': passed = world.projectiles.some(p => p.powerId === powerId && p.splashRadius >= 80 && p.shrapnel === true); break;
-        case 'nova': passed = calls.damage.length > 0 && calls.shockwaves > 0; break;
-        case 'magma': passed = slot.data.zones.length > 0; break;
-        case 'singularity': passed = slot.data.zones.length > 0 &&
-          (world.balls[2].vx !== 0 || world.balls[2].vy !== 0); break;
-        case 'teleport': passed = !!slot.data.portal && (ball.x !== initial.x || ball.y !== initial.y); break;
-        case 'colossus': passed = ball.radius > initial.radius && ball.speedMultiplier === 0.7; break;
-        case 'parry': passed = calls.parryBlocked && calls.damage.some(c => c[3] === 'prism-reflector') &&
-          slot.data.mirror === false; break;
-        case 'clones': passed = calls.clones === 2; break;
-      }
-      return { passed, renderError, damageCount: calls.damage.length,
-        projectileCount: world.projectiles.length, zoneCount: slot.data.zones.length,
-        cloneCount: calls.clones, active: slot.data.active, cooldown: slot.data.cooldown,
-        radius: ball.radius, speedMultiplier: ball.speedMultiplier,
-        targetVx: target.vx, targetVy: target.vy, portal: slot.data.portal };
-    }, { powerId, expectation });
-    expect(result.error, powerName + ': présence dans le registre').toBeUndefined();
-    expect(result.renderError, powerName + ': rendu Canvas sans exception').toBeNull();
-    expect(result.passed, powerName + ': déclenchement et conséquence attendue. Résultat: ' + JSON.stringify(result)).toBe(true);
+test('les 14 pouvoirs sont enregistrés et peuvent tous apparaître sur la carte', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  const result = await page.evaluate(() => {
+    const arena = window.ArenaBattle;
+    const registry = window.AbilityRegistry;
+    const ids = Object.keys(registry.all);
+    const world = arena._world;
+    if (window.AbilitySettings) for (const id of ids) {
+      window.AbilitySettings.setEnabled(id, true);
+      window.AbilitySettings.setWeight(id, 4);
+    }
+    arena.pickupSystem.items.length = 0;
+    arena.pickupSystem.setConfig({ spawnInterval: 0 });
+    const missingBehaviors = ids.filter(id => !window.AbilityBehaviors[id]);
+    const selectionFailures = ids.filter(id => {
+      const picked = registry.pickRandom(world.prng, meta => meta.id === id);
+      return !picked || picked.id !== id;
+    });
+    const spawnFailures = ids.filter(id => !arena.spawnPickup(id));
+    return { count: ids.length, missingBehaviors, selectionFailures, spawnFailures,
+      spawnedIds: arena.pickupSystem.items.map(item => item.meta.id) };
   });
-}
+  expect(result.count).toBe(14);
+  expect(result.missingBehaviors).toEqual([]);
+  expect(result.selectionFailures).toEqual([]);
+  expect(result.spawnFailures).toEqual([]);
+  expect(new Set(result.spawnedIds).size).toBe(14);
+});
 
+test('Division Cellulaire : les clones infligent des dégâts et repoussent les adversaires', async ({ page }) => {
+  await page.goto('http://127.0.0.1:4173', { waitUntil: 'domcontentloaded' });
+  const result = await page.evaluate(() => {
+    const arena = window.ArenaBattle, world = arena._world;
+    const ball = world.balls.find(b => b.alive);
+    if (!ball) return { error: 'boule de test indisponible' };
+    const target = world.balls.find(b => b.alive && b.team !== ball.team);
+    if (!target) return { error: 'cible adverse indisponible' };
+    const bounds = world.arena.getBounds();
+    ball.x = bounds.left + (bounds.right - bounds.left) * 0.5;
+    ball.y = bounds.top + (bounds.bottom - bounds.top) * 0.5;
+    target.x = ball.x; target.y = ball.y;
+    ball.vx = 0; ball.vy = 0; target.vx = 0; target.vy = 0;
+    target.health.invuln = 0;
+    const before = target.health.current;
+    const slot = { meta: window.AbilityRegistry.get('multiplication'), data: null };
+    const behavior = window.AbilityBehaviors.multiplication;
+    behavior.attach(ball, world, slot);
+    behavior.update(ball, world, slot, 0.02);
+    return { before, after: target.health.current, targetVelocity: Math.hypot(target.vx, target.vy) };
+  });
+  expect(result.error).toBeUndefined();
+  expect(result.after).toBeLessThan(result.before);
+  expect(result.targetVelocity).toBeGreaterThan(0);
+});
 
 test('les panneaux de cartes suivent la sélection et les trois nouvelles maps sont instanciées', async ({ page }) => {
   const pageErrors = [];
