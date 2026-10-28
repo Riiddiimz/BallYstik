@@ -47,8 +47,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (audioButton) audioButton.addEventListener('click', () => {
         const audio = window.audioSynth;
         if (!audio) return;
-        audio.init();
-        audio.muted = !audio.muted;
+        const alreadyInitialized = !!audio.ctx;
+        if (!audio.init()) return;
+        // Le premier clic déverrouille l'audio du navigateur ; il doit l'activer,
+        // et non l'activer puis le couper immédiatement.
+        audio.muted = alreadyInitialized ? !audio.muted : false;
         audioButton.innerHTML = audio.muted
             ? '<i class="fa-solid fa-volume-xmark"></i> Muet'
             : '<i class="fa-solid fa-volume-high"></i> Audio';
