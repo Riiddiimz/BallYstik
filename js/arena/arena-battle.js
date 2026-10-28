@@ -823,7 +823,8 @@
 
                         // Contact damage
                         if (ball.team !== other.team) {
-                            const baseDmg = 3 * this.options.contactDamageMult;
+                            // Surcharge Giga renforce les contacts pendant sa courte durée.
+                            const baseDmg = 3 * this.options.contactDamageMult * (ball.colossus > 0 ? 1.5 : 1);
                             const cdBall = ball._lastContactTimers || {};
                             const cdOther = other._lastContactTimers || {};
                             if ((cdBall[other.id] || 0) <= 0) {
