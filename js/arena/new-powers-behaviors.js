@@ -1129,6 +1129,7 @@ POWERS.explosive_flower = {
     this.entities.push({
       x: ball.x, y: ball.y, ownerId: ball.id,
       age: 0, bloomDur: 0.85, detonated: false, detonateAge: 0,
+      hitIds: new Set(),
     });
   },
   update(dt){
@@ -1153,12 +1154,13 @@ POWERS.explosive_flower = {
             });
           }
           for(const b of world.balls){
-            if(!b.alive || b.id === e.ownerId) continue;
+            if(!b.alive || b.id === e.ownerId || e.hitIds.has(b.id)) continue;
             const dx = b.x - e.x, dy = b.y - e.y;
             const proj = dx*Math.cos(ang) + dy*Math.sin(ang);
             if(proj < 0 || proj > far) continue;
             const perp = Math.abs(-dx*Math.sin(ang) + dy*Math.cos(ang));
             if(perp < 32*world.dpr){
+              e.hitIds.add(b.id);
               damageBall(b, 16, 'explosive_flower');
               b.vx += Math.cos(ang)*200*world.dpr;
               b.vy += Math.sin(ang)*200*world.dpr;
