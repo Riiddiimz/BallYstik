@@ -1763,6 +1763,13 @@ Object.keys(POWERS).forEach(id=>{
    if(lastUpdate.get(original)!==frame){
     lastUpdate.set(original,frame);
     try{
+     if(original.update)original.update(dt);
+    }catch(e){console.warn('[Powers Final update]',id,e);}
+   }
+   if(lastSystemUpdate!==frame){
+    lastSystemUpdate=frame;
+    try{
+     if(frame!==undefined&&frame!==null)state.time=frame;
      for(let i=state.pendingCasts.length-1;i>=0;i--){
       const pending=state.pendingCasts[i];pending.timer-=dt;
       if(pending.timer<=0){
@@ -1771,13 +1778,6 @@ Object.keys(POWERS).forEach(id=>{
        if(owner)POWERS[pending.powerId].castNow(proxyBall(owner));
       }
      }
-     if(original.update)original.update(dt);
-    }catch(e){console.warn('[Powers Final update]',id,e);}
-   }
-   if(lastSystemUpdate!==frame){
-    lastSystemUpdate=frame;
-    try{
-     if(frame!==undefined&&frame!==null)state.time=frame;
      updateProjectiles(dt);updateShrapnels(dt);updateNovas(dt);updateParticles(dt);updateShockwaves(dt);updateDamageTexts(dt);
     }catch(e){console.warn('[Powers Final effects update]',e);}
    }
