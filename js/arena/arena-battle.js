@@ -758,6 +758,16 @@
                 // Collision avec les limites propres à la carte active.
                 const hit = world.arena.resolveBall(ball, dt);
                 if (hit) {
+                    // Son distinct pour les rebords et les obstacles, avec cooldown anti-saturation.
+                    if (window.audioSynth && self.elapsedTime >= (ball._nextSurfaceSoundAt || 0)) {
+                        const impactType = hit.obstacle ? 'obstacle' : 'wall';
+                        const impactSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
+                        window.audioSynth.playFx(impactType, {
+                            volume: Math.min(0.24, 0.075 + impactSpeed / 2200),
+                            powerId: 'ball-' + ball.id + '-' + impactType + '-' + Math.floor(self.elapsedTime * 8)
+                        });
+                        ball._nextSurfaceSoundAt = self.elapsedTime + (impactType === 'obstacle' ? 0.13 : 0.16);
+                    }
                     // Capacités réactives
                     for (const slot of ball.abilitySlots) {
                         const beh = window.AbilityBehaviors[slot.meta.id];
@@ -799,16 +809,14 @@
                             this._keepBaseSpeed(other);
                         }
 
-                        // Signature sonore selon le matériau touché, avec limiteur anti-saturation.
+                        // Collision boule-boule : son plus fort si l'impact est rapide.
                         if (window.audioSynth && self.elapsedTime >= (ball._nextBounceSoundAt || 0)) {
-                            const impactType = hit && hit.obstacle ? 'obstacle' : 'wall';
-                            const impactSpeed = Math.hypot(ball.vx || 0, ball.vy || 0);
-                            const impactVolume = Math.min(0.24, 0.075 + impactSpeed / 2200);
-                            window.audioSynth.playFx(impactType, {
-                                volume: impactVolume,
-                                powerId: String(ball.id || 0) + ':' + impactType + ':' + Math.floor(self.elapsedTime * 8)
+                            const impactSpeed = Math.hypot(ball.vx - other.vx, ball.vy - other.vy);
+                            window.audioSynth.playFx('collision', {
+                                volume: Math.min(0.22, 0.07 + impactSpeed / 2600),
+                                powerId: 'balls-' + ball.id + '-' + other.id
                             });
-                            ball._nextBounceSoundAt = self.elapsedTime + (impactType === 'obstacle' ? 0.13 : 0.16);
+                            ball._nextBounceSoundAt = self.elapsedTime + 0.10;
                         }
 
                         // Contact damage
