@@ -281,8 +281,8 @@ POWERS.magma_rift = {
       x1: ball.x, y1: ball.y,
       x2: ball.x + Math.cos(ang)*220*world.dpr,
       y2: ball.y + Math.sin(ang)*220*world.dpr,
-      life: 5, maxLife: 5, width: 24*world.dpr, ownerId: ball.id,
-      flowOffset: 0,
+      life: 5, maxLife: 5, width: 24*world.dpr, ownerId: ball.id, team: ball.team,
+      flowOffset: 0, hitCooldowns: Object.create(null),
     });
     for(let t=0; t<=1; t+=0.05){
       const x = lerp(ball.x, ball.x + Math.cos(ang)*220*world.dpr, t);
@@ -317,16 +317,21 @@ POWERS.magma_rift = {
         });
       }
       for(const b of world.balls){
-        if(b.id === z.ownerId || !b.alive) continue;
+        if(b.id === z.ownerId || !b.alive || (z.team != null && b.team === z.team)) continue;
         const px = b.x, py = b.y;
         const vx = z.x2-z.x1, vy = z.y2-z.y1;
         const wx = px-z.x1, wy = py-z.y1;
         const t = clamp((wx*vx+wy*vy)/(vx*vx+vy*vy), 0, 1);
         const cx = z.x1 + vx*t, cy = z.y1 + vy*t;
         const d = Math.hypot(px-cx, py-cy);
-        if(d < z.width/2 + b.r){
-          damageBall(b, 8*dt, 'magma_rift');
+        if(d < z.width/2 + b.r && !(z.hitCooldowns[b.id] > 0)){
+          damageBall(b, 4, 'magma_rift');
+          z.hitCooldowns[b.id] = 0.5;
         }
+      }
+      for(const id of Object.keys(z.hitCooldowns)){
+        z.hitCooldowns[id] = Math.max(0, z.hitCooldowns[id] - dt);
+        if(z.hitCooldowns[id] <= 0) delete z.hitCooldowns[id];
       }
     }
     world.zones = world.zones.filter(z => z.life > 0);
@@ -682,16 +687,47 @@ POWERS.multiplication = {
         r: ball.r, color: '#ff2a85',
         life: 3.0, maxLife: 3.0, phase: rand(0, TAU),
         sourceX: ball.x, sourceY: ball.y,
+        ownerId: ball.id, team: ball.team,
+        hitCooldowns: Object.create(null),
       });
     }
   },
   update(dt){
+    const a = world.arena;
     for(let i=world.decoys.length-1;i>=0;i--){
       const d = world.decoys[i];
       d.life -= dt;
+      for(const id of Object.keys(d.hitCooldowns || {})){
+        d.hitCooldowns[id] = Math.max(0, d.hitCooldowns[id] - dt);
+        if(d.hitCooldowns[id] <= 0) delete d.hitCooldowns[id];
+      }
       d.x += d.vx * dt;
       d.y += d.vy * dt;
-      world.arena.resolve(d);
+      const left = a.x + d.r, right = a.x + a.w - d.r;
+      const top = a.y + d.r, bottom = a.y + a.h - d.r;
+      if(d.x < left){ d.x = left; d.vx = Math.abs(d.vx); }
+      else if(d.x > right){ d.x = right; d.vx = -Math.abs(d.vx); }
+      if(d.y < top){ d.y = top; d.vy = Math.abs(d.vy); }
+      else if(d.y > bottom){ d.y = bottom; d.vy = -Math.abs(d.vy); }
+      // Les clones sont des projectiles solides : ils repoussent et blessent les adversaires.
+      for(const b of world.balls){
+        if(!b.alive || b.id === d.ownerId || (d.team != null && b.team === d.team)) continue;
+        const dx = b.x - d.x, dy = b.y - d.y;
+        const dist = Math.hypot(dx, dy) || 0.001;
+        const minDist = d.r + b.r;
+        if(dist >= minDist) continue;
+        const nx = dx / dist, ny = dy / dist;
+        d.x = b.x - nx * (minDist + 1);
+        d.y = b.y - ny * (minDist + 1);
+        d.vx = -nx * 220*world.dpr - ny * 45*world.dpr;
+        d.vy = -ny * 220*world.dpr + nx * 45*world.dpr;
+        b.vx += nx * 80*world.dpr;
+        b.vy += ny * 80*world.dpr;
+        if(!d.hitCooldowns[b.id]){
+          damageBall(b, 5, 'multiplication');
+          d.hitCooldowns[b.id] = 0.45;
+        }
+      }
       if(d.life <= 0) world.decoys.splice(i,1);
     }
   },
