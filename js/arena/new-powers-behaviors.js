@@ -12,7 +12,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 const easeOut=t=>1-Math.pow(1-t,3);
 let realWorld=null;
-const state={projectiles:[],particles:[],shockwaves:[],decoys:[],beams:[],zones:[],damageTexts:[],shrapnels:[],novas:[],time:0,shake:0,dpr:1};
+const state={projectiles:[],particles:[],shockwaves:[],decoys:[],beams:[],zones:[],damageTexts:[],shrapnels:[],novas:[],pendingCasts:[],time:0,shake:0,dpr:1};
 const proxyCache=new WeakMap(), reverseProxy=new WeakMap(), baseRadiusCache=new WeakMap();
 function proxyBall(ball){
  if(!ball||typeof ball!=='object')return ball;
@@ -76,7 +76,7 @@ POWERS.judgment_ray = {
       y2: ball.y + Math.sin(ang)*2500*world.dpr,
       life: 0.6, maxLife: 0.6,
       state: 'charge', chargeT: 0.4, chargeMax: 0.4,
-      targetId: target.id, ang, chargeRingAngle: 0,
+      ownerId: ball.id, targetId: target.id, ang, chargeRingAngle: 0,
     });
   },
   update(dt){
@@ -101,13 +101,22 @@ POWERS.judgment_ray = {
         if(b.chargeT <= 0){
           b.state = 'fire';
           b.life = 0.6;
-          const target = world.balls.find(x => x.id === b.targetId && x.alive);
-          if(target){
-            damageBall(target, 26, 'judgment_ray');
-            world.shockwaves.push({ x:target.x, y:target.y, r:0, maxR: 70*world.dpr, color:'#67e8f9', life:0.4, maxLife:0.4, width:4 });
-            world.shockwaves.push({ x:target.x, y:target.y, r:0, maxR: 40*world.dpr, color:'#ffffff', life:0.25, maxLife:0.25, width:2 });
-            burstParticles(target.x, target.y, '#67e8f9', 26, 400*world.dpr, 0.65);
-            burstParticles(target.x, target.y, '#ffffff', 12, 260*world.dpr, 0.45);
+          const dx = Math.cos(b.ang), dy = Math.sin(b.ang);
+          const rayLength = 2500*world.dpr;
+          let hit = null, hitAlong = Infinity;
+          for(const candidate of world.balls){
+            if(!candidate.alive || candidate.id === b.ownerId) continue;
+            const rx = candidate.x - b.x1, ry = candidate.y - b.y1;
+            const along = rx*dx + ry*dy;
+            if(along < 0 || along > rayLength || along >= hitAlong) continue;
+            const perpendicular = Math.abs(rx*dy - ry*dx);
+            if(perpendicular <= (candidate.r || candidate.radius || 14) + 7*world.dpr){hit=candidate;hitAlong=along;}
+          }
+          if(hit){
+            damageBall(hit, 26, 'judgment_ray');
+            world.shockwaves.push({ x:hit.x, y:hit.y, r:0, maxR:48*world.dpr, color:'#67e8f9', life:0.32, maxLife:0.32, width:3 });
+            burstParticles(hit.x, hit.y, '#67e8f9', 20, 330*world.dpr, 0.5);
+            burstParticles(hit.x, hit.y, '#ffffff', 8, 220*world.dpr, 0.35);
           }
           const dx = Math.cos(b.ang), dy = Math.sin(b.ang);
           for(let k=0; k<50; k++){
@@ -210,9 +219,9 @@ POWERS.star_hunter = {
       vx: Math.cos(ang)*180*world.dpr,
       vy: Math.sin(ang)*180*world.dpr,
       targetId: target.id,
-      life: 2.8, maxLife: 2.8, trail: [],
-      color: '#fb923c', damage: 22,
-      angle: ang, speed: 180*world.dpr, ownerId: ball.id,
+      life: 2.5, maxLife: 2.5, trail: [],
+      color: '#fb923c', damage: 18,
+      angle: ang, speed: 170*world.dpr, turnRate: 1.15, ownerId: ball.id,
     });
   },
   update(){}, render(){},
@@ -241,8 +250,11 @@ POWERS.bomb_shrapnel = {
 // ═══ 4. SEISMIC NOVA — ENHANCED ═══
 POWERS.seismic_nova = {
   name:'Nova Sismique', icon:'◎', color:'#ef4444',
-  desc:'Onde circulaire qui repousse les boules.',
+  desc:'Onde circulaire qui se déclenche deux secondes après acquisition.',
   cast(ball){
+    state.pendingCasts.push({ powerId:'seismic_nova', ownerId:ball.id, ball:realBall(ball), x:ball.x, y:ball.y, timer:2 });
+  },
+  castNow(ball){
     world.shockwaves.push({
       x: ball.x, y: ball.y, r: 0, maxR: 220*world.dpr,
       color: '#ef4444', life: 0.9, maxLife: 0.9, width: 7,
@@ -382,14 +394,17 @@ POWERS.singularity = {
   name:'Singularité Violette', icon:'◯', color:'#a855f7',
   desc:'Attire les boules puis implose.',
   cast(ball){
-    const target = nearestEnemy(ball);
-    const x = target ? target.x : ball.x;
-    const y = target ? target.y : ball.y;
+    const a = world.arena, margin = 65*world.dpr;
+    let x = a.cx, y = a.cy;
+    for(let i=0;i<24;i++){
+      const nx=rand(a.x+margin,a.x+a.w-margin), ny=rand(a.y+margin,a.y+a.h-margin);
+      if(Math.hypot(nx-ball.x,ny-ball.y)>=220*world.dpr){x=nx;y=ny;break;}
+    }
     world.zones.push({
       type: 'singularity', x, y,
-      life: 1.9, maxLife: 1.9,
+      life: 2, maxLife: 2,
       radius: 0, maxRadius: 200*world.dpr,
-      pull: 420*world.dpr, implodeAt: 1.35,
+      pull: 420*world.dpr, implodeAt: 1.9,
       ownerId: ball.id, spin: 0,
     });
     world.shake = Math.max(world.shake, 4*world.dpr);
@@ -762,22 +777,26 @@ POWERS.chain_lightning = {
   desc:'Chaîne tournoyante qui lie deux boules et les écrase.',
   entities: [],
   cast(ball){
-    this.entities.push({
-      ownerId: ball.id, ownerX: ball.x, ownerY: ball.y,
-      age: 0, phase: 'spin', spinDur: 1.3, linkDur: 1.4,
-      spinSpeed: 6.5, maxRadius: 220*world.dpr,
-      radius: 30*world.dpr, angle: 0,
-      caughtIds: [], linkA: null, linkB: null, linkTimer: 0,
-      fadeAge: 0,
-    });
+    const target = world.balls.filter(b=>b.alive&&b.id!==ball.id)
+      .sort((a,b)=>Math.hypot(b.x-ball.x,b.y-ball.y)-Math.hypot(a.x-ball.x,a.y-ball.y))[0];
+    if(!target) return;
+    this.entities.push({ownerId:ball.id,targetId:target.id,x1:ball.x,y1:ball.y,age:0,phase:'strike',strikeDur:0.28,damageDone:false});
     burstParticles(ball.x, ball.y, '#fbbf24', 18, 260*world.dpr, 0.5);
-    world.shockwaves.push({ x:ball.x, y:ball.y, r:0, maxR:70*world.dpr, color:'#fbbf24', life:0.3, maxLife:0.3, width:2 });
   },
   update(dt){
     for(let i=this.entities.length-1;i>=0;i--){
       const e = this.entities[i];
       const owner = world.balls.find(b => b.id === e.ownerId);
-      if(e.phase === 'spin'){
+      if(e.phase === 'strike'){
+        const target=world.balls.find(b=>b.id===e.targetId&&b.alive);
+        e.age+=dt;
+        if(owner){e.x1=owner.x;e.y1=owner.y;}
+        if(target){
+          e.x2=target.x;e.y2=target.y;
+          if(!e.damageDone){e.damageDone=true;damageBall(target,18,'chain_lightning');burstParticles(target.x,target.y,'#fbbf24',24,360*world.dpr,0.55);}
+        }
+        if(e.age>=e.strikeDur)this.entities.splice(i,1);
+      } else if(e.phase === 'spin'){
         if(!owner || !owner.alive){ this.entities.splice(i,1); continue; }
         e.ownerX = owner.x; e.ownerY = owner.y;
         e.age += dt;
@@ -847,7 +866,15 @@ POWERS.chain_lightning = {
   render(c){
     for(const e of this.entities){
       const flicker = 0.7 + 0.3*Math.sin(world.time*40);
-      if(e.phase === 'spin'){
+      if(e.phase === 'strike'){
+        c.save();c.globalCompositeOperation='lighter';c.lineCap='round';
+        const target=world.balls.find(b=>b.id===e.targetId&&b.alive);
+        const x2=target?target.x:(e.x2??e.x1),y2=target?target.y:(e.y2??e.y1);
+        c.strokeStyle='rgba(251,191,36,0.65)';c.lineWidth=18*world.dpr;c.shadowColor='#fbbf24';c.shadowBlur=24*world.dpr;
+        c.beginPath();c.moveTo(e.x1,e.y1);
+        for(let k=1;k<8;k++){const t=k/8;c.lineTo(e.x1+(x2-e.x1)*t+rand(-16,16)*world.dpr,e.y1+(y2-e.y1)*t+rand(-16,16)*world.dpr);}
+        c.lineTo(x2,y2);c.stroke();c.strokeStyle='#fff7cc';c.lineWidth=3*world.dpr;c.shadowBlur=10*world.dpr;c.stroke();c.restore();
+      } else if(e.phase === 'spin'){
         c.save();
         c.globalCompositeOperation = 'lighter';
         c.lineCap = 'round';
@@ -1126,9 +1153,12 @@ POWERS.explosive_flower = {
   desc:'Une fleur se déploie, ses pétales partent en étoile.',
   entities: [],
   cast(ball){
+    const a = world.arena, margin = 45*world.dpr;
+    const x = rand(a.x + margin, a.x + a.w - margin);
+    const y = rand(a.y + margin, a.y + a.h - margin);
     this.entities.push({
-      x: ball.x, y: ball.y, ownerId: ball.id,
-      age: 0, bloomDur: 0.85, detonated: false, detonateAge: 0,
+      x, y, ownerId: ball.id,
+      age: 0, bloomDur: 2, detonated: false, detonateAge: 0,
       hitIds: new Set(),
     });
   },
@@ -1278,34 +1308,30 @@ POWERS.imprisonment_seal = {
           }
         }
         if(e.age >= e.runeDur + e.wallDur){
-          e.released = true;
-          burstParticles(e.x, e.y, '#a78bfa', 44, 440*world.dpr, 0.85);
-          burstParticles(e.x, e.y, '#ffffff', 22, 300*world.dpr, 0.55);
-          world.shockwaves.push({ x:e.x, y:e.y, r:0, maxR:e.radius*2.2, color:'#a78bfa', life:0.55, maxLife:0.55, width:5 });
-          world.shake = Math.max(world.shake, 9*world.dpr);
+          e.released=true;e.collapseAge=0;
+          for(const b of world.balls){
+            if(!b.alive)continue;
+            if(Math.hypot(b.x-e.x,b.y-e.y)<=e.radius+b.r){
+              damageBall(b,18,'imprisonment_seal');
+              const dx=e.x-b.x,dy=e.y-b.y,d=Math.hypot(dx,dy)||1;
+              b.vx+=dx/d*150*world.dpr;b.vy+=dy/d*150*world.dpr;
+            }
+          }
+          world.shake=Math.max(world.shake,7*world.dpr);
         }
       } else {
-        e.releaseAge += dt;
-        if(e.releaseAge > 0.5) this.entities.splice(i,1);
+        e.collapseAge+=dt;
+        if(e.collapseAge>0.16)this.entities.splice(i,1);
       }
     }
   },
   render(c){
     for(const e of this.entities){
       if(e.released){
-        const fade = 1 - e.releaseAge / 0.5;
-        if(fade <= 0) continue;
-        c.save();
-        c.globalAlpha = fade;
-        c.strokeStyle = '#a78bfa';
-        c.lineWidth = 2.5*world.dpr;
-        c.shadowColor = '#a78bfa';
-        c.shadowBlur = 24*world.dpr;
-        c.beginPath();
-        c.arc(e.x, e.y, e.radius * (1 + (1-fade)*0.8), 0, TAU);
-        c.stroke();
-        c.restore();
-        continue;
+        const p=Math.max(0,1-e.collapseAge/0.16);
+        c.save();c.globalAlpha=p;c.strokeStyle='#c4b5fd';c.lineWidth=(2.5+5*(1-p))*world.dpr;
+        c.shadowColor='#a78bfa';c.shadowBlur=18*world.dpr*p;
+        c.beginPath();c.arc(e.x,e.y,e.radius*p,0,TAU);c.stroke();c.restore();continue;
       }
       const wallP = e.age < e.runeDur ? 0 : Math.min(1, (e.age - e.runeDur) / 0.35);
       c.save();
@@ -1373,9 +1399,9 @@ function updateProjectiles(dt){
         let da = desired - p.angle;
         while(da > Math.PI) da -= TAU;
         while(da < -Math.PI) da += TAU;
-        p.angle += clamp(da, -3.5*dt, 3.5*dt);
+        p.angle += clamp(da, -(p.turnRate || 1.15)*dt, (p.turnRate || 1.15)*dt);
       }
-      p.speed = Math.min(p.speed + 140*world.dpr*dt, 420*world.dpr);
+      p.speed = Math.min(p.speed + 90*world.dpr*dt, 330*world.dpr);
       p.vx = Math.cos(p.angle)*p.speed;
       p.vy = Math.sin(p.angle)*p.speed;
       p.x += p.vx * dt;
@@ -1722,13 +1748,31 @@ function syncWorld(w){realWorld=w;state.time=world.time||state.time;}
 Object.keys(POWERS).forEach(id=>{
  const original=POWERS[id];
  window.AbilityBehaviors[id]={
-  attach(ball,w,slot){syncWorld(w);slot.data={originalId:id,used:true};try{original.cast(proxyBall(ball));if(window.audioSynth)window.audioSynth.playFx('power',{powerId:id,volume:.20});}catch(e){console.warn('[Powers Final cast]',id,e);}},
+  attach(ball,w,slot){
+   syncWorld(w);slot.data={originalId:id,used:true};
+   try{
+    if(id==='quantum_jump')slot.data.jokerReady=true;
+    else if(id==='seismic_nova')state.pendingCasts.push({powerId:id,ownerId:ball.id,ball:realBall(ball),timer:2});
+    else original.cast(proxyBall(ball));
+    if(window.audioSynth)window.audioSynth.playFx('power',{powerId:id,volume:.20});
+   }catch(e){console.warn('[Powers Final cast]',id,e);}
+  },
   update(ball,w,slot,dt){
    syncWorld(w);
    const frame=world.time;
    if(lastUpdate.get(original)!==frame){
     lastUpdate.set(original,frame);
-    try{if(original.update)original.update(dt);}catch(e){console.warn('[Powers Final update]',id,e);}
+    try{
+     for(let i=state.pendingCasts.length-1;i>=0;i--){
+      const pending=state.pendingCasts[i];pending.timer-=dt;
+      if(pending.timer<=0){
+       state.pendingCasts.splice(i,1);
+       const owner=world.balls.find(b=>b.id===pending.ownerId)||pending.ball;
+       if(owner)POWERS[pending.powerId].castNow(proxyBall(owner));
+      }
+     }
+     if(original.update)original.update(dt);
+    }catch(e){console.warn('[Powers Final update]',id,e);}
    }
    if(lastSystemUpdate!==frame){
     lastSystemUpdate=frame;
@@ -1741,6 +1785,11 @@ Object.keys(POWERS).forEach(id=>{
    // Les animations et effets déjà créés restent mis à jour normalement.
   },
   onTakeDamage(target,attacker,amount,w,slot){
+   if(id==='quantum_jump'&&slot?.data?.jokerReady&&amount>0){
+    slot.data.jokerReady=false;slot.timeLeft=0;
+    try{original.cast(proxyBall(target));}catch(e){console.warn('[Quantum Joker]',e);}
+    return 0;
+   }
    if(id==='prism_reflector'&&target&&target.prism>0){
     if(attacker&&attacker.alive)world.damage(attacker,target,amount*.45,'prism_reflector',{ignoreInvuln:true,noPowerReflect:true});
     return amount*.4;
@@ -1759,7 +1808,7 @@ Object.keys(POWERS).forEach(id=>{
 });
 let lastRenderFrame=null;
 window.AbilityBehaviors.resetAll=function(){
- const keys=['projectiles','particles','shockwaves','decoys','beams','zones','damageTexts','shrapnels','novas'];
+ const keys=['projectiles','particles','shockwaves','decoys','beams','zones','damageTexts','shrapnels','novas','pendingCasts'];
  for(const key of keys) state[key].length=0;
  state.time=0;state.shake=0;realWorld=null;
  for(const power of Object.values(POWERS)){if(Array.isArray(power.entities))power.entities.length=0;}
