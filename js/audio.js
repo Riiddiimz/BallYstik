@@ -138,43 +138,102 @@ class AudioSynth {
                 break;
         }
     }
-    // Effets courts générés en Web Audio : aucun fichier externe à charger.
+    // Effets synthétiques dédiés : tous les sons sont générés en temps réel, sans fichiers externes.
     playFx(name = 'hit', opts = {}) {
         if (!this.ctx || this.muted || this.volume <= 0) return;
-        const now = this.ctx.currentTime;
-        const gain = this.ctx.createGain();
-        const osc = this.ctx.createOscillator();
-        const amount = Math.max(0.001, Math.min(1, opts.volume ?? 0.22)) * this.volume;
+        const ctx = this.ctx;
+        const now = ctx.currentTime;
+        const master = Math.max(0.001, Math.min(1, opts.volume ?? 0.22)) * this.volume;
         const powerId = String(opts.powerId || name);
         let hash = 0;
         for (let i = 0; i < powerId.length; i++) hash = (hash * 31 + powerId.charCodeAt(i)) >>> 0;
-        const base = 180 + (hash % 420);
-        const duration = name === 'power' ? 0.24 : name === 'collision' ? 0.09 : 0.14;
-        const startFreq = name === 'collision' ? 130 + (hash % 90) : name === 'hit' ? 260 : base;
-        const endFreq = name === 'collision' ? 65 : name === 'hit' ? 110 : base * 1.8;
-        osc.type = name === 'collision' ? 'triangle' : name === 'hit' ? 'sawtooth' : 'sine';
-        osc.frequency.setValueAtTime(startFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(Math.max(35, endFreq), now + duration);
-        gain.gain.setValueAtTime(0.0001, now);
-        gain.gain.linearRampToValueAtTime(amount, now + 0.008);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
-        osc.start(now);
-        osc.stop(now + duration + 0.015);
-        if (name === 'power') {
-            const overtone = this.ctx.createOscillator();
-            const overtoneGain = this.ctx.createGain();
-            overtone.type = 'triangle';
-            overtone.frequency.setValueAtTime(base * 1.5, now);
-            overtone.frequency.exponentialRampToValueAtTime(base * 2.2, now + duration * 0.8);
-            overtoneGain.gain.setValueAtTime(amount * 0.28, now);
-            overtoneGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-            overtone.connect(overtoneGain);
-            overtoneGain.connect(this.ctx.destination);
-            overtone.start(now);
-            overtone.stop(now + duration + 0.015);
+        const varied = (hash % 97) / 97;
+        const profiles = {
+            judgment_ray: { wave: 'sawtooth', low: 780, high: 115, dur: 0.36, steps: [1, 0.56, 0.32] },
+            star_hunter: { wave: 'triangle', low: 420, high: 1120, dur: 0.30, steps: [1, 1.5, 2.1] },
+            bomb_shrapnel: { wave: 'square', low: 150, high: 48, dur: 0.42, steps: [1, 0.72, 0.42] },
+            seismic_nova: { wave: 'sine', low: 105, high: 52, dur: 0.48, steps: [1, 0.5, 0.25] },
+            magma_rift: { wave: 'sawtooth', low: 180, high: 65, dur: 0.52, steps: [1, 0.82, 0.45] },
+            singularity: { wave: 'sine', low: 640, high: 75, dur: 0.58, steps: [1, 0.5, 0.25] },
+            quantum_jump: { wave: 'triangle', low: 280, high: 880, dur: 0.24, steps: [1, 1.8, 2.7] },
+            colossus: { wave: 'square', low: 95, high: 44, dur: 0.38, steps: [1, 0.5, 0.25] },
+            prism_reflector: { wave: 'sine', low: 900, high: 620, dur: 0.34, steps: [1, 1.33, 1.8] },
+            multiplication: { wave: 'triangle', low: 360, high: 720, dur: 0.32, steps: [1, 1.25, 1.65] },
+            chain_lightning: { wave: 'sawtooth', low: 980, high: 180, dur: 0.26, steps: [1, 1.8, 0.7] },
+            crystal_prison: { wave: 'sine', low: 1050, high: 420, dur: 0.40, steps: [1, 1.5, 2] },
+            explosive_flower: { wave: 'triangle', low: 260, high: 920, dur: 0.36, steps: [1, 1.4, 2.2] },
+            imprisonment_seal: { wave: 'sawtooth', low: 520, high: 130, dur: 0.46, steps: [1, 0.75, 0.4] }
+        };
+        const powerKeys = Object.keys(profiles);
+        const profile = name === 'power'
+            ? (profiles[powerId] || profiles[powerKeys[hash % powerKeys.length]])
+            : null;
+        const duration = profile ? profile.dur
+            : name === 'collision' ? 0.075
+            : name === 'wall' ? 0.095
+            : name === 'obstacle' ? 0.12
+            : name === 'ko' ? 0.62
+            : name === 'hit' ? 0.15 : 0.22;
+        const baseFreq = profile ? profile.low * (0.94 + varied * 0.12)
+            : name === 'collision' ? 145 + (hash % 105)
+            : name === 'wall' ? 220 + (hash % 140)
+            : name === 'obstacle' ? 115 + (hash % 95)
+            : name === 'ko' ? 180 + (hash % 100)
+            : name === 'hit' ? 280 + (hash % 100)
+            : 260 + (hash % 420);
+        const endFreq = profile ? profile.high
+            : name === 'collision' ? 72
+            : name === 'wall' ? 95
+            : name === 'obstacle' ? 58
+            : name === 'ko' ? 42
+            : name === 'hit' ? 105 : baseFreq * 1.7;
+
+        const makeTone = (frequency, endFrequency, wave, gainScale, offset = 0, length = duration) => {
+            const osc = ctx.createOscillator();
+            const amp = ctx.createGain();
+            const filter = ctx.createBiquadFilter();
+            osc.type = wave;
+            osc.frequency.setValueAtTime(Math.max(30, frequency), now + offset);
+            osc.frequency.exponentialRampToValueAtTime(Math.max(30, endFrequency), now + offset + length);
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(name === 'power' ? 5000 : 2200, now + offset);
+            filter.frequency.exponentialRampToValueAtTime(name === 'power' ? 1100 : 420, now + offset + length);
+            const peak = Math.max(0.0001, master * gainScale);
+            amp.gain.setValueAtTime(0.0001, now + offset);
+            amp.gain.linearRampToValueAtTime(peak, now + offset + Math.min(0.012, length * 0.15));
+            amp.gain.exponentialRampToValueAtTime(0.0001, now + offset + length);
+            osc.connect(filter);
+            filter.connect(amp);
+            amp.connect(ctx.destination);
+            osc.start(now + offset);
+            osc.stop(now + offset + length + 0.02);
+        };
+
+        if (profile) {
+            // Trois couches donnent une signature différente à chaque pouvoir.
+            makeTone(baseFreq, endFreq, profile.wave, 0.58);
+            makeTone(baseFreq * profile.steps[1], endFreq * profile.steps[1], 'triangle', 0.22, 0.018, duration * 0.78);
+            if (hash % 2 === 0) makeTone(baseFreq * profile.steps[2], endFreq * profile.steps[2], 'sine', 0.13, 0.035, duration * 0.62);
+            return;
         }
+        if (name === 'ko') {
+            makeTone(baseFreq * 1.8, 55, 'sawtooth', 0.5, 0, 0.42);
+            makeTone(baseFreq, 38, 'sine', 0.45, 0.045, 0.58);
+            makeTone(820, 190, 'triangle', 0.18, 0.015, 0.19);
+            return;
+        }
+        if (name === 'obstacle') {
+            makeTone(baseFreq, endFreq, 'triangle', 0.42, 0, duration);
+            makeTone(baseFreq * 2.4, endFreq * 1.5, 'sine', 0.16, 0.004, duration * 0.55);
+            return;
+        }
+        if (name === 'collision' || name === 'wall') {
+            makeTone(baseFreq, endFreq, name === 'wall' ? 'sine' : 'triangle', 0.48, 0, duration);
+            makeTone(baseFreq * 2.2, endFreq * 1.4, 'sine', 0.12, 0.003, duration * 0.55);
+            return;
+        }
+        makeTone(baseFreq, endFreq, name === 'hit' ? 'sawtooth' : 'triangle', name === 'hit' ? 0.36 : 0.42);
+        if (name === 'power') makeTone(baseFreq * 1.5, baseFreq * 2.2, 'triangle', 0.22, 0.018, duration * 0.8);
     }
 
 }
