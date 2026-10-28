@@ -299,6 +299,9 @@
 
                     const dealt = target.health.damage(finalAmount, opts);
                     if (dealt <= 0) return 0;
+                    if (source !== 'contact' && !(opts && opts.silent) && window.audioSynth) {
+                        window.audioSynth.playFx('hit', { volume: Math.min(0.28, 0.12 + dealt / 120) });
+                    }
                     // Les leurres de Multiplication disparaissent au premier impact reçu.
                     if (target.isPowerDecoy && target.health) { target.health.current = 0; target.health.dead = true; }
 
@@ -372,9 +375,12 @@
             };
 
             world.playSound = function (name, opts) {
-                if (window.Audio && window.Audio.playFx) {
-                    try { window.Audio.playFx(name, opts); } catch (e) {}
-                }
+                try {
+                    if (window.audioSynth && window.audioSynth.playFx) {
+                        const mapped = name === 'hit' ? 'hit' : name === 'power' ? 'power' : name === 'collision' ? 'collision' : 'power';
+                        window.audioSynth.playFx(mapped, opts || {});
+                    }
+                } catch (e) {}
             };
 
             world.pickAbilityMeta = function () {
@@ -787,6 +793,12 @@
                         } else {
                             this._keepBaseSpeed(ball);
                             this._keepBaseSpeed(other);
+                        }
+
+                        // Son bref de rebond, limité pour éviter une saturation audio.
+                        if (window.audioSynth && self.elapsedTime >= (ball._nextBounceSoundAt || 0)) {
+                            window.audioSynth.playFx('collision', { volume: 0.12 });
+                            ball._nextBounceSoundAt = self.elapsedTime + 0.10;
                         }
 
                         // Contact damage
