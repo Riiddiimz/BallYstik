@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   browser-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 24
-          cache: npm
 
       - name: Install Node dependencies
         run: npm install --no-audit --no-fund
@@ -39,10 +38,12 @@ jobs:
       - name: Run Playwright browser tests
         run: npm run test:e2e
 
-      - name: Upload visual captures
+      - name: Upload visual captures and test report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ballystik-playwright-results
-          path: test-results/
+          path: |
+            test-results/
+            playwright-report/
           if-no-files-found: ignore
