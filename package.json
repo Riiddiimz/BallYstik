@@ -1,0 +1,12 @@
+{
+  "name": "ballystik",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BallYstik browser tests",
+  "scripts": {
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.57.0"
+  }
+}
